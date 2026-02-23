@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
@@ -17,6 +18,40 @@ from .coordinator import AkuvoxDataUpdateCoordinator
 from .entity import AkuvoxEntity
 
 _LOGGER = logging.getLogger(__name__)
+
+_RELAY_NUM_RE = re.compile(r"[Rr]elay([A-Za-z])")
+
+
+def _relay_key_to_number(relay_key: str) -> int:
+    """Convert a relay key like 'RelayA' to a relay number (1-based).
+
+    Args:
+        relay_key: The relay key from the device (e.g., "RelayA").
+
+    Returns:
+        The 1-based relay number.
+
+    """
+    match = _RELAY_NUM_RE.match(relay_key)
+    if match:
+        return ord(match.group(1).upper()) - ord("A") + 1
+    return 1
+
+
+def _relay_key_to_label(relay_key: str) -> str:
+    """Convert a relay key like 'RelayA' to a display label.
+
+    Args:
+        relay_key: The relay key from the device.
+
+    Returns:
+        A human-readable label (e.g., "Relay A").
+
+    """
+    match = _RELAY_NUM_RE.match(relay_key)
+    if match:
+        return f"Relay {match.group(1).upper()}"
+    return relay_key
 
 
 async def async_setup_entry(
@@ -42,11 +77,10 @@ async def async_setup_entry(
     entities: list[AkuvoxLockEntity] = []
 
     for relay_key in relay_status:
-        relay_number = int(relay_key)
         entities.append(
             AkuvoxLockEntity(
                 coordinator=coordinator,
-                relay_number=relay_number,
+                relay_key=relay_key,
             ),
         )
 
@@ -59,47 +93,44 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
     def __init__(
         self,
         coordinator: AkuvoxDataUpdateCoordinator,
-        relay_number: int,
+        relay_key: str,
     ) -> None:
         """Initialize the lock entity.
 
         Args:
             coordinator: The data update coordinator.
-            relay_number: The relay number on the device.
+            relay_key: The relay key from the device (e.g., "RelayA").
 
         """
         super().__init__(coordinator)
-        self._relay_number = relay_number
+        self._relay_key = relay_key
+        self._relay_number = _relay_key_to_number(relay_key)
         mac_clean = coordinator.data.device_info.mac_address.lower().replace(
             ":",
             "",
         )
-        self._attr_unique_id = f"{mac_clean}_relay_{relay_number}"
+        self._attr_unique_id = f"{mac_clean}_{relay_key.lower()}"
         self._attr_has_entity_name = True
-        self._attr_name = f"Relay {relay_number}"
+        self._attr_name = _relay_key_to_label(relay_key)
 
     @property
     def is_locked(self) -> bool | None:
-        """Return true if the relay is closed/inactive (locked).
+        """Return true if the relay is closed (locked).
 
         Returns:
             True if locked, False if unlocked, None if unknown.
 
         """
         relay_status = self.coordinator.data.relay_status
-        relay_key = str(self._relay_number)
-        relay_data = relay_status.get(relay_key)
+        state = relay_status.get(self._relay_key)
 
-        if relay_data is None:
-            return None
-
-        state = relay_data.get("state")
         if state is None:
             return None
 
-        if state in ("closed", "inactive"):
-            return True
-        if state in ("open", "active"):
-            return False
+        if isinstance(state, str):
+            if state in ("closed", "inactive"):
+                return True
+            if state in ("open", "active"):
+                return False
 
         return None
