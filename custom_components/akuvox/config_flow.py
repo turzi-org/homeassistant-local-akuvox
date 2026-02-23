@@ -82,6 +82,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors={"base": "invalid_host"},
             )
 
+        user_input[CONF_HOST] = host.strip()
         self._data.update(user_input)
 
         if user_input.get(CONF_USE_SSL):
