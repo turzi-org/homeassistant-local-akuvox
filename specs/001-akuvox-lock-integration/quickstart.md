@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Prerequisites
 
-- Python 3.13+
+- Python 3.14+
 - uv package manager
 - Home Assistant development environment (or
   pytest-homeassistant-custom-component for testing)
@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ```bash
 # Clone and enter repo
-cd /home/tykeal/repos/personal/homeassistant/local-akuvox
+cd /path/to/local-akuvox
 
 # Initialize Python project with uv
 uv init --lib --name local-akuvox
@@ -63,9 +63,9 @@ uv run pytest tests/ -x -q
 ## Running Linters
 
 ```bash
-uv run ruff check src/ tests/
-uv run ruff format --check src/ tests/
-uv run mypy src/
+uv run ruff check custom_components/ tests/
+uv run ruff format --check custom_components/ tests/
+uv run mypy custom_components/
 ```
 
 ## Key Implementation Order

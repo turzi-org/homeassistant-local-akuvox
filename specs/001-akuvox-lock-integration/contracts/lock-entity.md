@@ -39,9 +39,11 @@ class AkuvoxLockEntity(CoordinatorEntity, LockEntity):
 
 #### `async_lock(**kwargs) -> None`
 
-Lock entities for intercom relays do not support explicit locking.
-Raises `HomeAssistantError` or is a no-op since intercom doors
-auto-lock via hardware.
+Lock entities for intercom relays do not support explicit locking
+because intercom doors auto-lock via hardware.
+Calling `async_lock` **MUST** raise `HomeAssistantError` with
+the message
+`"Lock operation not supported; door auto-locks via hardware."`
 
 #### `async_unlock(**kwargs) -> None`
 

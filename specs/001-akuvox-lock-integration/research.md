@@ -18,7 +18,7 @@ as its sole dependency and provides a fully async, type-safe API
 designed for Home Assistant integration.
 
 - **Package**: pylocal-akuvox
-- **Python**: ≥3.14
+- **Python**: ≥3.14 (required by pylocal-akuvox)
 - **Dependencies**: aiohttp ≥3.13
 - **License**: Apache-2.0
 
@@ -117,7 +117,7 @@ settings without removing the integration entry.
 
 All NEEDS CLARIFICATION items from the spec have been resolved:
 
-1. **Auth modes**: Three modes supported — None/AllowList, Basic,
+1. **Auth modes**: Four modes supported — None, AllowList, Basic,
    Digest (resolved during spec creation)
 2. **SSL handling**: Explicit user selection, no auto-detect
    (resolved during spec iteration)
