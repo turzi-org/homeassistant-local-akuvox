@@ -71,8 +71,8 @@ is complete
   config keys (CONF_HOST, CONF_USE_SSL,
   CONF_VERIFY_SSL, CONF_AUTH_METHOD,
   CONF_USERNAME, CONF_PASSWORD), auth mode
-  constants (AUTH_NONE, AUTH_ALLOWLIST,
-  AUTH_BASIC, AUTH_DIGEST), and
+  constants (AUTH_NONE, AUTH_BASIC,
+  AUTH_DIGEST), and
   DEFAULT_SCAN_INTERVAL (30)
 - [ ] T006 [P] Create integration manifest in
   `custom_components/akuvox/manifest.json`
@@ -84,7 +84,9 @@ is complete
   `custom_components/akuvox/strings.json`
   with config flow step titles, field labels,
   and error messages for all 4 steps (user,
-  ssl, auth, credentials) plus error keys
+  ssl, auth, credentials). The auth step MUST
+  label AUTH_NONE as "None / AllowList" in the
+  UI. Include error keys
   (cannot_connect, invalid_auth, invalid_host,
   already_configured, unknown)
 - [ ] T008 [P] Create English translations in
@@ -272,9 +274,10 @@ lock state on device; verify update within 30s polling interval
   reflects relay change after coordinator
   update, test entity marked unavailable when
   coordinator raises UpdateFailed, test
-  entity recovers to correct state when
-  device comes back online after failed
-  updates, test polling interval is 30s
+  entity recovers to correct state within
+  2 coordinator update cycles after device
+  comes back online (SC-004), test polling
+  interval is 30s
 - [ ] T024 [P] [US3] Write state mapping tests
   in `tests/test_lock.py`: test is_locked
   returns True for relay closed/inactive
@@ -379,6 +382,14 @@ validation
   all commands in
   `specs/001-akuvox-lock-integration/quickstart.md`
   execute successfully
+- [ ] T036 [P] Add performance acceptance tests
+  in `tests/test_lock.py`: test async_unlock
+  completes within 5 seconds (SC-002) using
+  mock device; test coordinator
+  update_interval is timedelta(seconds=30)
+  (SC-003); test entity recovery within 2
+  coordinator update cycles after device
+  comes back online (SC-004)
 
 ---
 

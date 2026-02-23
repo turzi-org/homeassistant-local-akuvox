@@ -53,8 +53,7 @@ vol.Schema({
 ```python
 vol.Schema({
     vol.Required(CONF_AUTH_METHOD, default=AUTH_NONE): vol.In([
-        AUTH_NONE,
-        AUTH_ALLOWLIST,
+        AUTH_NONE,      # "None / AllowList" in UI
         AUTH_BASIC,
         AUTH_DIGEST,
     ]),
@@ -64,8 +63,8 @@ vol.Schema({
 **Validation**:
 
 - If `auth_method` is `basic` or `digest`, proceed to Step 4
-- If `auth_method` is `none` or `allowlist`, proceed to
-  connection test
+- If `auth_method` is `none` (covers both no-auth and allowlist
+  devices), proceed to connection test
 
 ### Step 4: Credentials (Conditional)
 

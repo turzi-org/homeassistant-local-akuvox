@@ -85,6 +85,10 @@ responds and the entity state updates accordingly.
    **When** the user triggers an unlock action, **Then** the
    integration reports the device as unavailable and the action fails
    gracefully with an error notification.
+3. **Given** an Akuvox lock entity exists,
+   **When** the user triggers a lock action, **Then** the
+   integration raises an error indicating that explicit locking
+   is not supported because the door auto-locks via hardware.
 
 ---
 
@@ -146,18 +150,26 @@ lock entity that can be controlled independently.
 
 ### Edge Cases
 
-- What happens when the device firmware is updated and the local API
-  changes behavior?
-- How does the system handle concurrent unlock requests from multiple
-  Home Assistant users or automations?
-- What happens when the device is power-cycled while the integration
-  is polling?
-- How does the integration behave if the device responds with
-  unexpected or malformed data?
-- What happens if the user changes the device IP address after
-  initial setup?
-- What happens when a device switches from HTTP to HTTPS (or vice
-  versa) after a firmware update?
+- **Firmware API changes**: The integration relies on the
+  pylocal-akuvox library to abstract API differences. Library
+  updates handle firmware changes; integration-level changes
+  are out of scope until the library signals a breaking change.
+- **Concurrent unlock requests**: Multiple simultaneous unlock
+  calls are passed through to the device independently. The
+  device handles concurrency; the integration does not
+  deduplicate or queue requests.
+- **Device power-cycle during polling**: The coordinator marks
+  the entity unavailable on connection failure (FR-006) and
+  recovers automatically on the next successful poll (SC-004).
+- **Malformed device responses**: The coordinator catches
+  `AkuvoxParseError` and raises `UpdateFailed`, marking
+  entities unavailable until the next successful poll.
+- **IP address change after setup**: The user reconfigures the
+  device IP via the options flow (FR-010). No automatic
+  detection is provided.
+- **HTTP/HTTPS protocol change**: The user reconfigures SSL
+  settings via the options flow (FR-010). No automatic
+  detection is provided.
 
 ## Requirements *(mandatory)*
 
@@ -179,8 +191,10 @@ lock entity that can be controlled independently.
   during the config flow setup process.
 - **FR-008**: The integration MUST support devices with multiple
   relays by creating one lock entity per relay.
-- **FR-009**: The integration MUST handle device communication
-  errors gracefully without crashing Home Assistant.
+- **FR-009**: The integration MUST catch all device communication
+  errors and surface them as entity unavailability or user-facing
+  error messages without crashing Home Assistant or blocking the
+  event loop.
 - **FR-010**: The integration MUST support reconfiguration of device
   connection parameters (IP, credentials, SSL settings) without
   removing and re-adding the device.
@@ -249,3 +263,8 @@ lock entity that can be controlled independently.
   network with zero cloud service dependencies.
 - **SC-006**: All device communication errors are handled without
   impacting Home Assistant stability or other integrations.
+- **SC-001 Note**: Setup time is an integration-level metric
+  verified during manual acceptance testing, not unit-testable.
+- **SC-005 Note**: Local-only operation is an architectural
+  constraint enforced by the pylocal-akuvox library design; no
+  cloud endpoints exist in the codebase.
