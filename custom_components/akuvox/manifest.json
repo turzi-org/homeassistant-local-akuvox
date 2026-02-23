@@ -1,0 +1,10 @@
+{
+  "domain": "akuvox",
+  "name": "Akuvox",
+  "version": "0.1.0",
+  "codeowners": ["@tykeal"],
+  "config_flow": true,
+  "documentation": "https://github.com/tykeal/homeassistant-local-akuvox",
+  "iot_class": "local_polling",
+  "requirements": ["pylocal-akuvox>=0.1.0"]
+}
