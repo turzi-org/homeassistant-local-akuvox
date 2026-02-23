@@ -10,14 +10,21 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Lock Entity Contract
 
-### Class: `AkuvoxLockEntity`
+### Base Class: `AkuvoxEntity` (in `entity.py`)
 
-Inherits from `CoordinatorEntity` and `LockEntity`.
+Inherits from `CoordinatorEntity`. Provides shared `device_info`
+property that converts the library's `DeviceInfo` to HA's
+`DeviceInfo` (identifiers, name, manufacturer, model,
+sw_version, hw_version).
+
+### Class: `AkuvoxLockEntity` (in `lock.py`)
+
+Inherits from `AkuvoxEntity` and `LockEntity`.
 
 ### Constructor
 
 ```python
-class AkuvoxLockEntity(CoordinatorEntity, LockEntity):
+class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
     def __init__(
         self,
         coordinator: AkuvoxDataUpdateCoordinator,

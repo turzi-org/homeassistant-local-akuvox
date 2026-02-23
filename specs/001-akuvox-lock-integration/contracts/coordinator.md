@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 # Contracts: Coordinator
 
 **Feature**: 001-akuvox-lock-integration
-**Component**: `__init__.py` (AkuvoxDataUpdateCoordinator)
+**Component**: `coordinator.py` (AkuvoxDataUpdateCoordinator)
 
 ## Coordinator Contract
 
