@@ -14,10 +14,11 @@ Stored in Home Assistant's config entry system (`.storage/`).
 
 ### Entry Data (set during config flow)
 
-Connection parameters are stored in entry data during initial
-setup. The options flow updates these same fields when the user
-reconfigures the integration; Home Assistant merges options into
-the active entry data on reload.
+Connection parameters are stored in `entry.data` during initial
+setup. When the user reconfigures the integration via the options
+flow, updated values are stored in `entry.options`. At runtime,
+the integration reads connection parameters from `entry.options`
+first, falling back to `entry.data` for fields not yet overridden.
 
 ```python
 {
