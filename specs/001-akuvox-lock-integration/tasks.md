@@ -31,7 +31,7 @@ implementation and testing.
 **Purpose**: Project initialization, dependencies, directory
 structure, and tooling configuration
 
-- [ ] T001 Initialize uv project with
+- [X] T001 Initialize uv project with
   `uv init --no-package --name local-akuvox`,
   then use `uv add` to add the production dep
   `pylocal-akuvox`, and `uv add --dev` to add
@@ -40,15 +40,15 @@ structure, and tooling configuration
   mypy, and interrogate; run `uv lock` and
   commit `uv.lock` (see quickstart.md for
   exact commands)
-- [ ] T002 Create directory structure:
+- [X] T002 Create directory structure:
   `custom_components/akuvox/`,
   `custom_components/akuvox/translations/`,
   and `tests/`
-- [ ] T003 [P] Configure ruff (C901 max
+- [X] T003 [P] Configure ruff (C901 max
   complexity 10), mypy (strict), and
   interrogate in pyproject.toml per
   constitution Principle I
-- [ ] T004 [P] Create HACS metadata file at
+- [X] T004 [P] Create HACS metadata file at
   hacs.json with name "Akuvox",
   render_readme true
 
@@ -65,7 +65,7 @@ fixtures that ALL user stories depend on
 **⚠️ CRITICAL**: No user story work can begin until this phase
 is complete
 
-- [ ] T005 Create constants module in
+- [X] T005 Create constants module in
   `custom_components/akuvox/const.py` defining
   DOMAIN ("akuvox"), PLATFORMS (["lock"]),
   config keys (CONF_HOST, CONF_USE_SSL,
@@ -74,13 +74,13 @@ is complete
   constants (AUTH_NONE, AUTH_BASIC,
   AUTH_DIGEST), and
   DEFAULT_SCAN_INTERVAL (30)
-- [ ] T006 [P] Create integration manifest in
+- [X] T006 [P] Create integration manifest in
   `custom_components/akuvox/manifest.json`
   with domain "akuvox", name "Akuvox",
   version "0.1.0", requirements
   ["pylocal-akuvox"], config_flow true,
   iot_class "local_polling"
-- [ ] T007 [P] Create UI strings in
+- [X] T007 [P] Create UI strings in
   `custom_components/akuvox/strings.json`
   with config flow step titles, field labels,
   and error messages for all 4 steps (user,
@@ -89,10 +89,10 @@ is complete
   UI. Include error keys
   (cannot_connect, invalid_auth, invalid_host,
   already_configured, unknown)
-- [ ] T008 [P] Create English translations in
+- [X] T008 [P] Create English translations in
   `custom_components/akuvox/translations/en.json`
   mirroring strings.json content
-- [ ] T009 Create shared test fixtures in
+- [X] T009 Create shared test fixtures in
   `tests/conftest.py` with mock
   AkuvoxDevice, mock DeviceInfo, mock
   relay_status responses, mock config entry
@@ -118,7 +118,7 @@ lock entity appears in entity list with locked/unlocked state
 > **Write these tests FIRST — they MUST FAIL before
 > implementation**
 
-- [ ] T010 [P] [US1] Write config flow tests in
+- [X] T010 [P] [US1] Write config flow tests in
   `tests/test_config_flow.py`: test user step
   shows form, test SSL step appears when
   use_ssl=True, test SSL step skipped when
@@ -133,7 +133,7 @@ lock entity appears in entity list with locked/unlocked state
   error on AkuvoxAuthenticationError, test
   already_configured aborts on duplicate MAC,
   test unknown error on generic AkuvoxError
-- [ ] T011 [P] [US1] Write coordinator tests in
+- [X] T011 [P] [US1] Write coordinator tests in
   `tests/test_coordinator.py`: test
   coordinator fetches device info and relay
   status, test coordinator raises
@@ -144,7 +144,7 @@ lock entity appears in entity list with locked/unlocked state
   coordinator raises ConfigEntryAuthFailed on
   AkuvoxAuthenticationError, test coordinator
   caches device_info after first call
-- [ ] T012 [P] [US1] Write integration setup
+- [X] T012 [P] [US1] Write integration setup
   tests in `tests/test_init.py`: test
   async_setup_entry creates coordinator and
   stores in hass.data, test async_setup_entry
@@ -152,7 +152,7 @@ lock entity appears in entity list with locked/unlocked state
   async_unload_entry cleans up hass.data and
   closes device, test setup fails gracefully
   on initial connection error
-- [ ] T013 [P] [US1] Write lock entity tests in
+- [X] T013 [P] [US1] Write lock entity tests in
   `tests/test_lock.py`: test entity created
   with correct unique_id
   ({mac}_relay_{num}), test entity name is
@@ -165,7 +165,7 @@ lock entity appears in entity list with locked/unlocked state
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Implement
+- [X] T014 [US1] Implement
   AkuvoxDataUpdateCoordinator in
   `custom_components/akuvox/coordinator.py`
   with \_async_update_data calling
@@ -174,7 +174,7 @@ lock entity appears in entity list with locked/unlocked state
   per coordinator contract,
   AkuvoxCoordinatorData dataclass, and 30s
   update_interval
-- [ ] T015 [US1] Implement AkuvoxEntity base
+- [X] T015 [US1] Implement AkuvoxEntity base
   class in
   `custom_components/akuvox/entity.py`
   inheriting CoordinatorEntity with
@@ -182,13 +182,13 @@ lock entity appears in entity list with locked/unlocked state
   DeviceInfo to HA DeviceInfo (identifiers,
   name, manufacturer, model, sw_version,
   hw_version)
-- [ ] T016 [US1] Implement AkuvoxLockEntity in
+- [X] T016 [US1] Implement AkuvoxLockEntity in
   `custom_components/akuvox/lock.py`
   inheriting AkuvoxEntity and LockEntity with
   unique_id, name, is_locked property parsing
   relay_status, and async_setup_entry
   creating one entity per relay
-- [ ] T017 [US1] Implement config flow in
+- [X] T017 [US1] Implement config flow in
   `custom_components/akuvox/config_flow.py`
   with 4 steps (async_step_user,
   async_step_ssl, async_step_auth,
@@ -196,7 +196,7 @@ lock entity appears in entity list with locked/unlocked state
   using AkuvoxDevice.get_info(), duplicate
   detection via MAC address, and all error
   handling per config-flow contract
-- [ ] T018 [US1] Implement async_setup_entry and
+- [X] T018 [US1] Implement async_setup_entry and
   async_unload_entry in
   `custom_components/akuvox/__init__.py`
   creating AkuvoxDevice from entry data
