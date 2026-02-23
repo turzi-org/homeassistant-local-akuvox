@@ -12,34 +12,29 @@ SPDX-License-Identifier: Apache-2.0
 
 Stored in Home Assistant's config entry system (`.storage/`).
 
-### Entry Data (set during config flow, immutable after creation)
+### Entry Data (set during config flow)
+
+Connection parameters are stored in entry data during initial
+setup. The options flow updates these same fields when the user
+reconfigures the integration; Home Assistant merges options into
+the active entry data on reload.
 
 ```python
 {
     "host": str,           # Device IP address or hostname
     "use_ssl": bool,       # Whether to use HTTPS
-    "verify_ssl": bool,    # Whether to verify SSL certificates
-    "auth_method": str,    # "none" | "allowlist" | "basic" | "digest"
-    "username": str | None,  # Credentials (Basic/Digest only)
-    "password": str | None,  # Credentials (Basic/Digest only)
+    "verify_ssl": bool,    # Whether to verify SSL certs
+    "auth_method": str,    # "none"|"allowlist"|"basic"|"digest"
+    "username": str | None,  # Basic/Digest only
+    "password": str | None,  # Basic/Digest only
 }
 ```
 
-### Entry Options (modifiable via options flow)
+### Options Flow
 
-```python
-{
-    "host": str,           # Allow IP change without re-adding
-    "use_ssl": bool,
-    "verify_ssl": bool,
-    "auth_method": str,
-    "username": str | None,
-    "password": str | None,
-}
-```
-
-When options are updated, the coordinator is reloaded with new
-connection parameters.
+The options flow presents the same fields as entry data,
+pre-filled with current values. On save, the integration
+reloads the coordinator with updated connection parameters.
 
 ## Coordinator Data
 

@@ -99,7 +99,10 @@ The integration will use `DataUpdateCoordinator` for polling:
 3. **Step: Auth** — Authentication mode selection
 4. **Step: Credentials** (conditional) — Username/password (only if
    Basic or Digest selected)
-5. **Validation** — Test connection with provided parameters
+
+After the UI steps are complete, the integration tests the
+connection with the provided parameters before creating the config
+entry.
 
 ### Entity Registration
 

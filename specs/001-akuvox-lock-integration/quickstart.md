@@ -21,8 +21,8 @@ SPDX-License-Identifier: Apache-2.0
 # Clone and enter repo
 cd /path/to/local-akuvox
 
-# Initialize Python project with uv
-uv init --lib --name local-akuvox
+# Initialize Python project with uv (--no-package avoids src/ layout)
+uv init --no-package --name local-akuvox
 uv add pylocal-akuvox
 uv add --dev pytest pytest-asyncio pytest-cov
 uv add --dev pytest-homeassistant-custom-component

@@ -22,7 +22,6 @@ tests/
 ## Commands
 
 ```bash
-cd custom_components
 uv run pytest tests/ -x -q
 uv run ruff check custom_components/ tests/
 uv run ruff format --check custom_components/ tests/
