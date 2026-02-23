@@ -296,3 +296,45 @@ async def test_multi_relay_entities_created(
         entry_b = ent_reg.async_get("lock.akuvox_e21v_relay_b")
         assert entry_b is not None
         assert entry_b.unique_id == f"{mac_clean}_relay_2"
+
+
+async def test_is_locked_handles_dict_state_format(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+) -> None:
+    """Test is_locked handles legacy dict state format defensively."""
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        from pylocal_akuvox import DeviceInfo
+
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": {"state": "closed"}},
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state is not None
+        assert state.state == "locked"
