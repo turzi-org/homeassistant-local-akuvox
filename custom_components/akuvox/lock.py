@@ -19,7 +19,7 @@ from .entity import AkuvoxEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-_RELAY_NUM_RE = re.compile(r"[Rr]elay([A-Za-z])")
+_RELAY_NUM_RE = re.compile(r"Relay([A-Z])")
 
 
 def _relay_key_to_number(relay_key: str) -> int:
@@ -32,9 +32,13 @@ def _relay_key_to_number(relay_key: str) -> int:
         The 1-based relay number.
 
     """
-    match = _RELAY_NUM_RE.match(relay_key)
+    match = _RELAY_NUM_RE.fullmatch(relay_key)
     if match:
         return ord(match.group(1).upper()) - ord("A") + 1
+    _LOGGER.warning(
+        "Unexpected relay key format '%s'; defaulting to relay 1",
+        relay_key,
+    )
     return 1
 
 
@@ -48,9 +52,13 @@ def _relay_key_to_label(relay_key: str) -> str:
         A human-readable label (e.g., "Relay A").
 
     """
-    match = _RELAY_NUM_RE.match(relay_key)
+    match = _RELAY_NUM_RE.fullmatch(relay_key)
     if match:
         return f"Relay {match.group(1).upper()}"
+    _LOGGER.warning(
+        "Unexpected relay key format '%s'; using raw key as label",
+        relay_key,
+    )
     return relay_key
 
 
@@ -104,6 +112,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         """
         super().__init__(coordinator)
         self._relay_key = relay_key
+        # Stored for trigger_relay() calls in Phase 4 (US2)
         self._relay_number = _relay_key_to_number(relay_key)
         mac_clean = coordinator.data.device_info.mac_address.lower().replace(
             ":",
@@ -132,5 +141,17 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 return True
             if state in ("open", "active"):
                 return False
+            _LOGGER.warning(
+                "Unrecognized relay state '%s' for %s",
+                state,
+                self._relay_key,
+            )
+            return None
 
+        _LOGGER.warning(
+            "Unexpected relay state type for %s: %r (type=%s)",
+            self._relay_key,
+            state,
+            type(state).__name__,
+        )
         return None
