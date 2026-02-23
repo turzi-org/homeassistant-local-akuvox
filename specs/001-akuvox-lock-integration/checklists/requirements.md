@@ -38,5 +38,8 @@ proceeding to planning
 ## Notes
 
 - FR-011 clarification resolved: integration supports three auth
-  modes (None/AllowList, Basic Auth, Digest Auth) as provided by
-  the pylocal-akuvox library.
+  modes (None/AllowList, Basic Auth, Digest Auth).
+- Implementation-specific library names removed from assumptions
+  per review feedback. Home Assistant domain terms (config flow,
+  lock entity, service calls) are retained as appropriate domain
+  language for an HA integration spec.

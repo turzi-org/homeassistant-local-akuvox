@@ -66,8 +66,7 @@ A Home Assistant user views their Akuvox lock entity and triggers an
 unlock action (e.g., pressing "Unlock" in the UI, calling the
 `lock.unlock` service, or using an automation). The integration sends
 the unlock command to the Akuvox device via its local API, and the
-lock entity state updates to reflect the change. The device
-automatically re-locks after a configurable timeout.
+lock entity state updates to reflect the change.
 
 **Why this priority**: Lock/unlock is the primary use case for
 exposing intercom devices as locks. This is the core value proposition
@@ -82,10 +81,7 @@ responds and the entity state updates accordingly.
 1. **Given** an Akuvox lock entity exists and the device is reachable,
    **When** the user triggers an unlock action, **Then** the device
    unlocks and the entity state changes to "unlocked".
-2. **Given** an Akuvox lock entity exists and the device is reachable,
-   **When** the unlock timeout period expires, **Then** the device
-   re-locks and the entity state changes to "locked".
-3. **Given** the Akuvox device is unreachable (network issue),
+2. **Given** the Akuvox device is unreachable (network issue),
    **When** the user triggers an unlock action, **Then** the
    integration reports the device as unavailable and the action fails
    gracefully with an error notification.
@@ -217,23 +213,23 @@ lock entity that can be controlled independently.
 
 ### Assumptions
 
-- The integration uses the `pylocal-akuvox` library for all device
-  communication.
+- The integration uses a dedicated Akuvox local API client library
+  for all device communication.
 - Akuvox devices expose a local HTTP or HTTPS API for relay control
   and status queries (no cloud API dependency). The library does not
   auto-detect whether the device uses SSL; the user MUST explicitly
   specify this during setup.
 - The "Verify SSL" checkbox defaults to unchecked since most local
   Akuvox deployments use self-signed certificates.
-- The underlying library (pylocal-akuvox) handles both valid and
-  invalid (self-signed) SSL certificates.
+- The underlying library handles both valid and invalid (self-signed)
+  SSL certificates.
 - The device API supports querying the number of available relays.
 - Lock entities default to a "locked" state since intercom doors
   are normally locked.
 - Polling interval defaults to 30 seconds, which balances
   responsiveness with device/network load.
 - The integration follows standard Home Assistant patterns for
-  config flow, coordinator-based polling, and entity registration.
+  config flow, polling-based updates, and entity registration.
 - Device authentication supports three modes: None/AllowList,
   HTTP Basic Auth, and HTTP Digest Auth.
 
