@@ -17,13 +17,12 @@ Akuvox that interacts with Akuvox intercom devices as locks via local APIs"
 
 A Home Assistant user navigates to the integrations page, searches for
 "Akuvox", and adds their Akuvox intercom device. They provide the
-device's local IP address and any required credentials. If the device
-uses HTTPS, the user checks a "Verify SSL" checkbox to enable SSL
-connections; if the device uses a self-signed certificate, the user
-leaves the box unchecked to allow unverified SSL connections. The
-integration discovers the device on the local network and confirms a
-successful connection. The device appears as a lock entity in Home
-Assistant.
+device's local IP address, select whether the device uses SSL (HTTPS),
+and supply any required credentials. When SSL is enabled, a "Verify
+SSL" checkbox appears; the user unchecks it if the device uses a
+self-signed certificate. The integration connects to the device on
+the local network and confirms a successful connection. The device
+appears as a lock entity in Home Assistant.
 
 **Why this priority**: Without device setup, no other functionality is
 possible. This is the foundational capability that enables all
@@ -47,12 +46,17 @@ in the entity list with a valid state.
    **When** they attempt to add the same device again, **Then** the
    integration prevents duplicate entries and notifies the user.
 4. **Given** a user has a device using HTTPS with a self-signed
-   certificate, **When** they add the device and leave "Verify SSL"
-   unchecked, **Then** the integration connects successfully without
-   certificate validation errors.
+   certificate, **When** they enable SSL in the config flow and leave
+   "Verify SSL" unchecked, **Then** the integration connects
+   successfully without certificate validation errors.
 5. **Given** a user has a device using HTTPS with a valid certificate,
-   **When** they add the device and check "Verify SSL", **Then** the
-   integration connects using full SSL certificate verification.
+   **When** they enable SSL in the config flow and check "Verify SSL",
+   **Then** the integration connects using full SSL certificate
+   verification.
+6. **Given** a user has a device using plain HTTP,
+   **When** they leave SSL disabled in the config flow, **Then** the
+   integration connects over HTTP and the "Verify SSL" option is not
+   presented.
 
 ---
 
@@ -189,12 +193,16 @@ lock entity that can be controlled independently.
   required), HTTP Basic Auth, and HTTP Digest Auth. The config flow
   MUST allow the user to select the authentication mode and, when
   applicable, provide username and password credentials.
-- **FR-012**: The config flow MUST provide a "Verify SSL" checkbox
-  that controls whether SSL certificate verification is enforced
-  when communicating with the device over HTTPS.
+- **FR-012**: The config flow MUST provide a "Use SSL" option that
+  the user MUST explicitly set to indicate whether the device uses
+  HTTPS. When SSL is enabled, a "Verify SSL" checkbox MUST be
+  presented to control whether SSL certificate verification is
+  enforced. The "Verify SSL" option MUST NOT appear when SSL is
+  disabled.
 - **FR-013**: The integration MUST support both HTTP and HTTPS
-  connections to Akuvox devices, including HTTPS with self-signed
-  certificates when SSL verification is disabled.
+  connections to Akuvox devices based on the user's explicit SSL
+  selection, including HTTPS with self-signed certificates when
+  SSL verification is disabled.
 
 ### Key Entities
 
@@ -212,7 +220,9 @@ lock entity that can be controlled independently.
 - The integration uses the `pylocal-akuvox` library for all device
   communication.
 - Akuvox devices expose a local HTTP or HTTPS API for relay control
-  and status queries (no cloud API dependency).
+  and status queries (no cloud API dependency). The library does not
+  auto-detect whether the device uses SSL; the user MUST explicitly
+  specify this during setup.
 - The "Verify SSL" checkbox defaults to unchecked since most local
   Akuvox deployments use self-signed certificates.
 - The underlying library (pylocal-akuvox) handles both valid and
