@@ -69,6 +69,19 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             )
 
+        host = user_input.get(CONF_HOST, "")
+        if not host or not host.strip():
+            return self.async_show_form(
+                step_id="user",
+                data_schema=vol.Schema(
+                    {
+                        vol.Required(CONF_HOST): str,
+                        vol.Required(CONF_USE_SSL, default=False): bool,
+                    }
+                ),
+                errors={"base": "invalid_host"},
+            )
+
         self._data.update(user_input)
 
         if user_input.get(CONF_USE_SSL):

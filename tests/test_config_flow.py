@@ -43,6 +43,24 @@ async def test_user_step_shows_form(
     assert result["step_id"] == "user"
 
 
+async def test_user_step_rejects_empty_host(
+    hass: HomeAssistant,
+) -> None:
+    """Test user step rejects empty host with invalid_host error."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_HOST: "   ", CONF_USE_SSL: False},
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    assert result["errors"] is not None
+    assert result["errors"]["base"] == "invalid_host"
+
+
 async def test_ssl_step_appears_when_use_ssl_true(
     hass: HomeAssistant,
 ) -> None:
