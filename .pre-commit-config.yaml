@@ -172,6 +172,7 @@ repos:
         verbose: true
         args: ["--show-error-codes", "--install-types", "--non-interactive"]
         additional_dependencies:
+          - "homeassistant>=2026.2.0"
           - "pytest"
           - "pylocal-akuvox"
           - "types-pexpect"

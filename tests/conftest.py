@@ -33,6 +33,20 @@ MOCK_FW_VERSION = "1.0.0"
 MOCK_HW_VERSION = "2.0.0"
 
 
+@pytest.fixture(autouse=True)
+def auto_enable_custom_integrations(
+    enable_custom_integrations: None,
+) -> None:
+    """Enable custom integrations for all tests."""
+
+
+MOCK_HOST = "192.168.1.100"
+MOCK_MAC = "AA:BB:CC:DD:EE:FF"
+MOCK_MODEL = "E21V"
+MOCK_FW_VERSION = "1.0.0"
+MOCK_HW_VERSION = "2.0.0"
+
+
 @pytest.fixture
 def mock_device_info() -> DeviceInfo:
     """Return a mock DeviceInfo object."""
