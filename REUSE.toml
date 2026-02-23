@@ -17,7 +17,7 @@ SPDX-FileCopyrightText = "2026 Andrew Grimberg <tykeal@bardicgrove.org>"
 [[annotations]]
 path = [
     "uv.lock",
-    "src/**/py.typed",
+    "custom_components/**/py.typed",
     "docs/_static/.gitkeep",
 ]
 SPDX-License-Identifier = "Apache-2.0"
