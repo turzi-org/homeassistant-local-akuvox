@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2025 Andrew Grimberg <tykeal@bardicgrove.org>
+# SPDX-License-Identifier: Apache-2.0
+version = 1
+
+# Annotate spec kit files and generated files
+[[annotations]]
+path = [
+    ".github/prompts/*",
+    ".specify/**",
+    "**.json",
+    ".github/agents/speckit**"
+]
+SPDX-License-Identifier = "Apache-2.0"
+SPDX-FileCopyrightText = "2026 Andrew Grimberg <tykeal@bardicgrove.org>"
+
+# Generated/marker files that cannot contain inline headers
+[[annotations]]
+path = [
+    "uv.lock",
+    "src/**/py.typed",
+    "docs/_static/.gitkeep",
+]
+SPDX-License-Identifier = "Apache-2.0"
+SPDX-FileCopyrightText = "2026 Andrew Grimberg <tykeal@bardicgrove.org>"
