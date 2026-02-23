@@ -54,7 +54,7 @@ def _relay_key_to_label(relay_key: str) -> str:
     """
     match = _RELAY_NUM_RE.fullmatch(relay_key)
     if match:
-        return f"Relay {match.group(1).upper()}"
+        return f"Relay {match.group(1)}"
     _LOGGER.warning(
         "Unexpected relay key format '%s'; using raw key as label",
         relay_key,
