@@ -17,9 +17,13 @@ Akuvox that interacts with Akuvox intercom devices as locks via local APIs"
 
 A Home Assistant user navigates to the integrations page, searches for
 "Akuvox", and adds their Akuvox intercom device. They provide the
-device's local IP address and any required credentials. The integration
-discovers the device on the local network and confirms a successful
-connection. The device appears as a lock entity in Home Assistant.
+device's local IP address and any required credentials. If the device
+uses HTTPS, the user checks a "Verify SSL" checkbox to enable SSL
+connections; if the device uses a self-signed certificate, the user
+leaves the box unchecked to allow unverified SSL connections. The
+integration discovers the device on the local network and confirms a
+successful connection. The device appears as a lock entity in Home
+Assistant.
 
 **Why this priority**: Without device setup, no other functionality is
 possible. This is the foundational capability that enables all
@@ -42,6 +46,13 @@ in the entity list with a valid state.
 3. **Given** a user has already added an Akuvox device,
    **When** they attempt to add the same device again, **Then** the
    integration prevents duplicate entries and notifies the user.
+4. **Given** a user has a device using HTTPS with a self-signed
+   certificate, **When** they add the device and leave "Verify SSL"
+   unchecked, **Then** the integration connects successfully without
+   certificate validation errors.
+5. **Given** a user has a device using HTTPS with a valid certificate,
+   **When** they add the device and check "Verify SSL", **Then** the
+   integration connects using full SSL certificate verification.
 
 ---
 
@@ -145,6 +156,8 @@ lock entity that can be controlled independently.
   unexpected or malformed data?
 - What happens if the user changes the device IP address after
   initial setup?
+- What happens when a device switches from HTTP to HTTPS (or vice
+  versa) after a firmware update?
 
 ## Requirements *(mandatory)*
 
@@ -169,19 +182,26 @@ lock entity that can be controlled independently.
 - **FR-009**: The integration MUST handle device communication
   errors gracefully without crashing Home Assistant.
 - **FR-010**: The integration MUST support reconfiguration of device
-  connection parameters (IP, credentials) without removing and
-  re-adding the device.
+  connection parameters (IP, credentials, SSL settings) without
+  removing and re-adding the device.
 - **FR-011**: The integration MUST support three authentication
   modes for device communication: None/AllowList (no credentials
   required), HTTP Basic Auth, and HTTP Digest Auth. The config flow
   MUST allow the user to select the authentication mode and, when
   applicable, provide username and password credentials.
+- **FR-012**: The config flow MUST provide a "Verify SSL" checkbox
+  that controls whether SSL certificate verification is enforced
+  when communicating with the device over HTTPS.
+- **FR-013**: The integration MUST support both HTTP and HTTPS
+  connections to Akuvox devices, including HTTPS with self-signed
+  certificates when SSL verification is disabled.
 
 ### Key Entities
 
 - **Akuvox Device**: Represents a physical Akuvox intercom unit.
   Attributes include IP address, device model, firmware version,
-  number of relays, and connection status.
+  number of relays, connection status, SSL verification preference,
+  and protocol (HTTP or HTTPS).
 - **Lock (Relay)**: Represents a single relay on an Akuvox device
   exposed as a Home Assistant lock entity. Attributes include relay
   number, current state (locked/unlocked/unavailable), and parent
@@ -191,8 +211,12 @@ lock entity that can be controlled independently.
 
 - The integration uses the `pylocal-akuvox` library for all device
   communication.
-- Akuvox devices expose a local HTTP-based API for relay control
+- Akuvox devices expose a local HTTP or HTTPS API for relay control
   and status queries (no cloud API dependency).
+- The "Verify SSL" checkbox defaults to unchecked since most local
+  Akuvox deployments use self-signed certificates.
+- The underlying library (pylocal-akuvox) handles both valid and
+  invalid (self-signed) SSL certificates.
 - The device API supports querying the number of available relays.
 - Lock entities default to a "locked" state since intercom doors
   are normally locked.
