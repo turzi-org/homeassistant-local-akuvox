@@ -1,0 +1,74 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Device Connection",
+        "description": "Enter the IP address or hostname of your Akuvox device.",
+        "data": {
+          "host": "Host",
+          "use_ssl": "Use SSL"
+        }
+      },
+      "ssl": {
+        "title": "SSL Options",
+        "description": "Configure SSL certificate verification.",
+        "data": {
+          "verify_ssl": "Verify SSL Certificate"
+        }
+      },
+      "auth": {
+        "title": "Authentication",
+        "description": "Select the authentication method for your device.",
+        "data": {
+          "auth_method": "Authentication Method"
+        },
+        "data_description": {
+          "auth_method": "Choose 'None / AllowList' if your device has no authentication or uses IP-based allowlisting."
+        }
+      },
+      "credentials": {
+        "title": "Credentials",
+        "description": "Enter the username and password for your device.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the device.",
+      "invalid_auth": "Invalid authentication credentials.",
+      "invalid_host": "Invalid host address.",
+      "already_configured": "This device is already configured.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This device is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Akuvox Options",
+        "description": "Update connection settings for your Akuvox device.",
+        "data": {
+          "host": "Host",
+          "use_ssl": "Use SSL",
+          "verify_ssl": "Verify SSL Certificate",
+          "auth_method": "Authentication Method",
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    }
+  },
+  "selector": {
+    "auth_method": {
+      "options": {
+        "none": "None / AllowList",
+        "basic": "Basic",
+        "digest": "Digest"
+      }
+    }
+  }
+}

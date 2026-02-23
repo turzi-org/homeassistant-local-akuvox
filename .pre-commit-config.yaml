@@ -173,6 +173,7 @@ repos:
         args: ["--show-error-codes", "--install-types", "--non-interactive"]
         additional_dependencies:
           - "pytest"
+          - "pylocal-akuvox"
           - "types-pexpect"
           - "types-pygments"
           - "types-pytz"
