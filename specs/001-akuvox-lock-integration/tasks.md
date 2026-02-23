@@ -33,12 +33,13 @@ structure, and tooling configuration
 
 - [ ] T001 Initialize uv project with
   `uv init --no-package --name local-akuvox`,
-  then use `uv add` to add deps:
-  pylocal-akuvox, pytest, pytest-asyncio,
-  pytest-cov,
+  then use `uv add` to add the production dep
+  `pylocal-akuvox`, and `uv add --dev` to add
+  pytest, pytest-asyncio, pytest-cov,
   pytest-homeassistant-custom-component, ruff,
-  mypy, interrogate; run `uv lock` and commit
-  `uv.lock`
+  mypy, and interrogate; run `uv lock` and
+  commit `uv.lock` (see quickstart.md for
+  exact commands)
 - [ ] T002 Create directory structure:
   `custom_components/akuvox/`,
   `custom_components/akuvox/translations/`,
@@ -124,8 +125,7 @@ lock entity appears in entity list with locked/unlocked state
   Basic, Digest), test credentials step
   appears for basic/digest, test credentials
   step skipped for none/allowlist, test
-  successful
-  connection creates entry, test
+  successful connection creates entry, test
   cannot_connect error on
   AkuvoxConnectionError, test invalid_auth
   error on AkuvoxAuthenticationError, test
@@ -153,7 +153,7 @@ lock entity appears in entity list with locked/unlocked state
 - [ ] T013 [P] [US1] Write lock entity tests in
   `tests/test_lock.py`: test entity created
   with correct unique_id
-  ({mac}\_relay\_{num}), test entity name is
+  ({mac}_relay_{num}), test entity name is
   "Relay {num}", test entity device_info maps
   library DeviceInfo to HA DeviceInfo, test
   is_locked returns True when relay inactive,
@@ -242,9 +242,8 @@ verify device unlocks and entity state changes
 
 - [ ] T021 [US2] Implement async_unlock in
   `custom_components/akuvox/lock.py` calling
-  `await coordinator.device.trigger_relay(num=relay_number)`
-  then
-  `await coordinator.async_request_refresh()`,
+  `await coordinator.device.trigger_relay(num=relay_number)`,
+  then `await coordinator.async_request_refresh()`,
   with try/except mapping all AkuvoxError
   subclasses to HomeAssistantError
 - [ ] T022 [US2] Implement async_lock in
@@ -320,8 +319,8 @@ confirm only that entity changes state
   `tests/test_lock.py`: test
   async_setup_entry creates two entities for
   device with two relays, test each entity
-  has unique unique_id ({mac}\_relay\_1,
-  {mac}\_relay\_2), test each entity has
+  has unique unique_id ({mac}_relay_1,
+  {mac}_relay_2), test each entity has
   distinct name (Relay 1, Relay 2), test
   unlocking relay 1 only changes relay 1
   entity state, test relay 2 state unchanged
