@@ -23,7 +23,7 @@ async def test_entity_unique_id(
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
 ) -> None:
-    """Test entity created with correct unique_id {mac}_relaya."""
+    """Test entity created with correct unique_id {mac}_relay_{num}."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         data=mock_config_entry_data_none,
@@ -40,7 +40,7 @@ async def test_entity_unique_id(
     ent_reg = er.async_get(hass)
     entity_entry = ent_reg.async_get("lock.akuvox_e21v_relay_a")
     assert entity_entry is not None
-    expected_uid = f"{MOCK_MAC.lower().replace(':', '')}_relaya"
+    expected_uid = f"{MOCK_MAC.lower().replace(':', '')}_relay_1"
     assert entity_entry.unique_id == expected_uid
 
 
@@ -291,8 +291,8 @@ async def test_multi_relay_entities_created(
         mac_clean = MOCK_MAC.lower().replace(":", "")
         entry_a = ent_reg.async_get("lock.akuvox_e21v_relay_a")
         assert entry_a is not None
-        assert entry_a.unique_id == f"{mac_clean}_relaya"
+        assert entry_a.unique_id == f"{mac_clean}_relay_1"
 
         entry_b = ent_reg.async_get("lock.akuvox_e21v_relay_b")
         assert entry_b is not None
-        assert entry_b.unique_id == f"{mac_clean}_relayb"
+        assert entry_b.unique_id == f"{mac_clean}_relay_2"

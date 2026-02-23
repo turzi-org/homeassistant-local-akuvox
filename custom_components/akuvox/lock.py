@@ -22,6 +22,26 @@ _LOGGER = logging.getLogger(__name__)
 _RELAY_NUM_RE = re.compile(r"Relay([A-Z])")
 
 
+def _relay_key_to_number(relay_key: str) -> int:
+    """Convert a relay key like 'RelayA' to a relay number (1-based).
+
+    Args:
+        relay_key: The relay key from the device (e.g., "RelayA").
+
+    Returns:
+        The 1-based relay number.
+
+    """
+    match = _RELAY_NUM_RE.fullmatch(relay_key)
+    if match:
+        return ord(match.group(1)) - ord("A") + 1
+    _LOGGER.warning(
+        "Unexpected relay key format '%s'; defaulting to relay 1",
+        relay_key,
+    )
+    return 1
+
+
 def _relay_key_to_label(relay_key: str) -> str:
     """Convert a relay key like 'RelayA' to a display label.
 
@@ -92,11 +112,12 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         """
         super().__init__(coordinator)
         self._relay_key = relay_key
+        self._relay_number = _relay_key_to_number(relay_key)
         mac_clean = coordinator.data.device_info.mac_address.lower().replace(
             ":",
             "",
         )
-        self._attr_unique_id = f"{mac_clean}_{relay_key.lower()}"
+        self._attr_unique_id = f"{mac_clean}_relay_{self._relay_number}"
         self._attr_has_entity_name = True
         self._attr_name = _relay_key_to_label(relay_key)
 
@@ -124,6 +145,20 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 "Unrecognized relay state '%s' for %s",
                 state,
                 self._relay_key,
+            )
+            return None
+
+        if isinstance(state, dict):
+            inner = state.get("state")
+            if isinstance(inner, str):
+                if inner in ("closed", "inactive"):
+                    return True
+                if inner in ("open", "active"):
+                    return False
+            _LOGGER.debug(
+                "Unrecognized dict relay state for %s: %r",
+                self._relay_key,
+                state,
             )
             return None
 
