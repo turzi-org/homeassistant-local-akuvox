@@ -95,7 +95,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
                 step_id="ssl",
                 data_schema=vol.Schema(
                     {
-                        vol.Required(CONF_VERIFY_SSL, default=False): bool,
+                        vol.Required(CONF_VERIFY_SSL, default=True): bool,
                     }
                 ),
             )
