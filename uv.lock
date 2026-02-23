@@ -1153,6 +1153,7 @@ name = "local-akuvox"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "homeassistant" },
     { name = "pylocal-akuvox" },
 ]
 
@@ -1168,7 +1169,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pylocal-akuvox", specifier = ">=0.1.0" }]
+requires-dist = [
+    { name = "homeassistant", specifier = ">=2026.2.0" },
+    { name = "pylocal-akuvox", specifier = ">=0.1.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [
