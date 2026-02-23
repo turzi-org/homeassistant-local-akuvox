@@ -22,26 +22,6 @@ _LOGGER = logging.getLogger(__name__)
 _RELAY_NUM_RE = re.compile(r"Relay([A-Z])")
 
 
-def _relay_key_to_number(relay_key: str) -> int:
-    """Convert a relay key like 'RelayA' to a relay number (1-based).
-
-    Args:
-        relay_key: The relay key from the device (e.g., "RelayA").
-
-    Returns:
-        The 1-based relay number.
-
-    """
-    match = _RELAY_NUM_RE.fullmatch(relay_key)
-    if match:
-        return ord(match.group(1).upper()) - ord("A") + 1
-    _LOGGER.warning(
-        "Unexpected relay key format '%s'; defaulting to relay 1",
-        relay_key,
-    )
-    return 1
-
-
 def _relay_key_to_label(relay_key: str) -> str:
     """Convert a relay key like 'RelayA' to a display label.
 
@@ -112,8 +92,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         """
         super().__init__(coordinator)
         self._relay_key = relay_key
-        # Stored for trigger_relay() calls in Phase 4 (US2)
-        self._relay_number = _relay_key_to_number(relay_key)
         mac_clean = coordinator.data.device_info.mac_address.lower().replace(
             ":",
             "",
@@ -124,10 +102,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
     @property
     def is_locked(self) -> bool | None:
-        """Return true if the relay is closed (locked).
+        """Return true if the relay is closed/inactive (locked).
 
         Returns:
-            True if locked, False if unlocked, None if unknown.
+            True if locked (closed/inactive), False if unlocked
+            (open/active), None if unknown.
 
         """
         relay_status = self.coordinator.data.relay_status
@@ -141,14 +120,14 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 return True
             if state in ("open", "active"):
                 return False
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "Unrecognized relay state '%s' for %s",
                 state,
                 self._relay_key,
             )
             return None
 
-        _LOGGER.warning(
+        _LOGGER.debug(
             "Unexpected relay state type for %s: %r (type=%s)",
             self._relay_key,
             state,
