@@ -37,8 +37,8 @@ class AkuvoxCoordinatorData:
 
 **Behavior**:
 
-1. Call `device.get_relay_status()`
-2. Call `device.get_info()` (cached after first successful call)
+1. Call `await device.get_relay_status()`
+2. Call `await device.get_info()` (cached after first successful call)
 3. Return combined data
 
 **Error Handling**:

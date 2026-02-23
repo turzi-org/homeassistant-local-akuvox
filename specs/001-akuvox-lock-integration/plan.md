@@ -14,8 +14,8 @@ SPDX-License-Identifier: Apache-2.0
 
 Home Assistant custom integration that exposes Akuvox intercom device
 relays as lock entities via the local HTTP/HTTPS API. Uses the
-`pylocal-akuvox` library for device communication. Supports four
-authentication modes (None, AllowList, Basic Auth, Digest Auth),
+`pylocal-akuvox` library for device communication. Supports three
+authentication modes (None/AllowList, Basic Auth, Digest Auth),
 explicit SSL selection with optional certificate verification, and
 multiple relays per device. Follows standard HA patterns with
 DataUpdateCoordinator for polling-based state updates. The repository

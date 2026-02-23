@@ -83,8 +83,8 @@ All exceptions inherit from `AkuvoxError`:
 
 The integration will use `DataUpdateCoordinator` for polling:
 
-- `_async_update_data()` calls `get_relay_status()` and
-  `get_info()` on each poll cycle
+- `_async_update_data()` calls `await get_relay_status()` and
+  `await get_info()` on each poll cycle
 - `update_interval = timedelta(seconds=30)`
 - Raises `UpdateFailed` on `AkuvoxConnectionError` or
   `AkuvoxDeviceError` — HA marks entities unavailable automatically
@@ -120,8 +120,9 @@ settings without removing the integration entry.
 
 All NEEDS CLARIFICATION items from the spec have been resolved:
 
-1. **Auth modes**: Four modes supported — None, AllowList, Basic,
-   Digest (resolved during spec creation)
+1. **Auth modes**: Four library enum values (None, AllowList,
+   Basic, Digest); spec groups None/AllowList as one mode
+   for three user-facing choices (resolved during spec creation)
 2. **SSL handling**: Explicit user selection, no auto-detect
    (resolved during spec iteration)
 3. **Library**: pylocal-akuvox confirmed as the communication library

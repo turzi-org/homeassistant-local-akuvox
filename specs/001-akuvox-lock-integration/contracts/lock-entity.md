@@ -47,7 +47,7 @@ the message
 
 #### `async_unlock(**kwargs) -> None`
 
-1. Call `coordinator.device.trigger_relay(num=self._relay_number)`
+1. Call `await coordinator.device.trigger_relay(num=self._relay_number)`
 2. Request coordinator refresh: `await coordinator.async_request_refresh()`
 
 **Error Handling**:

@@ -44,9 +44,13 @@ every 30 seconds:
 ```python
 @dataclass
 class AkuvoxCoordinatorData:
-    device_info: DeviceInfo    # From get_info()
+    device_info: DeviceInfo    # Library's DeviceInfo from get_info()
     relay_status: dict[str, Any]  # From get_relay_status()
 ```
+
+Note: The library's `DeviceInfo` dataclass is distinct from Home
+Assistant's `DeviceInfo` helper. The entity's `device_info` property
+MUST convert the library type into an HA `DeviceInfo` mapping.
 
 ## Entity Model
 

@@ -90,7 +90,8 @@ vol.Schema({
 After all steps, validate by connecting to the device:
 
 1. Create `AkuvoxDevice` with collected parameters
-2. Call `get_info()` to verify connectivity and get device metadata
+2. Call `await device.get_info()` to verify connectivity and get
+   device metadata
 3. Check `mac_address` against existing entries for duplicate
    detection
 
