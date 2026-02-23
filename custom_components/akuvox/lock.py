@@ -34,6 +34,10 @@ async def async_setup_entry(
     """
     coordinator: AkuvoxDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
+    if coordinator.data is None:
+        _LOGGER.warning("No data available for %s", entry.title)
+        return
+
     relay_status = coordinator.data.relay_status
     entities: list[AkuvoxLockEntity] = []
 
@@ -72,7 +76,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         )
         self._attr_unique_id = f"{mac_clean}_relay_{relay_number}"
         self._attr_has_entity_name = True
-        self._attr_translation_key = None
         self._attr_name = f"Relay {relay_number}"
 
     @property

@@ -61,6 +61,7 @@ async def test_entity_name(
 
     state = hass.states.get("lock.akuvox_e21v_relay_1")
     assert state is not None
+    assert state.attributes.get("friendly_name") == "Akuvox E21V Relay 1"
 
 
 async def test_entity_device_info(

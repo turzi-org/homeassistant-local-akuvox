@@ -20,16 +20,11 @@ from .const import (
     CONF_VERIFY_SSL,
     DOMAIN,
     PLATFORMS,
+    get_auth_method_map,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-AUTH_METHOD_MAP: dict[str, AuthMethod] = {
-    "none": AuthMethod.NONE,
-    "basic": AuthMethod.BASIC,
-    "digest": AuthMethod.DIGEST,
-}
 
 
 def _get_config_value(entry: ConfigEntry, key: str, default: object = None) -> object:
@@ -61,7 +56,7 @@ def _create_device(entry: ConfigEntry) -> AkuvoxDevice:
     use_ssl = bool(_get_config_value(entry, CONF_USE_SSL, False))
     verify_ssl = bool(_get_config_value(entry, CONF_VERIFY_SSL, True))
     auth_method_str = str(_get_config_value(entry, CONF_AUTH_METHOD, "none"))
-    auth_method = AUTH_METHOD_MAP.get(auth_method_str, AuthMethod.NONE)
+    auth_method = get_auth_method_map().get(auth_method_str, AuthMethod.NONE)
 
     auth_config: AuthConfig | None = None
     if auth_method in (AuthMethod.BASIC, AuthMethod.DIGEST):
@@ -96,9 +91,14 @@ async def async_setup_entry(
 
     """
     device = _create_device(entry)
+    await device.__aenter__()
     coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
 
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        await device.__aexit__(None, None, None)
+        raise
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
@@ -127,6 +127,7 @@ async def async_unload_entry(
     if unload_ok:
         coordinator: AkuvoxDataUpdateCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
         await coordinator.device.__aexit__(None, None, None)
+        _LOGGER.debug("Closed device session for %s", entry.title)
 
         if not hass.data[DOMAIN]:
             hass.data.pop(DOMAIN)

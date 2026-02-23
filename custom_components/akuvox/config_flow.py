@@ -30,15 +30,10 @@ from .const import (
     CONF_USERNAME,
     CONF_VERIFY_SSL,
     DOMAIN,
+    get_auth_method_map,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-AUTH_METHOD_MAP: dict[str, AuthMethod] = {
-    AUTH_NONE: AuthMethod.NONE,
-    AUTH_BASIC: AuthMethod.BASIC,
-    AUTH_DIGEST: AuthMethod.DIGEST,
-}
 
 
 class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -179,7 +174,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         auth_method_str = self._data.get(CONF_AUTH_METHOD, AUTH_NONE)
-        auth_method = AUTH_METHOD_MAP.get(auth_method_str, AuthMethod.NONE)
+        auth_method = get_auth_method_map().get(auth_method_str, AuthMethod.NONE)
 
         auth_config: AuthConfig | None = None
         if auth_method in (AuthMethod.BASIC, AuthMethod.DIGEST):
@@ -199,12 +194,16 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
         try:
-            info = await device.get_info()
+            async with device:
+                info = await device.get_info()
         except AkuvoxConnectionError:
+            _LOGGER.debug("Connection failed to %s", self._data[CONF_HOST])
             errors["base"] = "cannot_connect"
         except AkuvoxAuthenticationError:
+            _LOGGER.debug("Auth failed for %s", self._data[CONF_HOST])
             errors["base"] = "invalid_auth"
         except AkuvoxError:
+            _LOGGER.debug("Unknown error for %s", self._data[CONF_HOST])
             errors["base"] = "unknown"
 
         if errors:
