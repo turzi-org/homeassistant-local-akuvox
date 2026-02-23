@@ -32,11 +32,13 @@ implementation and testing.
 structure, and tooling configuration
 
 - [ ] T001 Initialize uv project with
-  `uv init --no-package --name local-akuvox`
-  and add deps: pylocal-akuvox, pytest,
-  pytest-asyncio, pytest-cov,
+  `uv init --no-package --name local-akuvox`,
+  then use `uv add` to add deps:
+  pylocal-akuvox, pytest, pytest-asyncio,
+  pytest-cov,
   pytest-homeassistant-custom-component, ruff,
-  mypy, interrogate in pyproject.toml
+  mypy, interrogate; run `uv lock` and commit
+  `uv.lock`
 - [ ] T002 Create directory structure:
   `custom_components/akuvox/`,
   `custom_components/akuvox/translations/`,
@@ -82,7 +84,7 @@ is complete
   with config flow step titles, field labels,
   and error messages for all 4 steps (user,
   ssl, auth, credentials) plus error keys
-  (cannot_connect, invalid_auth,
+  (cannot_connect, invalid_auth, invalid_host,
   already_configured, unknown)
 - [ ] T008 [P] Create English translations in
   `custom_components/akuvox/translations/en.json`
@@ -117,10 +119,12 @@ lock entity appears in entity list with locked/unlocked state
   `tests/test_config_flow.py`: test user step
   shows form, test SSL step appears when
   use_ssl=True, test SSL step skipped when
-  use_ssl=False, test auth step shows all 4
-  modes, test credentials step appears for
-  basic/digest, test credentials step skipped
-  for none/allowlist, test successful
+  use_ssl=False, test auth step shows 3
+  user-facing auth options (None/AllowList,
+  Basic, Digest), test credentials step
+  appears for basic/digest, test credentials
+  step skipped for none/allowlist, test
+  successful
   connection creates entry, test
   cannot_connect error on
   AkuvoxConnectionError, test invalid_auth
@@ -132,6 +136,9 @@ lock entity appears in entity list with locked/unlocked state
   coordinator fetches device info and relay
   status, test coordinator raises
   UpdateFailed on AkuvoxConnectionError, test
+  coordinator raises UpdateFailed on
+  AkuvoxDeviceError, test coordinator raises
+  UpdateFailed on AkuvoxParseError, test
   coordinator raises ConfigEntryAuthFailed on
   AkuvoxAuthenticationError, test coordinator
   caches device_info after first call
