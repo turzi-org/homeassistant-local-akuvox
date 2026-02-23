@@ -3,5 +3,6 @@
 #
 # codespell configuration
 # "Thur" and "Unknow" are actual Akuvox API field names
+# "hass" is the standard Home Assistant variable name
 [codespell]
-ignore-words-list = thur,unknow
+ignore-words-list = hass,thur,unknow
