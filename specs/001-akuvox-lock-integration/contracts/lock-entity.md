@@ -62,6 +62,13 @@ the door unlocks momentarily and then re-locks according to the
 device configuration. The integration **MUST** pass `level=1` (auto-close pulse)
 in addition to the relay number when calling `trigger_relay`.
 
+Note: Some older integration documentation and research notes may show
+unlock operations as `trigger_relay(num=...)` without an explicit
+`level`. Those examples are historical; the `AkuvoxLockEntity` contract
+**always** requires `level=1` to ensure pulse/auto-close behavior and
+to avoid sustained-unlock or toggle modes that may be exposed by some
+firmware versions.
+
 **Error Handling**:
 
 | Exception | Action |
