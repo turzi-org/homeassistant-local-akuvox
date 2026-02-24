@@ -82,15 +82,18 @@ debounced `async_request_refresh()`) to guarantee the device is
 polled right away. The optimistic override **MUST** be cleared
 only **after** the refresh completes, so that any coordinator
 update triggered during the refresh does not write stale device
-state back to Home Assistant. To enforce this, the entity **MUST**
-override `_handle_coordinator_update` so that, while the internal
-optimistic-unlock flag is active, coordinator updates **MUST NOT**
-write the coordinator-reported lock state back to Home Assistant
-or clear the optimistic override. This prevents stale device
-state from overwriting the optimistic UI state before the unlock
-delay expires. Normal coordinator-driven state updates **MAY**
-resume once the unlock-delay window has expired and the optimistic
-override has been cleared by the delayed refresh callback.
+state back to Home Assistant. The `is_locked` property **MUST**
+return the optimistic value when the override is active; however,
+during this window the entity **MUST** continue to process and
+expose other coordinator updates (for example, availability and
+non-lock attributes) so that Home Assistant still reflects the
+device's current availability and metadata. Normal
+coordinator-driven lock state updates **MUST** resume only after
+the unlock-delay window has expired and the optimistic override
+has been cleared by the delayed refresh callback.  If the delayed
+refresh fails, the optimistic override **MUST** still be cleared
+(via a finally guard) so the entity does not permanently report
+an incorrect state.
 
 **Error Handling**:
 

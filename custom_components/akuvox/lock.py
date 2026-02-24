@@ -252,15 +252,12 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         """Handle coordinator data updates.
 
         Optimistic state is preserved during the unlock-delay window
-        so that early coordinator polls with stale device data do not
-        revert the UI to locked.
+        Optimistic state is preserved during the unlock-delay window
+        by the is_locked property, which returns the optimistic value
+        when set. Coordinator updates are still processed so that
+        availability and other attributes remain accurate.
         """
-        if self._optimistic_locked is None:
-            super()._handle_coordinator_update()
-        else:
-            # Suppress HA state write while optimistic override is active;
-            # async_write_ha_state was already called after unlock.
-            pass
+        super()._handle_coordinator_update()
 
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the door (not supported — auto-locks via hardware).
@@ -294,7 +291,12 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         self._schedule_delayed_refresh()
 
     def _schedule_delayed_refresh(self) -> None:
-        """Schedule a coordinator refresh after the unlock delay expires."""
+        """Schedule a coordinator refresh after the unlock delay expires.
+
+        If called while a previous timer is pending (e.g. rapid unlock
+        calls), the earlier timer is cancelled and only the latest
+        unlock window is tracked.
+        """
         if self._delayed_refresh_cancel is not None:
             self._delayed_refresh_cancel()
 
@@ -317,11 +319,20 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         The optimistic override is kept until the refresh completes so
         that any coordinator update triggered during the refresh does
-        not write stale device state to Home Assistant.
+        not write stale device state to Home Assistant.  A finally
+        block ensures the override is always cleared even if the
+        refresh fails.
         """
-        await self.coordinator.async_refresh()
-        self._optimistic_locked = None
-        self.async_write_ha_state()
+        try:
+            await self.coordinator.async_refresh()
+        except Exception:  # noqa: BLE001
+            _LOGGER.exception(
+                "Error refreshing coordinator after optimistic unlock for relay %s",
+                self._relay_key,
+            )
+        finally:
+            self._optimistic_locked = None
+            self.async_write_ha_state()
 
     async def async_will_remove_from_hass(self) -> None:
         """Cancel pending timers on entity removal."""

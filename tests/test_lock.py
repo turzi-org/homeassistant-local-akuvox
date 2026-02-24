@@ -604,6 +604,8 @@ async def test_delayed_refresh_clears_optimistic_state(
     coordinator refresh and clear the optimistic override so the entity
     reports real device state.
     """
+    import datetime
+
     from homeassistant.util import dt as dt_util
     from pytest_homeassistant_custom_component.common import (
         async_fire_time_changed,
@@ -635,7 +637,7 @@ async def test_delayed_refresh_clears_optimistic_state(
     async_fire_time_changed(
         hass,
         dt_util.utcnow()
-        + __import__("datetime").timedelta(
+        + datetime.timedelta(
             seconds=_RELAY_UNLOCK_DELAY_SECONDS + 1,
         ),
     )
@@ -658,6 +660,8 @@ async def test_entity_removal_cancels_delayed_refresh(
     refresh timer is pending, the timer must be cancelled to avoid
     refreshing a torn-down coordinator.
     """
+    import datetime
+
     from homeassistant.util import dt as dt_util
     from pytest_homeassistant_custom_component.common import (
         async_fire_time_changed,
@@ -694,7 +698,7 @@ async def test_entity_removal_cancels_delayed_refresh(
     async_fire_time_changed(
         hass,
         dt_util.utcnow()
-        + __import__("datetime").timedelta(
+        + datetime.timedelta(
             seconds=_RELAY_UNLOCK_DELAY_SECONDS + 1,
         ),
     )
