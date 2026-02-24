@@ -268,4 +268,4 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             raise HomeAssistantError(
                 f"Failed to unlock relay {self._relay_number}: {err}"
             ) from err
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_refresh()
