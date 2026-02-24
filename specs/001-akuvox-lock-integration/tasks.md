@@ -269,7 +269,7 @@ lock state on device; verify update within 30s polling interval
 
 ### Tests for User Story 3
 
-- [ ] T023 [P] [US3] Write polling state tests in
+- [X] T023 [P] [US3] Write polling state tests in
   `tests/test_coordinator.py`: test state
   reflects relay change after coordinator
   update, test entity marked unavailable when
@@ -278,7 +278,7 @@ lock state on device; verify update within 30s polling interval
   2 coordinator update cycles after device
   comes back online (SC-004), test polling
   interval is 30s
-- [ ] T024 [P] [US3] Write state mapping tests
+- [X] T024 [P] [US3] Write state mapping tests
   in `tests/test_lock.py`: test is_locked
   returns True for relay closed/inactive
   state, test is_locked returns False for
@@ -287,13 +287,13 @@ lock state on device; verify update within 30s polling interval
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Refine relay state parsing in
+- [X] T025 [US3] Refine relay state parsing in
   `custom_components/akuvox/lock.py` to
   handle all relay state values from
   `get_relay_status()` response, mapping to
   locked/unlocked/unknown per data-model
   state mapping table
-- [ ] T026 [US3] Ensure coordinator in
+- [X] T026 [US3] Ensure coordinator in
   `custom_components/akuvox/coordinator.py`
   correctly raises UpdateFailed for
   connection and device errors so HA marks
