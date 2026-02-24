@@ -58,7 +58,7 @@ async def test_setup_entry_forwards_to_lock(
 
     assert entry.state is ConfigEntryState.LOADED
     # Verify lock entity was created (platform was forwarded)
-    state = hass.states.get("lock.akuvox_e21v_relay_1")
+    state = hass.states.get("lock.akuvox_e21v_relay_a")
     assert state is not None
 
 

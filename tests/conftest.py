@@ -55,7 +55,7 @@ def mock_device_info() -> DeviceInfo:
 def mock_relay_status() -> dict[str, Any]:
     """Return a mock relay status response with one relay."""
     return {
-        "1": {"state": "closed"},
+        "RelayA": "closed",
     }
 
 
@@ -63,8 +63,8 @@ def mock_relay_status() -> dict[str, Any]:
 def mock_relay_status_multi() -> dict[str, Any]:
     """Return a mock relay status response with two relays."""
     return {
-        "1": {"state": "closed"},
-        "2": {"state": "open"},
+        "RelayA": "closed",
+        "RelayB": "open",
     }
 
 
