@@ -538,10 +538,8 @@ async def test_async_unlock_shows_unlocked_optimistically(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    # Device still reports "closed" (locked) — hasn't processed yet
-    mock_akuvox_device.get_relay_status.return_value = {
-        "RelayA": "closed",
-    }
+    # Relay status is NOT updated — device still reports locked.
+    # The entity must still show unlocked via optimistic state.
 
     await hass.services.async_call(
         "lock",

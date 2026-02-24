@@ -11,9 +11,10 @@ from typing import Any
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 from pylocal_akuvox import AkuvoxError
 
 from .const import DOMAIN
@@ -224,6 +225,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         self._attr_has_entity_name = True
         self._attr_name = _relay_key_to_label(relay_key)
         self._optimistic_locked: bool | None = None
+        self._delayed_refresh_cancel: CALLBACK_TYPE | None = None
 
     @property
     def is_locked(self) -> bool | None:
@@ -280,3 +282,23 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ) from err
         self._optimistic_locked = False
         self.async_write_ha_state()
+        self._schedule_delayed_refresh()
+
+    def _schedule_delayed_refresh(self) -> None:
+        """Schedule a coordinator refresh after the unlock delay expires."""
+        if self._delayed_refresh_cancel is not None:
+            self._delayed_refresh_cancel()
+
+        @callback
+        def _refresh(_now: Any) -> None:
+            """Request coordinator refresh after delay."""
+            self._delayed_refresh_cancel = None
+            self.hass.async_create_task(
+                self.coordinator.async_request_refresh(),
+            )
+
+        self._delayed_refresh_cancel = async_call_later(
+            self.hass,
+            _RELAY_UNLOCK_DELAY_SECONDS,
+            _refresh,
+        )

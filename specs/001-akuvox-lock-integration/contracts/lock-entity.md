@@ -55,7 +55,8 @@ the message
 #### `async_unlock(**kwargs) -> None`
 
 1. Call `await coordinator.device.trigger_relay(num=self._relay_number, delay=5)`
-2. Optimistically set `is_locked = False` and write state to HA
+2. Set an internal optimistic override so that `is_locked` returns
+   `False` and write state to HA
 
 The relay **MUST** be triggered with a non-zero `delay` so the door
 unlocks momentarily and then re-locks after the specified number of
@@ -69,6 +70,9 @@ After a successful trigger, the entity **MUST** optimistically report
 unlocked because the device may not have processed the command by
 the time a coordinator poll occurs. The optimistic state is cleared
 on the next coordinator update, which confirms the real device state.
+A delayed coordinator refresh **MUST** be scheduled after the unlock
+delay expires so the entity re-syncs with the device without waiting
+for the full polling interval.
 
 **Error Handling**:
 
