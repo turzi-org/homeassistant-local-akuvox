@@ -98,7 +98,7 @@ async def test_entity_device_info(
 async def test_is_locked_true(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
-    relay_state: str,
+    relay_state: str | int,
     expected_ha_state: str,
 ) -> None:
     """Test is_locked returns True for closed/inactive/0 states."""
@@ -146,7 +146,7 @@ async def test_is_locked_true(
 async def test_is_locked_false(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
-    relay_state: str,
+    relay_state: str | int,
     expected_ha_state: str,
 ) -> None:
     """Test is_locked returns False for open/active/1 states."""
