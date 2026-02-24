@@ -223,7 +223,7 @@ verify device unlocks and entity state changes
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] Write unlock action tests
+- [X] T019 [P] [US2] Write unlock action tests
   in `tests/test_lock.py`: test async_unlock
   calls trigger_relay with correct relay
   number, test async_unlock requests
@@ -234,7 +234,7 @@ verify device unlocks and entity state changes
   AkuvoxAuthenticationError, test
   async_unlock raises HomeAssistantError on
   generic AkuvoxError
-- [ ] T020 [P] [US2] Write lock action tests in
+- [X] T020 [P] [US2] Write lock action tests in
   `tests/test_lock.py`: test async_lock
   raises HomeAssistantError with message
   "Lock operation not supported; door
@@ -242,13 +242,13 @@ verify device unlocks and entity state changes
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Implement async_unlock in
+- [X] T021 [US2] Implement async_unlock in
   `custom_components/akuvox/lock.py` calling
   `await coordinator.device.trigger_relay(num=relay_number)`,
   then `await coordinator.async_request_refresh()`,
   with try/except mapping all AkuvoxError
   subclasses to HomeAssistantError
-- [ ] T022 [US2] Implement async_lock in
+- [X] T022 [US2] Implement async_lock in
   `custom_components/akuvox/lock.py` raising
   HomeAssistantError with the specified
   message per lock-entity contract

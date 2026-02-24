@@ -7,11 +7,14 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Any
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from pylocal_akuvox import AkuvoxError
 
 from .const import DOMAIN
 from .coordinator import AkuvoxDataUpdateCoordinator
@@ -233,3 +236,31 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             return None
 
         return _parse_relay_state(self._relay_key, state)
+
+    async def async_lock(self, **kwargs: Any) -> None:
+        """Lock the door (not supported — auto-locks via hardware).
+
+        Raises:
+            HomeAssistantError: Always, as locking is not supported.
+
+        """
+        raise HomeAssistantError(
+            "Lock operation not supported; door auto-locks via hardware."
+        )
+
+    async def async_unlock(self, **kwargs: Any) -> None:
+        """Unlock the door by triggering the relay.
+
+        Raises:
+            HomeAssistantError: If the device communication fails.
+
+        """
+        try:
+            await self.coordinator.device.trigger_relay(
+                num=self._relay_number,
+            )
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"Failed to unlock relay {self._relay_number}: {err}"
+            ) from err
+        await self.coordinator.async_request_refresh()
