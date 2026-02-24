@@ -9,7 +9,8 @@ import logging
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.core import callback
 from pylocal_akuvox import (
     AkuvoxAuthenticationError,
     AkuvoxConnectionError,
@@ -40,6 +41,22 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Akuvox."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> AkuvoxOptionsFlow:
+        """Get the options flow handler.
+
+        Args:
+            config_entry: The config entry to configure.
+
+        Returns:
+            The options flow handler.
+
+        """
+        return AkuvoxOptionsFlow(config_entry)
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -255,4 +272,77 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=f"Akuvox {info.model}",
             data=self._data,
+        )
+
+
+class AkuvoxOptionsFlow(OptionsFlow):
+    """Handle options flow for Akuvox integration."""
+
+    def __init__(self, config_entry: ConfigEntry) -> None:
+        """Initialize the options flow.
+
+        Args:
+            config_entry: The config entry being configured.
+
+        """
+        self._config_entry = config_entry
+
+    async def async_step_init(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> Any:
+        """Handle the init step of options flow.
+
+        Presents all connection parameters pre-filled with current
+        values. On submit, saves to entry.options and triggers
+        integration reload.
+
+        Args:
+            user_input: User input from the form.
+
+        Returns:
+            Flow result for entry creation or form.
+
+        """
+        if user_input is not None:
+            return self.async_create_entry(
+                title="",
+                data=user_input,
+            )
+
+        current = {
+            **self._config_entry.data,
+            **self._config_entry.options,
+        }
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_HOST,
+                        default=current.get(CONF_HOST, ""),
+                    ): str,
+                    vol.Required(
+                        CONF_USE_SSL,
+                        default=current.get(CONF_USE_SSL, False),
+                    ): bool,
+                    vol.Required(
+                        CONF_VERIFY_SSL,
+                        default=current.get(CONF_VERIFY_SSL, True),
+                    ): bool,
+                    vol.Required(
+                        CONF_AUTH_METHOD,
+                        default=current.get(CONF_AUTH_METHOD, AUTH_NONE),
+                    ): vol.In([AUTH_NONE, AUTH_BASIC, AUTH_DIGEST]),
+                    vol.Optional(
+                        CONF_USERNAME,
+                        default=current.get(CONF_USERNAME, ""),
+                    ): str,
+                    vol.Optional(
+                        CONF_PASSWORD,
+                        default=current.get(CONF_PASSWORD, ""),
+                    ): str,
+                }
+            ),
         )
