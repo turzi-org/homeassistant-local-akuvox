@@ -258,6 +258,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         try:
             await self.coordinator.device.trigger_relay(
                 num=self._relay_number,
+                level=1,
             )
         except AkuvoxError as err:
             raise HomeAssistantError(
