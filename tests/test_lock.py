@@ -93,7 +93,7 @@ async def test_entity_device_info(
 
 @pytest.mark.parametrize(
     ("relay_state", "expected_ha_state"),
-    [("closed", "locked"), ("inactive", "locked")],
+    [("closed", "locked"), ("inactive", "locked"), (0, "locked")],
 )
 async def test_is_locked_true(
     hass: HomeAssistant,
@@ -141,7 +141,7 @@ async def test_is_locked_true(
 
 @pytest.mark.parametrize(
     ("relay_state", "expected_ha_state"),
-    [("open", "unlocked"), ("active", "unlocked")],
+    [("open", "unlocked"), ("active", "unlocked"), (1, "unlocked")],
 )
 async def test_is_locked_false(
     hass: HomeAssistant,
