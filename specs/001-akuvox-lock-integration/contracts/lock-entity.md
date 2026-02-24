@@ -90,7 +90,7 @@ non-lock attributes) so that Home Assistant still reflects the
 device's current availability and metadata. Normal
 coordinator-driven lock state updates **MUST** resume only after
 the unlock-delay window has expired and the optimistic override
-has been cleared by the delayed refresh callback.  If the delayed
+has been cleared by the delayed refresh callback. If the delayed
 refresh fails, the optimistic override **MUST** still be cleared
 (via a finally guard) so the entity does not permanently report
 an incorrect state.

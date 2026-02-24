@@ -247,17 +247,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         return _parse_relay_state(self._relay_key, state)
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Handle coordinator data updates.
-
-        Optimistic state is preserved during the unlock-delay window
-        by the is_locked property, which returns the optimistic value
-        when set. Coordinator updates are still processed so that
-        availability and other attributes remain accurate.
-        """
-        super()._handle_coordinator_update()
-
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the door (not supported — auto-locks via hardware).
 
@@ -318,7 +307,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         The optimistic override is kept until the refresh completes so
         that any coordinator update triggered during the refresh does
-        not write stale device state to Home Assistant.  A finally
+        not write stale device state to Home Assistant. A finally
         block ensures the override is always cleared even if the
         refresh fails.
         """
