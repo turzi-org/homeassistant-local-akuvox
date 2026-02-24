@@ -55,7 +55,7 @@ the message
 #### `async_unlock(**kwargs) -> None`
 
 1. Call `await coordinator.device.trigger_relay(num=self._relay_number, delay=5)`
-2. Request coordinator refresh: `await coordinator.async_request_refresh()`
+2. Immediate coordinator refresh: `await coordinator.async_refresh()`
 
 The relay **MUST** be triggered with a non-zero `delay` so the door
 unlocks momentarily and then re-locks after the specified number of
