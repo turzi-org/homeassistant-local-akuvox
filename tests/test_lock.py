@@ -483,3 +483,157 @@ async def test_unrecognized_relay_keys_skipped(
             entry.entry_id,
         )
         assert len(entities) == 1
+
+
+# ──────────────────────────────────────────────────────
+# User Story 2 — Control Door Lock
+# ──────────────────────────────────────────────────────
+
+
+async def test_async_unlock_calls_trigger_relay(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test async_unlock calls trigger_relay with correct number."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        blocking=True,
+    )
+
+    mock_akuvox_device.trigger_relay.assert_called_once_with(num=1)
+
+
+async def test_async_unlock_requests_coordinator_refresh(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test async_unlock requests coordinator refresh after trigger."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Change relay state to simulate device response after unlock
+    mock_akuvox_device.get_relay_status.return_value = {
+        "RelayA": "open",
+    }
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        blocking=True,
+    )
+
+    # After refresh, state should reflect the updated relay status
+    await hass.async_block_till_done()
+    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    assert state is not None
+    assert state.state == "unlocked"
+
+
+@pytest.mark.parametrize(
+    "exception_cls",
+    [
+        "AkuvoxConnectionError",
+        "AkuvoxAuthenticationError",
+        "AkuvoxError",
+    ],
+)
+async def test_async_unlock_raises_on_device_error(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    exception_cls: str,
+) -> None:
+    """Test async_unlock raises HomeAssistantError on device errors."""
+    import pylocal_akuvox
+    from homeassistant.exceptions import HomeAssistantError
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        from pylocal_akuvox import DeviceInfo
+
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": "closed"},
+        )
+        exc = getattr(pylocal_akuvox, exception_cls)
+        device.trigger_relay = AsyncMock(
+            side_effect=exc("trigger failed"),
+        )
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        with pytest.raises(HomeAssistantError):
+            await hass.services.async_call(
+                "lock",
+                "unlock",
+                {"entity_id": "lock.akuvox_e21v_relay_a"},
+                blocking=True,
+            )
+
+
+async def test_async_lock_raises_error(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test async_lock raises HomeAssistantError."""
+    from homeassistant.exceptions import HomeAssistantError
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    with pytest.raises(HomeAssistantError, match="auto-locks via hardware"):
+        await hass.services.async_call(
+            "lock",
+            "lock",
+            {"entity_id": "lock.akuvox_e21v_relay_a"},
+            blocking=True,
+        )
