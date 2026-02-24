@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -20,12 +20,14 @@ from pylocal_akuvox import (
     AkuvoxParseError,
     DeviceInfo,
 )
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.akuvox.const import DEFAULT_SCAN_INTERVAL
+from custom_components.akuvox.const import DEFAULT_SCAN_INTERVAL, DOMAIN
 from custom_components.akuvox.coordinator import (
     AkuvoxCoordinatorData,
     AkuvoxDataUpdateCoordinator,
 )
+from tests.conftest import MOCK_MAC
 
 
 async def test_coordinator_fetches_data(
@@ -143,18 +145,13 @@ async def test_coordinator_update_interval(
 async def test_state_reflects_relay_change_after_update(
     hass: HomeAssistant,
     mock_device_info: DeviceInfo,
+    mock_config_entry_data_none: dict[str, Any],
 ) -> None:
     """Test entity state changes when coordinator data changes.
 
     After a coordinator refresh with a new relay state, the lock
     entity must reflect the updated value.
     """
-    from unittest.mock import patch
-
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
-
-    from tests.conftest import MOCK_MAC
-
     device = AsyncMock()
     device.get_info = AsyncMock(return_value=mock_device_info)
     device.get_relay_status = AsyncMock(return_value={"RelayA": 0})
@@ -169,15 +166,8 @@ async def test_state_reflects_relay_change_after_update(
         mock_cls.return_value = device
 
         entry = MockConfigEntry(
-            domain="akuvox",
-            data={
-                "host": "192.168.1.100",
-                "use_ssl": False,
-                "verify_ssl": False,
-                "auth_method": "none",
-                "username": None,
-                "password": None,
-            },
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
             unique_id=MOCK_MAC,
         )
         entry.add_to_hass(hass)
@@ -192,7 +182,7 @@ async def test_state_reflects_relay_change_after_update(
         # Change relay state to unlocked
         device.get_relay_status.return_value = {"RelayA": 1}
 
-        coordinator = hass.data["akuvox"][entry.entry_id]
+        coordinator = hass.data[DOMAIN][entry.entry_id]
         await coordinator.async_refresh()
         await hass.async_block_till_done()
 
@@ -204,6 +194,7 @@ async def test_state_reflects_relay_change_after_update(
 async def test_entity_recovers_after_coordinator_failure(
     hass: HomeAssistant,
     mock_device_info: DeviceInfo,
+    mock_config_entry_data_none: dict[str, Any],
 ) -> None:
     """Test entity recovers to correct state after device comes back.
 
@@ -211,12 +202,6 @@ async def test_entity_recovers_after_coordinator_failure(
     subsequent successful update must restore the entity to the
     correct state within 2 coordinator update cycles (SC-004).
     """
-    from unittest.mock import patch
-
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
-
-    from tests.conftest import MOCK_MAC
-
     device = AsyncMock()
     device.get_info = AsyncMock(return_value=mock_device_info)
     device.get_relay_status = AsyncMock(return_value={"RelayA": 0})
@@ -231,15 +216,8 @@ async def test_entity_recovers_after_coordinator_failure(
         mock_cls.return_value = device
 
         entry = MockConfigEntry(
-            domain="akuvox",
-            data={
-                "host": "192.168.1.100",
-                "use_ssl": False,
-                "verify_ssl": False,
-                "auth_method": "none",
-                "username": None,
-                "password": None,
-            },
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
             unique_id=MOCK_MAC,
         )
         entry.add_to_hass(hass)
@@ -256,7 +234,7 @@ async def test_entity_recovers_after_coordinator_failure(
             "Connection lost",
         )
 
-        coordinator = hass.data["akuvox"][entry.entry_id]
+        coordinator = hass.data[DOMAIN][entry.entry_id]
         await coordinator.async_refresh()
         await hass.async_block_till_done()
 
