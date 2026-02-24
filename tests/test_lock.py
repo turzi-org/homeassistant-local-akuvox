@@ -593,6 +593,101 @@ async def test_optimistic_state_survives_coordinator_update(
     assert state.state == "unlocked"
 
 
+async def test_rapid_unlock_resets_optimistic_window(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test rapid successive unlocks keep optimistic state active.
+
+    When a second unlock is issued before the first timer fires, the
+    earlier timer is cancelled and a new window starts.  The entity
+    must remain unlocked until the latest window expires.
+    """
+    import datetime
+
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import (
+        async_fire_time_changed,
+    )
+
+    from custom_components.akuvox.lock import (
+        _RELAY_REFRESH_BUFFER_SECONDS,
+        _RELAY_UNLOCK_DELAY_SECONDS,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    start = dt_util.utcnow()
+
+    # First unlock
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        blocking=True,
+    )
+
+    # Advance part-way through the first window
+    async_fire_time_changed(
+        hass,
+        start
+        + datetime.timedelta(
+            seconds=_RELAY_UNLOCK_DELAY_SECONDS - 1,
+        ),
+    )
+    await hass.async_block_till_done()
+
+    # Second unlock — resets the timer
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        blocking=True,
+    )
+
+    second_unlock = dt_util.utcnow()
+
+    # Advance past the original window but before the new one expires
+    async_fire_time_changed(
+        hass,
+        second_unlock
+        + datetime.timedelta(
+            seconds=_RELAY_UNLOCK_DELAY_SECONDS,
+        ),
+    )
+    await hass.async_block_till_done()
+
+    # Entity must still report unlocked (second timer hasn't fired)
+    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    assert state is not None
+    assert state.state == "unlocked"
+
+    # Now advance past the second window
+    mock_akuvox_device.get_relay_status.return_value = {"RelayA": 0}
+    async_fire_time_changed(
+        hass,
+        second_unlock
+        + datetime.timedelta(
+            seconds=_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+        ),
+    )
+    await hass.async_block_till_done()
+
+    # Now entity should reflect real device state (locked)
+    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    assert state is not None
+    assert state.state == "locked"
+
+
 async def test_delayed_refresh_clears_optimistic_state(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
@@ -611,7 +706,10 @@ async def test_delayed_refresh_clears_optimistic_state(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_UNLOCK_DELAY_SECONDS
+    from custom_components.akuvox.lock import (
+        _RELAY_REFRESH_BUFFER_SECONDS,
+        _RELAY_UNLOCK_DELAY_SECONDS,
+    )
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -623,6 +721,8 @@ async def test_delayed_refresh_clears_optimistic_state(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
+    start = dt_util.utcnow()
+
     await hass.services.async_call(
         "lock",
         "unlock",
@@ -633,12 +733,12 @@ async def test_delayed_refresh_clears_optimistic_state(
     # Device now returns locked (relay re-locked after delay)
     mock_akuvox_device.get_relay_status.return_value = {"RelayA": 0}
 
-    # Advance time past the unlock-delay window
+    # Advance time past the unlock-delay + buffer window
     async_fire_time_changed(
         hass,
-        dt_util.utcnow()
+        start
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS + 1,
+            seconds=_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
         ),
     )
     await hass.async_block_till_done()
@@ -667,7 +767,10 @@ async def test_entity_removal_cancels_delayed_refresh(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_UNLOCK_DELAY_SECONDS
+    from custom_components.akuvox.lock import (
+        _RELAY_REFRESH_BUFFER_SECONDS,
+        _RELAY_UNLOCK_DELAY_SECONDS,
+    )
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -678,6 +781,8 @@ async def test_entity_removal_cancels_delayed_refresh(
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+
+    start = dt_util.utcnow()
 
     # Trigger unlock to schedule a delayed refresh
     await hass.services.async_call(
@@ -694,12 +799,12 @@ async def test_entity_removal_cancels_delayed_refresh(
     await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
 
-    # Advance time past the unlock-delay window
+    # Advance time past the unlock-delay + buffer window
     async_fire_time_changed(
         hass,
-        dt_util.utcnow()
+        start
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS + 1,
+            seconds=_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
         ),
     )
     await hass.async_block_till_done()

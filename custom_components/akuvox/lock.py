@@ -27,6 +27,10 @@ _LOGGER = logging.getLogger(__name__)
 # to a 5-second auto-relock delay on a fresh configuration.
 _RELAY_UNLOCK_DELAY_SECONDS = 5
 
+# Extra seconds added to the unlock delay before polling the device,
+# giving the relay time to re-lock after the window expires.
+_RELAY_REFRESH_BUFFER_SECONDS = 1
+
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
 _RELAY_NUM_RE = re.compile(r"Relay([A-Z])")
@@ -261,6 +265,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
     async def async_unlock(self, **kwargs: Any) -> None:
         """Unlock the door by triggering the relay.
 
+        If trigger_relay fails, the optimistic state and timer are not
+        touched.  Any pending timer from a previous successful unlock
+        is left in place so it can still clear the earlier optimistic
+        override as expected.
+
         Raises:
             HomeAssistantError: If the device communication fails.
 
@@ -298,7 +307,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         self._delayed_refresh_cancel = async_call_later(
             self.hass,
-            _RELAY_UNLOCK_DELAY_SECONDS,
+            _RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS,
             _refresh,
         )
 
