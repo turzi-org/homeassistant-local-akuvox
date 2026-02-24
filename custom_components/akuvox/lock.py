@@ -24,24 +24,24 @@ _LOGGER = logging.getLogger(__name__)
 _RELAY_NUM_RE = re.compile(r"Relay([A-Z])")
 
 
-def _relay_key_to_number(relay_key: str) -> int:
+def _relay_key_to_number(relay_key: str) -> int | None:
     """Convert a relay key like 'RelayA' to a relay number (1-based).
 
     Args:
         relay_key: The relay key from the device (e.g., "RelayA").
 
     Returns:
-        The 1-based relay number.
+        The 1-based relay number, or None if format is unrecognized.
 
     """
     match = _RELAY_NUM_RE.fullmatch(relay_key)
     if match:
         return ord(match.group(1)) - ord("A") + 1
     _LOGGER.warning(
-        "Unexpected relay key format '%s'; defaulting to relay 1",
+        "Unexpected relay key format '%s'; skipping",
         relay_key,
     )
-    return 1
+    return None
 
 
 def _relay_key_to_label(relay_key: str) -> str:
@@ -87,6 +87,12 @@ async def async_setup_entry(
     entities: list[AkuvoxLockEntity] = []
 
     for relay_key in relay_status:
+        if not _RELAY_NUM_RE.fullmatch(relay_key):
+            _LOGGER.warning(
+                "Skipping unrecognized relay key '%s'",
+                relay_key,
+            )
+            continue
         entities.append(
             AkuvoxLockEntity(
                 coordinator=coordinator,

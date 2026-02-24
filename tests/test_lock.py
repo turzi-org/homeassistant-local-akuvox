@@ -338,3 +338,56 @@ async def test_is_locked_handles_dict_state_format(
         state = hass.states.get("lock.akuvox_e21v_relay_a")
         assert state is not None
         assert state.state == "locked"
+
+
+async def test_unrecognized_relay_keys_skipped(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+) -> None:
+    """Test that unrecognized relay keys are skipped."""
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        from pylocal_akuvox import DeviceInfo
+
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={
+                "RelayA": "closed",
+                "unknown_key": "open",
+                "relay_b": "open",
+            },
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        # Only RelayA should be created
+        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state_a is not None
+
+        ent_reg = er.async_get(hass)
+        entities = er.async_entries_for_config_entry(
+            ent_reg,
+            entry.entry_id,
+        )
+        assert len(entities) == 1
