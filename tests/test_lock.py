@@ -101,7 +101,7 @@ async def test_is_locked_true(
     relay_state: str,
     expected_ha_state: str,
 ) -> None:
-    """Test is_locked returns True for closed/inactive states."""
+    """Test is_locked returns True for closed/inactive/0 states."""
     with patch(
         "custom_components.akuvox.AkuvoxDevice",
         autospec=True,
@@ -149,7 +149,7 @@ async def test_is_locked_false(
     relay_state: str,
     expected_ha_state: str,
 ) -> None:
-    """Test is_locked returns False for open/active states."""
+    """Test is_locked returns False for open/active/1 states."""
     with patch(
         "custom_components.akuvox.AkuvoxDevice",
         autospec=True,

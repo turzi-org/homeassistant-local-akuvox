@@ -64,6 +64,78 @@ def _relay_key_to_label(relay_key: str) -> str:
     return relay_key
 
 
+def _parse_relay_state(
+    relay_key: str,
+    state: object,
+) -> bool | None:
+    """Parse a relay state value into a locked boolean.
+
+    Args:
+        relay_key: The relay key for logging context.
+        state: The raw state value from the device.
+
+    Returns:
+        True if locked, False if unlocked, None if unknown.
+
+    """
+    if isinstance(state, int):
+        if state == 0:
+            return True
+        if state == 1:
+            return False
+        _LOGGER.debug(
+            "Unexpected integer relay state %d for %s",
+            state,
+            relay_key,
+        )
+        return None
+
+    if isinstance(state, str):
+        return _parse_str_state(relay_key, state)
+
+    if isinstance(state, dict):
+        inner = state.get("state")
+        if isinstance(inner, str):
+            return _parse_str_state(relay_key, inner)
+        _LOGGER.debug(
+            "Unrecognized dict relay state for %s: %r",
+            relay_key,
+            state,
+        )
+        return None
+
+    _LOGGER.debug(
+        "Unexpected relay state type for %s: %r (type=%s)",
+        relay_key,
+        state,
+        type(state).__name__,
+    )
+    return None
+
+
+def _parse_str_state(relay_key: str, state: str) -> bool | None:
+    """Parse a string relay state value.
+
+    Args:
+        relay_key: The relay key for logging context.
+        state: The string state value.
+
+    Returns:
+        True if locked, False if unlocked, None if unknown.
+
+    """
+    if state in ("closed", "inactive"):
+        return True
+    if state in ("open", "active"):
+        return False
+    _LOGGER.debug(
+        "Unrecognized relay state '%s' for %s",
+        state,
+        relay_key,
+    )
+    return None
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -144,39 +216,4 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if state is None:
             return None
 
-        if isinstance(state, int):
-            return state == 0
-
-        if isinstance(state, str):
-            if state in ("closed", "inactive"):
-                return True
-            if state in ("open", "active"):
-                return False
-            _LOGGER.debug(
-                "Unrecognized relay state '%s' for %s",
-                state,
-                self._relay_key,
-            )
-            return None
-
-        if isinstance(state, dict):
-            inner = state.get("state")
-            if isinstance(inner, str):
-                if inner in ("closed", "inactive"):
-                    return True
-                if inner in ("open", "active"):
-                    return False
-            _LOGGER.debug(
-                "Unrecognized dict relay state for %s: %r",
-                self._relay_key,
-                state,
-            )
-            return None
-
-        _LOGGER.debug(
-            "Unexpected relay state type for %s: %r (type=%s)",
-            self._relay_key,
-            state,
-            type(state).__name__,
-        )
-        return None
+        return _parse_relay_state(self._relay_key, state)
