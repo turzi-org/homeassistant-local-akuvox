@@ -514,8 +514,8 @@ async def test_options_flow_triggers_reload(
 
 async def test_options_flow_rejects_empty_host(
     hass: HomeAssistant,
-    mock_relay_status: AsyncMock,
-    mock_device_info: AsyncMock,
+    mock_relay_status: dict[str, Any],
+    mock_device_info: DeviceInfo,
     mock_config_entry_data_none: dict[str, Any],
 ) -> None:
     """Test options flow rejects empty host with invalid_host error."""
@@ -534,8 +534,8 @@ async def test_options_flow_rejects_empty_host(
         instance = mock_cls.return_value
         instance.__aenter__ = AsyncMock(return_value=instance)
         instance.__aexit__ = AsyncMock(return_value=False)
-        instance.get_relay_status = mock_relay_status
-        instance.get_info = mock_device_info
+        instance.get_relay_status = AsyncMock(return_value=mock_relay_status)
+        instance.get_info = AsyncMock(return_value=mock_device_info)
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -559,8 +559,8 @@ async def test_options_flow_rejects_empty_host(
 
 async def test_options_flow_rejects_whitespace_host(
     hass: HomeAssistant,
-    mock_relay_status: AsyncMock,
-    mock_device_info: AsyncMock,
+    mock_relay_status: dict[str, Any],
+    mock_device_info: DeviceInfo,
     mock_config_entry_data_none: dict[str, Any],
 ) -> None:
     """Test options flow rejects whitespace-only host."""
@@ -579,8 +579,8 @@ async def test_options_flow_rejects_whitespace_host(
         instance = mock_cls.return_value
         instance.__aenter__ = AsyncMock(return_value=instance)
         instance.__aexit__ = AsyncMock(return_value=False)
-        instance.get_relay_status = mock_relay_status
-        instance.get_info = mock_device_info
+        instance.get_relay_status = AsyncMock(return_value=mock_relay_status)
+        instance.get_info = AsyncMock(return_value=mock_device_info)
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
