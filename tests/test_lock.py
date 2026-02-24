@@ -554,6 +554,45 @@ async def test_async_unlock_shows_unlocked_optimistically(
     assert state.state == "unlocked"
 
 
+async def test_optimistic_state_survives_coordinator_update(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test optimistic unlocked state survives a coordinator poll.
+
+    If the coordinator refreshes during the unlock-delay window, the
+    device may still report locked. The optimistic override must not
+    be cleared until the delayed refresh fires.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        blocking=True,
+    )
+
+    # Simulate a coordinator poll returning stale locked state
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    # Entity must still report unlocked despite stale coordinator data
+    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    assert state is not None
+    assert state.state == "unlocked"
+
+
 @pytest.mark.parametrize(
     "exception_cls",
     [

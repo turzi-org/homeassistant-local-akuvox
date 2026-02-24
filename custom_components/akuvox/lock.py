@@ -249,9 +249,18 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        """Clear optimistic state when coordinator provides real data."""
-        self._optimistic_locked = None
-        super()._handle_coordinator_update()
+        """Handle coordinator data updates.
+
+        Optimistic state is preserved during the unlock-delay window
+        so that early coordinator polls with stale device data do not
+        revert the UI to locked.
+        """
+        if self._optimistic_locked is None:
+            super()._handle_coordinator_update()
+        else:
+            # Suppress HA state write while optimistic override is active;
+            # async_write_ha_state was already called after unlock.
+            pass
 
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the door (not supported — auto-locks via hardware).
@@ -291,8 +300,9 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         @callback
         def _refresh(_now: Any) -> None:
-            """Request coordinator refresh after delay."""
+            """Clear optimistic state and refresh from device."""
             self._delayed_refresh_cancel = None
+            self._optimistic_locked = None
             self.hass.async_create_task(
                 self.coordinator.async_request_refresh(),
             )
@@ -302,3 +312,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             _RELAY_UNLOCK_DELAY_SECONDS,
             _refresh,
         )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Cancel pending timers on entity removal."""
+        if self._delayed_refresh_cancel is not None:
+            self._delayed_refresh_cancel()
+            self._delayed_refresh_cancel = None
+        await super().async_will_remove_from_hass()

@@ -68,11 +68,15 @@ should be sourced from the device configuration instead.
 
 After a successful trigger, the entity **MUST** optimistically report
 unlocked because the device may not have processed the command by
-the time a coordinator poll occurs. The optimistic state is cleared
-on the next coordinator update, which confirms the real device state.
-A delayed coordinator refresh **MUST** be scheduled after the unlock
-delay expires so the entity re-syncs with the device without waiting
-for the full polling interval.
+the time a coordinator poll occurs. The optimistic unlocked state
+**MUST NOT** be cleared by any coordinator update that occurs during
+the configured unlock-delay window, even if that update reports the
+relay as locked. Instead, the optimistic override **MUST** be retained
+until the delayed refresh callback fires after the unlock-delay
+window expires, at which point the real device state is trusted.
+A delayed coordinator refresh **MUST** be scheduled for immediately
+after the unlock delay expires so the entity re-syncs with the
+device without waiting for the full polling interval.
 
 **Error Handling**:
 
