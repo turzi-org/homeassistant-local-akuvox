@@ -87,11 +87,7 @@ async def async_setup_entry(
     entities: list[AkuvoxLockEntity] = []
 
     for relay_key in relay_status:
-        if not _RELAY_NUM_RE.fullmatch(relay_key):
-            _LOGGER.warning(
-                "Skipping unrecognized relay key '%s'",
-                relay_key,
-            )
+        if _relay_key_to_number(relay_key) is None:
             continue
         entities.append(
             AkuvoxLockEntity(
@@ -120,7 +116,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         """
         super().__init__(coordinator)
         self._relay_key = relay_key
-        self._relay_number = _relay_key_to_number(relay_key)
+        relay_number = _relay_key_to_number(relay_key)
+        if relay_number is None:
+            msg = f"Invalid relay key: {relay_key}"
+            raise ValueError(msg)
+        self._relay_number = relay_number
         mac_clean = coordinator.data.device_info.mac_address.lower().replace(
             ":",
             "",
