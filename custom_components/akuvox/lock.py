@@ -22,8 +22,8 @@ from .entity import AkuvoxEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-# level=1 tells the relay to operate in normally-closed mode,
-# producing a momentary pulse unlock instead of sustained open.
+# level=1 configures the relay for auto-close (pulse) mode,
+# producing a momentary unlock pulse instead of a sustained open state.
 _RELAY_LEVEL_PULSE = 1
 
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
