@@ -324,10 +324,10 @@ confirm only that entity changes state
   device with two relays, test each entity
   has unique unique_id ({mac}_relay_1,
   {mac}_relay_2), test each entity has
-  distinct name (Relay 1, Relay 2), test
-  unlocking relay 1 only changes relay 1
-  entity state, test relay 2 state unchanged
-  when relay 1 is unlocked
+  distinct name (Relay A, Relay B), test
+  unlocking relay A only changes relay A
+  entity state, test relay B state unchanged
+  when relay A is unlocked
 - [X] T028 [P] [US4] Write multi-relay
   coordinator tests in
   `tests/test_coordinator.py`: test
