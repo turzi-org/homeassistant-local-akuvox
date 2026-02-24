@@ -252,3 +252,81 @@ async def test_entity_recovers_after_coordinator_failure(
         state = hass.states.get("lock.akuvox_e21v_relay_a")
         assert state is not None
         assert state.state == "locked"
+
+
+async def test_coordinator_data_includes_multiple_relays(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+) -> None:
+    """Test coordinator data includes status for all relays."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 0, "RelayB": 1},
+    )
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    data = await coordinator._async_update_data()
+
+    assert "RelayA" in data.relay_status
+    assert "RelayB" in data.relay_status
+    assert data.relay_status["RelayA"] == 0
+    assert data.relay_status["RelayB"] == 1
+
+
+async def test_coordinator_multi_relay_state_change(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_config_entry_data_none: dict[str, Any],
+) -> None:
+    """Test coordinator updates propagate to correct relay entities.
+
+    When only one relay changes state, only that entity should
+    update while the other remains unchanged.
+    """
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 0, "RelayB": 0},
+    )
+    device.trigger_relay = AsyncMock(return_value=None)
+    device.__aenter__ = AsyncMock(return_value=device)
+    device.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        mock_cls.return_value = device
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        # Both locked
+        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
+        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        assert state_a is not None
+        assert state_b is not None
+        assert state_a.state == "locked"
+        assert state_b.state == "locked"
+
+        # Only RelayB changes
+        device.get_relay_status.return_value = {"RelayA": 0, "RelayB": 1}
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+
+        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
+        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        assert state_a is not None
+        assert state_b is not None
+        assert state_a.state == "locked"
+        assert state_b.state == "unlocked"

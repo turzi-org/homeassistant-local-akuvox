@@ -492,6 +492,131 @@ async def test_multi_relay_entities_created(
         assert entry_b.unique_id == f"{mac_clean}_relay_2"
 
 
+async def test_multi_relay_distinct_names(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+) -> None:
+    """Test multi-relay entities have distinct friendly names."""
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        from pylocal_akuvox import DeviceInfo
+
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": 0, "RelayB": 0},
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
+        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        assert state_a is not None
+        assert state_b is not None
+
+        name_a = state_a.attributes.get("friendly_name")
+        name_b = state_b.attributes.get("friendly_name")
+        assert name_a is not None
+        assert name_b is not None
+        assert name_a != name_b
+        assert "Relay A" in name_a
+        assert "Relay B" in name_b
+
+
+async def test_unlock_relay_a_does_not_change_relay_b(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+) -> None:
+    """Test unlocking relay A only affects relay A entity.
+
+    When relay A is unlocked, relay B must remain locked.
+    """
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        from pylocal_akuvox import DeviceInfo
+
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": 0, "RelayB": 0},
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        # Both start locked
+        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
+        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        assert state_a is not None
+        assert state_b is not None
+        assert state_a.state == "locked"
+        assert state_b.state == "locked"
+
+        # Unlock relay A
+        await hass.services.async_call(
+            "lock",
+            "unlock",
+            {"entity_id": "lock.akuvox_e21v_relay_a"},
+            blocking=True,
+        )
+        await hass.async_block_till_done()
+
+        # Relay A is now unlocked (optimistic)
+        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state_a is not None
+        assert state_a.state == "unlocked"
+
+        # Relay B remains locked
+        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        assert state_b is not None
+        assert state_b.state == "locked"
+
+        # Verify trigger_relay was called for relay 1 only
+        device.trigger_relay.assert_awaited_once_with(
+            num=1,
+            delay=5,
+        )
+
+
 async def test_is_locked_handles_dict_state_format(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
