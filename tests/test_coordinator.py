@@ -138,3 +138,139 @@ async def test_coordinator_update_interval(
     assert coordinator.update_interval == timedelta(
         seconds=DEFAULT_SCAN_INTERVAL,
     )
+
+
+async def test_state_reflects_relay_change_after_update(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+) -> None:
+    """Test entity state changes when coordinator data changes.
+
+    After a coordinator refresh with a new relay state, the lock
+    entity must reflect the updated value.
+    """
+    from unittest.mock import patch
+
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from tests.conftest import MOCK_MAC
+
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value={"RelayA": 0})
+    device.trigger_relay = AsyncMock(return_value=None)
+    device.__aenter__ = AsyncMock(return_value=device)
+    device.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        mock_cls.return_value = device
+
+        entry = MockConfigEntry(
+            domain="akuvox",
+            data={
+                "host": "192.168.1.100",
+                "use_ssl": False,
+                "verify_ssl": False,
+                "auth_method": "none",
+                "username": None,
+                "password": None,
+            },
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state is not None
+        assert state.state == "locked"
+
+        # Change relay state to unlocked
+        device.get_relay_status.return_value = {"RelayA": 1}
+
+        coordinator = hass.data["akuvox"][entry.entry_id]
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+
+        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state is not None
+        assert state.state == "unlocked"
+
+
+async def test_entity_recovers_after_coordinator_failure(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+) -> None:
+    """Test entity recovers to correct state after device comes back.
+
+    After the coordinator fails (making entity unavailable), a
+    subsequent successful update must restore the entity to the
+    correct state within 2 coordinator update cycles (SC-004).
+    """
+    from unittest.mock import patch
+
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from tests.conftest import MOCK_MAC
+
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value={"RelayA": 0})
+    device.trigger_relay = AsyncMock(return_value=None)
+    device.__aenter__ = AsyncMock(return_value=device)
+    device.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        mock_cls.return_value = device
+
+        entry = MockConfigEntry(
+            domain="akuvox",
+            data={
+                "host": "192.168.1.100",
+                "use_ssl": False,
+                "verify_ssl": False,
+                "auth_method": "none",
+                "username": None,
+                "password": None,
+            },
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state is not None
+        assert state.state == "locked"
+
+        # Coordinator fails
+        device.get_relay_status.side_effect = AkuvoxConnectionError(
+            "Connection lost",
+        )
+
+        coordinator = hass.data["akuvox"][entry.entry_id]
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+
+        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state is not None
+        assert state.state == "unavailable"
+
+        # Device comes back online
+        device.get_relay_status.side_effect = None
+        device.get_relay_status.return_value = {"RelayA": 0}
+
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+
+        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state is not None
+        assert state.state == "locked"
