@@ -513,7 +513,7 @@ async def test_async_unlock_calls_trigger_relay(
         blocking=True,
     )
 
-    mock_akuvox_device.trigger_relay.assert_called_once_with(num=1, level=1)
+    mock_akuvox_device.trigger_relay.assert_called_once_with(num=1, delay=5)
 
 
 async def test_async_unlock_requests_coordinator_refresh(
