@@ -300,11 +300,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         @callback
         def _refresh(_now: Any) -> None:
-            """Clear optimistic state and refresh from device."""
+            """Kick off async refresh after unlock window expires."""
             self._delayed_refresh_cancel = None
-            self._optimistic_locked = None
             self.hass.async_create_task(
-                self.coordinator.async_request_refresh(),
+                self._async_finish_optimistic_unlock(),
             )
 
         self._delayed_refresh_cancel = async_call_later(
@@ -312,6 +311,17 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             _RELAY_UNLOCK_DELAY_SECONDS,
             _refresh,
         )
+
+    async def _async_finish_optimistic_unlock(self) -> None:
+        """Refresh coordinator then clear optimistic state.
+
+        The optimistic override is kept until the refresh completes so
+        that any coordinator update triggered during the refresh does
+        not write stale device state to Home Assistant.
+        """
+        await self.coordinator.async_refresh()
+        self._optimistic_locked = None
+        self.async_write_ha_state()
 
     async def async_will_remove_from_hass(self) -> None:
         """Cancel pending timers on entity removal."""

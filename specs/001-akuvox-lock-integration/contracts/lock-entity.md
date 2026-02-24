@@ -76,9 +76,14 @@ until the delayed refresh callback fires after the unlock-delay
 window expires, at which point the real device state is trusted.
 A delayed coordinator refresh **MUST** be scheduled for immediately
 after the unlock delay expires so the entity re-syncs with the
-device without waiting for the full polling interval. To enforce
-this behavior, the entity **MUST** override
-`_handle_coordinator_update` so that, while the internal
+device without waiting for the full polling interval. The delayed
+refresh **MUST** use an immediate `async_refresh()` (not the
+debounced `async_request_refresh()`) to guarantee the device is
+polled right away. The optimistic override **MUST** be cleared
+only **after** the refresh completes, so that any coordinator
+update triggered during the refresh does not write stale device
+state back to Home Assistant. To enforce this, the entity **MUST**
+override `_handle_coordinator_update` so that, while the internal
 optimistic-unlock flag is active, coordinator updates **MUST NOT**
 write the coordinator-reported lock state back to Home Assistant
 or clear the optimistic override. This prevents stale device

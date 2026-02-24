@@ -593,6 +593,117 @@ async def test_optimistic_state_survives_coordinator_update(
     assert state.state == "unlocked"
 
 
+async def test_delayed_refresh_clears_optimistic_state(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test delayed refresh fires, clears optimistic state, re-syncs.
+
+    After the unlock-delay window expires the timer must trigger a
+    coordinator refresh and clear the optimistic override so the entity
+    reports real device state.
+    """
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import (
+        async_fire_time_changed,
+    )
+
+    from custom_components.akuvox.lock import _RELAY_UNLOCK_DELAY_SECONDS
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        blocking=True,
+    )
+
+    # Device now returns locked (relay re-locked after delay)
+    mock_akuvox_device.get_relay_status.return_value = {"RelayA": 0}
+
+    # Advance time past the unlock-delay window
+    async_fire_time_changed(
+        hass,
+        dt_util.utcnow()
+        + __import__("datetime").timedelta(
+            seconds=_RELAY_UNLOCK_DELAY_SECONDS + 1,
+        ),
+    )
+    await hass.async_block_till_done()
+
+    # Entity should now reflect real device state (locked)
+    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    assert state is not None
+    assert state.state == "locked"
+
+
+async def test_entity_removal_cancels_delayed_refresh(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test entity removal cancels pending delayed refresh timer.
+
+    When the entity is removed from Home Assistant while a delayed
+    refresh timer is pending, the timer must be cancelled to avoid
+    refreshing a torn-down coordinator.
+    """
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import (
+        async_fire_time_changed,
+    )
+
+    from custom_components.akuvox.lock import _RELAY_UNLOCK_DELAY_SECONDS
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Trigger unlock to schedule a delayed refresh
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        blocking=True,
+    )
+
+    # Record call count before removal
+    refresh_count = mock_akuvox_device.get_relay_status.call_count
+
+    # Unload the config entry (removes entities)
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Advance time past the unlock-delay window
+    async_fire_time_changed(
+        hass,
+        dt_util.utcnow()
+        + __import__("datetime").timedelta(
+            seconds=_RELAY_UNLOCK_DELAY_SECONDS + 1,
+        ),
+    )
+    await hass.async_block_till_done()
+
+    # No additional refresh should have been triggered
+    assert mock_akuvox_device.get_relay_status.call_count == refresh_count
+
+
 @pytest.mark.parametrize(
     "exception_cls",
     [
