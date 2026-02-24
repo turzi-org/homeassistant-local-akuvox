@@ -11,7 +11,7 @@ from typing import Any
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pylocal_akuvox import AkuvoxError
@@ -223,6 +223,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         self._attr_unique_id = f"{mac_clean}_relay_{self._relay_number}"
         self._attr_has_entity_name = True
         self._attr_name = _relay_key_to_label(relay_key)
+        self._optimistic_locked: bool | None = None
 
     @property
     def is_locked(self) -> bool | None:
@@ -233,6 +234,9 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             (open/active/1), None if unknown.
 
         """
+        if self._optimistic_locked is not None:
+            return self._optimistic_locked
+
         relay_status = self.coordinator.data.relay_status
         state = relay_status.get(self._relay_key)
 
@@ -240,6 +244,12 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             return None
 
         return _parse_relay_state(self._relay_key, state)
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Clear optimistic state when coordinator provides real data."""
+        self._optimistic_locked = None
+        super()._handle_coordinator_update()
 
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the door (not supported — auto-locks via hardware).
@@ -268,4 +278,5 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             raise HomeAssistantError(
                 f"Failed to unlock relay {self._relay_number}: {err}"
             ) from err
-        await self.coordinator.async_refresh()
+        self._optimistic_locked = False
+        self.async_write_ha_state()
