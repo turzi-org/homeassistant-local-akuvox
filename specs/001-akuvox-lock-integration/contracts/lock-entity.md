@@ -54,13 +54,13 @@ the message
 
 #### `async_unlock(**kwargs) -> None`
 
-1. Call `await coordinator.device.trigger_relay(num=self._relay_number)`
+1. Call `await coordinator.device.trigger_relay(num=self._relay_number, level=1)`
 2. Request coordinator refresh: `await coordinator.async_request_refresh()`
 
-The relay **MUST** be triggered in the device's auto-close mode so that
+The relay **MUST** be triggered in the device's auto-close (pulse) mode so that
 the door unlocks momentarily and then re-locks according to the
-device configuration. This contract does not prescribe specific
-parameter values beyond the relay number.
+device configuration. The integration **MUST** pass `level=1` (auto-close pulse)
+in addition to the relay number when calling `trigger_relay`.
 
 **Error Handling**:
 
