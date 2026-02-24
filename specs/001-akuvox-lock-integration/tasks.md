@@ -357,32 +357,32 @@ confirm only that entity changes state
 **Purpose**: Options flow (FR-010), documentation, and final
 validation
 
-- [ ] T031 [P] Write options flow tests in
+- [X] T031 [P] Write options flow tests in
   `tests/test_config_flow.py`: test options
   flow shows current values pre-filled, test
   options flow updates entry.options, test
   integration reloads after options change
-- [ ] T032 Implement options flow in
+- [X] T032 Implement options flow in
   `custom_components/akuvox/config_flow.py`
   with OptionsFlow class presenting all
   connection parameters pre-filled from
   current config, saving to entry.options,
   and triggering integration reload
-- [ ] T033 [P] Update `__init__.py` to read
+- [X] T033 [P] Update `__init__.py` to read
   connection params from entry.options with
   fallback to entry.data when creating
   AkuvoxDevice in
   `custom_components/akuvox/__init__.py`
-- [ ] T034 [P] Run full test suite with
+- [X] T034 [P] Run full test suite with
   coverage:
   `uv run pytest tests/ --cov=custom_components/akuvox`
   `--cov-report=term-missing`
   and ensure no coverage regressions
-- [ ] T035 Run quickstart.md validation: verify
+- [X] T035 Run quickstart.md validation: verify
   all commands in
   `specs/001-akuvox-lock-integration/quickstart.md`
   execute successfully
-- [ ] T036 [P] Add performance acceptance tests
+- [X] T036 [P] Add performance acceptance tests
   in `tests/test_lock.py`: test async_unlock
   completes within 5 seconds (SC-002) using
   mock device; test coordinator
