@@ -22,6 +22,10 @@ from .entity import AkuvoxEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+# level=1 configures the relay for auto-close (pulse) mode,
+# producing a momentary unlock pulse instead of a sustained open state.
+_RELAY_LEVEL_PULSE = 1
+
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
 _RELAY_NUM_RE = re.compile(r"Relay([A-Z])")
@@ -258,6 +262,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         try:
             await self.coordinator.device.trigger_relay(
                 num=self._relay_number,
+                level=_RELAY_LEVEL_PULSE,
             )
         except AkuvoxError as err:
             raise HomeAssistantError(

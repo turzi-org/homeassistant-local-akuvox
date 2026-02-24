@@ -54,8 +54,20 @@ the message
 
 #### `async_unlock(**kwargs) -> None`
 
-1. Call `await coordinator.device.trigger_relay(num=self._relay_number)`
+1. Call `await coordinator.device.trigger_relay(num=self._relay_number, level=1)`
 2. Request coordinator refresh: `await coordinator.async_request_refresh()`
+
+The relay **MUST** be triggered in the device's auto-close (pulse) mode so that
+the door unlocks momentarily and then re-locks according to the
+device configuration. The integration **MUST** pass `level=1` (auto-close pulse)
+in addition to the relay number when calling `trigger_relay`.
+
+Note: Some older integration documentation and research notes may show
+unlock operations as `trigger_relay(num=...)` without an explicit
+`level`. Those examples are historical; the `AkuvoxLockEntity` contract
+**always** requires `level=1` to ensure pulse/auto-close behavior and
+to avoid sustained-unlock or toggle modes that may be exposed by some
+firmware versions.
 
 **Error Handling**:
 
