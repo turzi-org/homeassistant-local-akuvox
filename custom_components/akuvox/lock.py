@@ -79,22 +79,15 @@ def _parse_relay_state(
 
     """
     if isinstance(state, int):
-        if state == 0:
-            return True
-        if state == 1:
-            return False
-        _LOGGER.debug(
-            "Unexpected integer relay state %d for %s",
-            state,
-            relay_key,
-        )
-        return None
+        return _parse_int_state(relay_key, state)
 
     if isinstance(state, str):
         return _parse_str_state(relay_key, state)
 
     if isinstance(state, dict):
         inner = state.get("state")
+        if isinstance(inner, int):
+            return _parse_int_state(relay_key, inner)
         if isinstance(inner, str):
             return _parse_str_state(relay_key, inner)
         _LOGGER.debug(
@@ -109,6 +102,29 @@ def _parse_relay_state(
         relay_key,
         state,
         type(state).__name__,
+    )
+    return None
+
+
+def _parse_int_state(relay_key: str, state: int) -> bool | None:
+    """Parse an integer relay state value.
+
+    Args:
+        relay_key: The relay key for logging context.
+        state: The integer state value (0=locked, 1=unlocked).
+
+    Returns:
+        True if locked, False if unlocked, None if unknown.
+
+    """
+    if state == 0:
+        return True
+    if state == 1:
+        return False
+    _LOGGER.debug(
+        "Unexpected integer relay state %d for %s",
+        state,
+        relay_key,
     )
     return None
 
