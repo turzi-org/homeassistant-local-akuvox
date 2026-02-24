@@ -19,6 +19,8 @@ from .entity import AkuvoxEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+# Akuvox devices expose relays as "RelayA", "RelayB", etc.
+# with a single uppercase letter A-Z suffix.
 _RELAY_NUM_RE = re.compile(r"Relay([A-Z])")
 
 
