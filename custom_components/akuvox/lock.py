@@ -11,9 +11,10 @@ from typing import Any
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 from pylocal_akuvox import AkuvoxError
 
 from .const import DOMAIN
@@ -25,6 +26,10 @@ _LOGGER = logging.getLogger(__name__)
 # Default relay unlock delay in seconds. Akuvox intercoms default
 # to a 5-second auto-relock delay on a fresh configuration.
 _RELAY_UNLOCK_DELAY_SECONDS = 5
+
+# Extra seconds added to the unlock delay before polling the device,
+# giving the relay time to re-lock after the window expires.
+_RELAY_REFRESH_BUFFER_SECONDS = 1
 
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
@@ -223,6 +228,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         self._attr_unique_id = f"{mac_clean}_relay_{self._relay_number}"
         self._attr_has_entity_name = True
         self._attr_name = _relay_key_to_label(relay_key)
+        self._optimistic_locked: bool | None = None
+        self._delayed_refresh_cancel: CALLBACK_TYPE | None = None
 
     @property
     def is_locked(self) -> bool | None:
@@ -233,6 +240,9 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             (open/active/1), None if unknown.
 
         """
+        if self._optimistic_locked is not None:
+            return self._optimistic_locked
+
         relay_status = self.coordinator.data.relay_status
         state = relay_status.get(self._relay_key)
 
@@ -255,6 +265,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
     async def async_unlock(self, **kwargs: Any) -> None:
         """Unlock the door by triggering the relay.
 
+        If trigger_relay fails, the optimistic state and timer are not
+        touched.  Any pending timer from a previous successful unlock
+        is left in place so it can still clear the earlier optimistic
+        override as expected.
+
         Raises:
             HomeAssistantError: If the device communication fails.
 
@@ -268,4 +283,57 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             raise HomeAssistantError(
                 f"Failed to unlock relay {self._relay_number}: {err}"
             ) from err
-        await self.coordinator.async_refresh()
+        self._optimistic_locked = False
+        self.async_write_ha_state()
+        self._schedule_delayed_refresh()
+
+    def _schedule_delayed_refresh(self) -> None:
+        """Schedule a coordinator refresh after the unlock delay expires.
+
+        If called while a previous timer is pending (e.g. rapid unlock
+        calls), the earlier timer is cancelled and only the latest
+        unlock window is tracked.
+        """
+        if self._delayed_refresh_cancel is not None:
+            self._delayed_refresh_cancel()
+
+        @callback
+        def _refresh(_now: Any) -> None:
+            """Kick off async refresh after unlock window expires."""
+            self._delayed_refresh_cancel = None
+            self.hass.async_create_task(
+                self._async_finish_optimistic_unlock(),
+            )
+
+        self._delayed_refresh_cancel = async_call_later(
+            self.hass,
+            _RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS,
+            _refresh,
+        )
+
+    async def _async_finish_optimistic_unlock(self) -> None:
+        """Refresh coordinator then clear optimistic state.
+
+        The optimistic override is kept until the refresh completes so
+        that any coordinator update triggered during the refresh does
+        not write stale device state to Home Assistant. A finally
+        block ensures the override is always cleared even if the
+        refresh fails.
+        """
+        try:
+            await self.coordinator.async_refresh()
+        except Exception:  # noqa: BLE001
+            _LOGGER.exception(
+                "Error refreshing coordinator after optimistic unlock for relay %s",
+                self._relay_key,
+            )
+        finally:
+            self._optimistic_locked = None
+            self.async_write_ha_state()
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Cancel pending timers on entity removal."""
+        if self._delayed_refresh_cancel is not None:
+            self._delayed_refresh_cancel()
+            self._delayed_refresh_cancel = None
+        await super().async_will_remove_from_hass()

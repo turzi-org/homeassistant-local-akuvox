@@ -55,7 +55,8 @@ the message
 #### `async_unlock(**kwargs) -> None`
 
 1. Call `await coordinator.device.trigger_relay(num=self._relay_number, delay=5)`
-2. Immediate coordinator refresh: `await coordinator.async_refresh()`
+2. Set an internal optimistic override so that `is_locked` returns
+   `False` and write state to HA
 
 The relay **MUST** be triggered with a non-zero `delay` so the door
 unlocks momentarily and then re-locks after the specified number of
@@ -64,6 +65,35 @@ remain in a sustained unlock state. The integration uses 5 seconds,
 matching the Akuvox factory default auto-relock delay. Once the
 library supports reading the device's configured delay, this value
 should be sourced from the device configuration instead.
+
+After a successful trigger, the entity **MUST** optimistically report
+unlocked because the device may not have processed the command by
+the time a coordinator poll occurs. The optimistic unlocked state
+**MUST NOT** be cleared by any coordinator update that occurs during
+the configured unlock-delay window, even if that update reports the
+relay as locked. Instead, the optimistic override **MUST** be retained
+until the delayed refresh callback fires after the unlock-delay
+window expires, at which point the real device state is trusted.
+A delayed coordinator refresh **MUST** be scheduled for immediately
+after the unlock delay expires so the entity re-syncs with the
+device without waiting for the full polling interval. The delayed
+refresh **MUST** use an immediate `async_refresh()` (not the
+debounced `async_request_refresh()`) to guarantee the device is
+polled right away. The optimistic override **MUST** be cleared
+only **after** the refresh completes, so that any coordinator
+update triggered during the refresh does not write stale device
+state back to Home Assistant. The `is_locked` property **MUST**
+return the optimistic value when the override is active; however,
+during this window the entity **MUST** continue to process and
+expose other coordinator updates (for example, availability and
+non-lock attributes) so that Home Assistant still reflects the
+device's current availability and metadata. Normal
+coordinator-driven lock state updates **MUST** resume only after
+the unlock-delay window has expired and the optimistic override
+has been cleared by the delayed refresh callback. If the delayed
+refresh fails, the optimistic override **MUST** still be cleared
+(via a finally guard) so the entity does not permanently report
+an incorrect state.
 
 **Error Handling**:
 
