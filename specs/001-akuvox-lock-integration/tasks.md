@@ -318,7 +318,7 @@ confirm only that entity changes state
 
 ### Tests for User Story 4
 
-- [ ] T027 [P] [US4] Write multi-relay tests in
+- [X] T027 [P] [US4] Write multi-relay tests in
   `tests/test_lock.py`: test
   async_setup_entry creates two entities for
   device with two relays, test each entity
@@ -328,7 +328,7 @@ confirm only that entity changes state
   unlocking relay 1 only changes relay 1
   entity state, test relay 2 state unchanged
   when relay 1 is unlocked
-- [ ] T028 [P] [US4] Write multi-relay
+- [X] T028 [P] [US4] Write multi-relay
   coordinator tests in
   `tests/test_coordinator.py`: test
   coordinator data includes status for all
@@ -337,12 +337,12 @@ confirm only that entity changes state
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Update async_setup_entry in
+- [X] T029 [US4] Update async_setup_entry in
   `custom_components/akuvox/lock.py` to parse
   relay count from coordinator data and
   create one AkuvoxLockEntity per relay with
   correct relay_number
-- [ ] T030 [US4] Ensure is_locked in
+- [X] T030 [US4] Ensure is_locked in
   `custom_components/akuvox/lock.py` reads
   the correct relay's state from the
   relay_status dict using self._relay_number
