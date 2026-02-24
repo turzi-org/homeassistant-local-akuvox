@@ -495,7 +495,7 @@ async def test_async_unlock_calls_trigger_relay(
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
 ) -> None:
-    """Test async_unlock calls trigger_relay with correct number and level."""
+    """Test async_unlock calls trigger_relay with correct params."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         data=mock_config_entry_data_none,
