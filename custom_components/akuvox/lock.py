@@ -252,7 +252,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         """Handle coordinator data updates.
 
         Optimistic state is preserved during the unlock-delay window
-        Optimistic state is preserved during the unlock-delay window
         by the is_locked property, which returns the optimistic value
         when set. Coordinator updates are still processed so that
         availability and other attributes remain accurate.
