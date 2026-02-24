@@ -131,11 +131,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
     @property
     def is_locked(self) -> bool | None:
-        """Return true if the relay is closed/inactive (locked).
+        """Return true if the relay is closed/inactive/0 (locked).
 
         Returns:
-            True if locked (closed/inactive), False if unlocked
-            (open/active), None if unknown.
+            True if locked (closed/inactive/0), False if unlocked
+            (open/active/1), None if unknown.
 
         """
         relay_status = self.coordinator.data.relay_status
@@ -143,6 +143,9 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         if state is None:
             return None
+
+        if isinstance(state, int):
+            return state == 0
 
         if isinstance(state, str):
             if state in ("closed", "inactive"):
