@@ -516,12 +516,12 @@ async def test_async_unlock_calls_trigger_relay(
     mock_akuvox_device.trigger_relay.assert_called_once_with(num=1, delay=5)
 
 
-async def test_async_unlock_requests_coordinator_refresh(
+async def test_async_unlock_refreshes_coordinator_immediately(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
 ) -> None:
-    """Test async_unlock requests coordinator refresh after trigger."""
+    """Test async_unlock performs immediate coordinator refresh."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         data=mock_config_entry_data_none,
@@ -544,8 +544,9 @@ async def test_async_unlock_requests_coordinator_refresh(
         blocking=True,
     )
 
-    # After refresh, state should reflect the updated relay status
-    await hass.async_block_till_done()
+    # State must reflect unlocked immediately after the blocking call
+    # returns, without needing async_block_till_done for a deferred
+    # refresh to fire.
     state = hass.states.get("lock.akuvox_e21v_relay_a")
     assert state is not None
     assert state.state == "unlocked"
