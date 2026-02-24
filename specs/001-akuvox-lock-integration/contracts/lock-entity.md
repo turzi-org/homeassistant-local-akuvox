@@ -55,7 +55,7 @@ the message
 #### `async_unlock(**kwargs) -> None`
 
 1. Call `await coordinator.device.trigger_relay(num=self._relay_number, delay=5)`
-2. Immediate coordinator refresh: `await coordinator.async_refresh()`
+2. Optimistically set `is_locked = False` and write state to HA
 
 The relay **MUST** be triggered with a non-zero `delay` so the door
 unlocks momentarily and then re-locks after the specified number of
@@ -64,6 +64,11 @@ remain in a sustained unlock state. The integration uses 5 seconds,
 matching the Akuvox factory default auto-relock delay. Once the
 library supports reading the device's configured delay, this value
 should be sourced from the device configuration instead.
+
+After a successful trigger, the entity **MUST** optimistically report
+unlocked because the device may not have processed the command by
+the time a coordinator poll occurs. The optimistic state is cleared
+on the next coordinator update, which confirms the real device state.
 
 **Error Handling**:
 
