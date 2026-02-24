@@ -305,6 +305,20 @@ class AkuvoxOptionsFlow(OptionsFlow):
 
         """
         if user_input is not None:
+            host = user_input.get(CONF_HOST, "")
+            if not host or not host.strip():
+                current = {
+                    **self._config_entry.data,
+                    **self._config_entry.options,
+                    **user_input,
+                }
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=self._build_schema(current),
+                    errors={"base": "invalid_host"},
+                )
+
+            user_input[CONF_HOST] = host.strip()
             return self.async_create_entry(
                 title="",
                 data=user_input,
@@ -317,32 +331,47 @@ class AkuvoxOptionsFlow(OptionsFlow):
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_HOST,
-                        default=current.get(CONF_HOST, ""),
-                    ): str,
-                    vol.Required(
-                        CONF_USE_SSL,
-                        default=current.get(CONF_USE_SSL, False),
-                    ): bool,
-                    vol.Required(
-                        CONF_VERIFY_SSL,
-                        default=current.get(CONF_VERIFY_SSL, True),
-                    ): bool,
-                    vol.Required(
-                        CONF_AUTH_METHOD,
-                        default=current.get(CONF_AUTH_METHOD, AUTH_NONE),
-                    ): vol.In([AUTH_NONE, AUTH_BASIC, AUTH_DIGEST]),
-                    vol.Optional(
-                        CONF_USERNAME,
-                        default=current.get(CONF_USERNAME, ""),
-                    ): str,
-                    vol.Optional(
-                        CONF_PASSWORD,
-                        default=current.get(CONF_PASSWORD, ""),
-                    ): str,
-                }
-            ),
+            data_schema=self._build_schema(current),
+        )
+
+    @staticmethod
+    def _build_schema(
+        current: dict[str, Any],
+    ) -> vol.Schema:
+        """Build the options flow form schema.
+
+        Args:
+            current: Current configuration values.
+
+        Returns:
+            A voluptuous schema with pre-filled defaults.
+
+        """
+        return vol.Schema(
+            {
+                vol.Required(
+                    CONF_HOST,
+                    default=current.get(CONF_HOST, ""),
+                ): str,
+                vol.Required(
+                    CONF_USE_SSL,
+                    default=current.get(CONF_USE_SSL, False),
+                ): bool,
+                vol.Required(
+                    CONF_VERIFY_SSL,
+                    default=current.get(CONF_VERIFY_SSL, True),
+                ): bool,
+                vol.Required(
+                    CONF_AUTH_METHOD,
+                    default=current.get(CONF_AUTH_METHOD, AUTH_NONE),
+                ): vol.In([AUTH_NONE, AUTH_BASIC, AUTH_DIGEST]),
+                vol.Optional(
+                    CONF_USERNAME,
+                    default=current.get(CONF_USERNAME, ""),
+                ): str,
+                vol.Optional(
+                    CONF_PASSWORD,
+                    default=current.get(CONF_PASSWORD, ""),
+                ): str,
+            }
         )
