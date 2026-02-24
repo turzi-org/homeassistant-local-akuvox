@@ -54,8 +54,12 @@ the message
 
 #### `async_unlock(**kwargs) -> None`
 
-1. Call `await coordinator.device.trigger_relay(num=self._relay_number)`
+1. Call `await coordinator.device.trigger_relay(num=self._relay_number, level=1)`
 2. Request coordinator refresh: `await coordinator.async_request_refresh()`
+
+The `level=1` parameter sets the relay to normally-closed mode,
+producing a momentary pulse unlock. Without it, `level=0`
+(normally-open) would leave the relay in a sustained unlock state.
 
 **Error Handling**:
 
