@@ -93,15 +93,15 @@ async def test_entity_device_info(
 
 @pytest.mark.parametrize(
     ("relay_state", "expected_ha_state"),
-    [("closed", "locked"), ("inactive", "locked")],
+    [("closed", "locked"), ("inactive", "locked"), (0, "locked")],
 )
 async def test_is_locked_true(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
-    relay_state: str,
+    relay_state: str | int,
     expected_ha_state: str,
 ) -> None:
-    """Test is_locked returns True for closed/inactive states."""
+    """Test is_locked returns True for closed/inactive/0 states."""
     with patch(
         "custom_components.akuvox.AkuvoxDevice",
         autospec=True,
@@ -141,15 +141,107 @@ async def test_is_locked_true(
 
 @pytest.mark.parametrize(
     ("relay_state", "expected_ha_state"),
-    [("open", "unlocked"), ("active", "unlocked")],
+    [("open", "unlocked"), ("active", "unlocked"), (1, "unlocked")],
 )
 async def test_is_locked_false(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
-    relay_state: str,
+    relay_state: str | int,
     expected_ha_state: str,
 ) -> None:
-    """Test is_locked returns False for open/active states."""
+    """Test is_locked returns False for open/active/1 states."""
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        from pylocal_akuvox import DeviceInfo
+
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": relay_state},
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state is not None
+        assert state.state == expected_ha_state
+
+
+@pytest.mark.parametrize("relay_state", [2, -1])
+async def test_is_locked_unknown_for_unexpected_int(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    relay_state: int,
+) -> None:
+    """Test is_locked returns None for unexpected integer states."""
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        from pylocal_akuvox import DeviceInfo
+
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": relay_state},
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        assert state is not None
+        assert state.state == "unknown"
+
+
+@pytest.mark.parametrize(
+    ("relay_state", "expected_ha_state"),
+    [({"state": 0}, "locked"), ({"state": 1}, "unlocked")],
+)
+async def test_is_locked_handles_dict_int_state(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    relay_state: dict[str, int],
+    expected_ha_state: str,
+) -> None:
+    """Test is_locked handles dict-wrapped integer states."""
     with patch(
         "custom_components.akuvox.AkuvoxDevice",
         autospec=True,
