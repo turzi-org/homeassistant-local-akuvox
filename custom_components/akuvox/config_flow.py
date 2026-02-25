@@ -305,8 +305,22 @@ class AkuvoxOptionsFlow(OptionsFlow):
 
         """
         if user_input is not None:
+            errors: dict[str, str] = {}
+
             host = user_input.get(CONF_HOST, "")
             if not host or not host.strip():
+                errors["base"] = "invalid_host"
+            else:
+                user_input[CONF_HOST] = host.strip()
+
+            auth = user_input.get(CONF_AUTH_METHOD, AUTH_NONE)
+            if auth in (AUTH_BASIC, AUTH_DIGEST):
+                username = user_input.get(CONF_USERNAME, "")
+                password = user_input.get(CONF_PASSWORD, "")
+                if not username or not password:
+                    errors["base"] = "invalid_auth"
+
+            if errors:
                 current = {
                     **self._config_entry.data,
                     **self._config_entry.options,
@@ -315,10 +329,9 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 return self.async_show_form(
                     step_id="init",
                     data_schema=self._build_schema(current),
-                    errors={"base": "invalid_host"},
+                    errors=errors,
                 )
 
-            user_input[CONF_HOST] = host.strip()
             return self.async_create_entry(
                 title="",
                 data=user_input,
