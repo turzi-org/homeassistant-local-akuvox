@@ -399,6 +399,18 @@ async def test_options_flow_shows_current_values(
         assert result["type"] is FlowResultType.FORM
         assert result["step_id"] == "init"
 
+        schema = result["data_schema"]
+        assert schema is not None
+        validated = schema({})
+        assert validated[CONF_HOST] == mock_config_entry_data_none[CONF_HOST]
+        assert validated[CONF_USE_SSL] == mock_config_entry_data_none[CONF_USE_SSL]
+        assert (
+            validated[CONF_VERIFY_SSL] == mock_config_entry_data_none[CONF_VERIFY_SSL]
+        )
+        assert (
+            validated[CONF_AUTH_METHOD] == mock_config_entry_data_none[CONF_AUTH_METHOD]
+        )
+
 
 async def test_options_flow_updates_entry(
     hass: HomeAssistant,
