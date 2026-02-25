@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -1137,8 +1138,6 @@ async def test_async_unlock_completes_within_5s(
     With a mock device, the unlock action should complete
     near-instantly, well under the 5-second budget.
     """
-    import time
-
     with patch(
         "custom_components.akuvox.AkuvoxDevice",
         autospec=True,
