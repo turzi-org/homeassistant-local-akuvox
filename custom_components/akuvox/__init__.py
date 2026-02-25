@@ -112,7 +112,23 @@ async def async_setup_entry(
         await device.__aexit__(None, None, None)
         raise
 
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+
     return True
+
+
+async def _async_update_listener(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> None:
+    """Reload integration when options change.
+
+    Args:
+        hass: The Home Assistant instance.
+        entry: The config entry that was updated.
+
+    """
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(

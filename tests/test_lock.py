@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -1126,3 +1127,55 @@ async def test_async_lock_raises_error(
             {"entity_id": "lock.akuvox_e21v_relay_a"},
             blocking=True,
         )
+
+
+async def test_async_unlock_completes_within_5s(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+) -> None:
+    """Test async_unlock completes within 5 seconds (SC-002).
+
+    With a mock device, the unlock action should complete
+    near-instantly, well under the 5-second budget.
+    """
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        from pylocal_akuvox import DeviceInfo
+
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": 0},
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC,
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        start = time.monotonic()
+        await hass.services.async_call(
+            "lock",
+            "unlock",
+            {"entity_id": "lock.akuvox_e21v_relay_a"},
+            blocking=True,
+        )
+        elapsed = time.monotonic() - start
+        assert elapsed < 5.0, f"Unlock took {elapsed:.2f}s, exceeds 5s budget"
