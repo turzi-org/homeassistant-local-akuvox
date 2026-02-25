@@ -612,3 +612,48 @@ async def test_options_flow_rejects_whitespace_host(
     )
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "invalid_host"}
+
+
+async def test_options_flow_rejects_missing_credentials(
+    hass: HomeAssistant,
+    mock_relay_status: dict[str, Any],
+    mock_device_info: DeviceInfo,
+    mock_config_entry_data_none: dict[str, Any],
+) -> None:
+    """Test options flow rejects auth methods without credentials."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch(
+            "custom_components.akuvox.AkuvoxDevice",
+            autospec=True,
+        ) as mock_cls,
+    ):
+        instance = mock_cls.return_value
+        instance.__aenter__ = AsyncMock(return_value=instance)
+        instance.__aexit__ = AsyncMock(return_value=False)
+        instance.get_relay_status = AsyncMock(return_value=mock_relay_status)
+        instance.get_info = AsyncMock(return_value=mock_device_info)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    result = await hass.config_entries.options.async_init(
+        entry.entry_id,
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_HOST: MOCK_HOST,
+            CONF_USE_SSL: False,
+            CONF_VERIFY_SSL: True,
+            CONF_AUTH_METHOD: AUTH_BASIC,
+            CONF_USERNAME: "",
+            CONF_PASSWORD: "",
+        },
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_auth"}
