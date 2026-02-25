@@ -1422,7 +1422,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "homeassistant", specifier = ">=2026.2.0" },
-    { name = "pylocal-akuvox", specifier = ">=0.1.1" },
+    { name = "pylocal-akuvox", specifier = ">=0.2.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.3.0" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=7.0.0" },
@@ -2127,14 +2127,14 @@ wheels = [
 
 [[package]]
 name = "pylocal-akuvox"
-version = "0.1.1"
+version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f0/ca/bf4dd985d85bf2d2b7fd07f8a336b7d842a31b2e7109c075300b0f39a2e4/pylocal_akuvox-0.1.1.tar.gz", hash = "sha256:fad71467c747204d8f40af8d5baf987d338108c6ef078185c973d427c6ee74f8", size = 174524, upload-time = "2026-02-23T17:20:00.066Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/14/62/ef94391fae9c72ce9ef3f49a090449dd9260097eb65705ee48c053844d64/pylocal_akuvox-0.2.0.tar.gz", hash = "sha256:9116aff7f55f15e0d61a6833b9bd20103c2ab596ac33fa7b6c4f7eedcb86afdb", size = 189754, upload-time = "2026-02-25T22:47:10.453Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/73/c8/18036bd2b07e174cda04f2d42dc6f5f9da08406f596e6c49ff9f80f64fdd/pylocal_akuvox-0.1.1-py3-none-any.whl", hash = "sha256:052b9ea6f309c010e1578ff0dccec7f4c0494e9049b60f75fd1ab94bd6264329", size = 20572, upload-time = "2026-02-23T17:19:58.672Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/e7/573ec9a8f3ebb83fac85d1bc9274c737ba04c848a4a23ea52a3bb2464836/pylocal_akuvox-0.2.0-py3-none-any.whl", hash = "sha256:2258b8ac075adfc138b370b03d18164aedb68e2b7da2385caed3da556243663f", size = 21871, upload-time = "2026-02-25T22:47:09.253Z" },
 ]
 
 [[package]]
