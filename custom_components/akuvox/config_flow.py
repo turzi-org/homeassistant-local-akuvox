@@ -318,7 +318,7 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 username = user_input.get(CONF_USERNAME, "")
                 password = user_input.get(CONF_PASSWORD, "")
                 if not username or not password:
-                    errors["base"] = "invalid_auth"
+                    errors.setdefault("base", "invalid_auth")
 
             if errors:
                 current = {
