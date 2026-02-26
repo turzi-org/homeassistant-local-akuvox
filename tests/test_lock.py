@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import time
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -17,7 +17,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.akuvox.const import (
     CONFIG_KEY_LOCATION,
+    CONFIG_KEY_RELAY_HOLD_DELAY,
     CONFIG_KEY_RELAY_NAME,
+    DEFAULT_HOLD_DELAY_SECONDS,
     DOMAIN,
 )
 from tests.conftest import MOCK_MAC
@@ -891,10 +893,7 @@ async def test_rapid_unlock_resets_optimistic_window(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import (
-        _RELAY_REFRESH_BUFFER_SECONDS,
-        _RELAY_UNLOCK_DELAY_SECONDS,
-    )
+    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -921,7 +920,7 @@ async def test_rapid_unlock_resets_optimistic_window(
         hass,
         start
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS - 1,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS - 1,
         ),
     )
     await hass.async_block_till_done()
@@ -941,7 +940,7 @@ async def test_rapid_unlock_resets_optimistic_window(
         hass,
         second_unlock
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS,
         ),
     )
     await hass.async_block_till_done()
@@ -957,7 +956,7 @@ async def test_rapid_unlock_resets_optimistic_window(
         hass,
         second_unlock
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
         ),
     )
     await hass.async_block_till_done()
@@ -986,10 +985,7 @@ async def test_delayed_refresh_clears_optimistic_state(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import (
-        _RELAY_REFRESH_BUFFER_SECONDS,
-        _RELAY_UNLOCK_DELAY_SECONDS,
-    )
+    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -1018,7 +1014,7 @@ async def test_delayed_refresh_clears_optimistic_state(
         hass,
         start
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
         ),
     )
     await hass.async_block_till_done()
@@ -1047,10 +1043,7 @@ async def test_entity_removal_cancels_delayed_refresh(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import (
-        _RELAY_REFRESH_BUFFER_SECONDS,
-        _RELAY_UNLOCK_DELAY_SECONDS,
-    )
+    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -1084,7 +1077,7 @@ async def test_entity_removal_cancels_delayed_refresh(
         hass,
         start
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
         ),
     )
     await hass.async_block_till_done()
@@ -1302,3 +1295,298 @@ async def test_relay_entity_name_fallback_when_empty(
     state = hass.states.get("lock.front_door_relay_a")
     assert state is not None
     assert state.attributes.get("friendly_name") == "Front Door Relay A"
+
+
+# ── T024: Per-relay hold_delay in trigger_relay ──────────────────
+
+
+async def test_unlock_uses_config_hold_delay(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test async_unlock passes per-relay hold_delay to trigger_relay."""
+    cfg = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_HOLD_DELAY}A": "7"},
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    mock_akuvox_device.trigger_relay.assert_called_once_with(num=1, delay=7)
+
+
+async def test_unlock_each_relay_uses_own_hold_delay(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_relay_status_multi: dict[str, Any],
+    mock_device_config_factory: Any,
+) -> None:
+    """Test different relays use their own config hold_delay values."""
+    cfg = mock_device_config_factory(
+        **{
+            f"{CONFIG_KEY_RELAY_HOLD_DELAY}A": "3",
+            f"{CONFIG_KEY_RELAY_HOLD_DELAY}B": "10",
+        },
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value=mock_relay_status_multi,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_side_gate"},
+        blocking=True,
+    )
+
+    assert mock_akuvox_device.trigger_relay.call_count == 2
+    mock_akuvox_device.trigger_relay.assert_has_calls(
+        [
+            call(num=1, delay=3),
+            call(num=2, delay=10),
+        ],
+    )
+
+
+# ── T025: Refresh timer uses config hold_delay + buffer ──────────
+
+
+async def test_refresh_timer_uses_config_hold_delay(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test refresh timer fires at hold_delay + buffer from config.
+
+    With hold_delay=7 the async_call_later should schedule at 8s
+    (7 + 1s buffer).  At 7s the entity must still be unlocked
+    (optimistic), at 9s it must reflect real device state.
+    """
+    import datetime
+
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import (
+        async_fire_time_changed,
+    )
+
+    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+
+    cfg = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_HOLD_DELAY}A": "7"},
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    start = dt_util.utcnow()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    # At 7s the timer (8s) hasn't fired — still unlocked
+    async_fire_time_changed(
+        hass,
+        start + datetime.timedelta(seconds=7),
+    )
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "unlocked"
+
+    # Past the full window (8s) — locked
+    mock_akuvox_device.get_relay_status.return_value = {"RelayA": 0}
+    async_fire_time_changed(
+        hass,
+        start
+        + datetime.timedelta(
+            seconds=7 + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+        ),
+    )
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "locked"
+
+
+# ── T026: hold_delay fallback to default ─────────────────────────
+
+
+async def test_unlock_fallback_delay_when_relay_not_in_configs(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test unlock uses DEFAULT_HOLD_DELAY when relay absent from configs.
+
+    When relay_configs does not contain the relay letter, the unlock
+    must fall back to DEFAULT_HOLD_DELAY_SECONDS for both trigger_relay
+    and the refresh timer.
+    """
+    import datetime
+
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import (
+        async_fire_time_changed,
+    )
+
+    from custom_components.akuvox.coordinator import AkuvoxCoordinatorData
+    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Clear relay_configs to simulate missing config entry
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    original = coordinator.data
+    coordinator.data = AkuvoxCoordinatorData(
+        device_info=original.device_info,
+        relay_status=original.relay_status,
+        device_name=original.device_name,
+        relay_configs={},
+    )
+
+    start = dt_util.utcnow()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    mock_akuvox_device.trigger_relay.assert_called_once_with(
+        num=1,
+        delay=DEFAULT_HOLD_DELAY_SECONDS,
+    )
+
+    # Refresh timer: DEFAULT_HOLD_DELAY + buffer + 1
+    mock_akuvox_device.get_relay_status.return_value = {"RelayA": 0}
+    async_fire_time_changed(
+        hass,
+        start
+        + datetime.timedelta(
+            seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+        ),
+    )
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "locked"
+
+
+# ── T026b: hold_delay updates after reconnection ────────────────
+
+
+async def test_hold_delay_updates_after_reconnection(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test unlock uses updated hold_delay after device reconnection.
+
+    Initial config uses default HoldDelayA=5.  Device goes offline
+    then comes back with HoldDelayA=10.  The next unlock must use
+    delay=10.
+    """
+    from pylocal_akuvox import AkuvoxConnectionError
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Device goes offline
+    mock_akuvox_device.get_relay_status.side_effect = AkuvoxConnectionError("offline")
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    # Device comes back with new config: HoldDelayA=10
+    mock_akuvox_device.get_relay_status.side_effect = None
+    mock_akuvox_device.get_relay_status.return_value = {"RelayA": 0}
+    cfg_new = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_HOLD_DELAY}A": "10"},
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg_new)
+
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    mock_akuvox_device.trigger_relay.reset_mock()
+
+    # Unlock should use updated delay=10
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+    mock_akuvox_device.trigger_relay.assert_called_once_with(
+        num=1,
+        delay=10,
+    )

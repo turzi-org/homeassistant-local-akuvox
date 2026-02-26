@@ -16,15 +16,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 from pylocal_akuvox import AkuvoxError
 
-from .const import DOMAIN, RELAY_KEY_RE
+from .const import DEFAULT_HOLD_DELAY_SECONDS, DOMAIN, RELAY_KEY_RE
 from .coordinator import AkuvoxDataUpdateCoordinator
 from .entity import AkuvoxEntity
 
 _LOGGER = logging.getLogger(__name__)
-
-# Default relay unlock delay in seconds. Akuvox intercoms default
-# to a 5-second auto-relock delay on a fresh configuration.
-_RELAY_UNLOCK_DELAY_SECONDS = 5
 
 # Extra seconds added to the unlock delay before polling the device,
 # giving the relay time to re-lock after the window expires.
@@ -276,10 +272,13 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: If the device communication fails.
 
         """
+        letter = chr(ord("A") + self._relay_number - 1)
+        relay_cfg = self.coordinator.data.relay_configs.get(letter)
+        hold_delay = relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS
         try:
             await self.coordinator.device.trigger_relay(
                 num=self._relay_number,
-                delay=_RELAY_UNLOCK_DELAY_SECONDS,
+                delay=hold_delay,
             )
         except AkuvoxError as err:
             raise HomeAssistantError(
@@ -287,14 +286,18 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ) from err
         self._optimistic_locked = False
         self.async_write_ha_state()
-        self._schedule_delayed_refresh()
+        self._schedule_delayed_refresh(hold_delay)
 
-    def _schedule_delayed_refresh(self) -> None:
+    def _schedule_delayed_refresh(self, hold_delay: int) -> None:
         """Schedule a coordinator refresh after the unlock delay expires.
 
         If called while a previous timer is pending (e.g. rapid unlock
         calls), the earlier timer is cancelled and only the latest
         unlock window is tracked.
+
+        Args:
+            hold_delay: The hold delay in seconds from relay config.
+
         """
         if self._delayed_refresh_cancel is not None:
             self._delayed_refresh_cancel()
@@ -309,7 +312,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         self._delayed_refresh_cancel = async_call_later(
             self.hass,
-            _RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS,
+            hold_delay + _RELAY_REFRESH_BUFFER_SECONDS,
             _refresh,
         )
 
