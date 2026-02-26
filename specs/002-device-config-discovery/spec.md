@@ -172,7 +172,8 @@ that a state value of 0 is interpreted as "unlocked" instead of "locked".
 - **FR-005**: System MUST use the device's per-relay type value (NO/NC) to
   correctly interpret relay state when determining locked vs unlocked status.
 - **FR-006**: System MUST pass the device's relay type and relay mode to the
-  unlock command so the relay activates in the correct mode for its wiring.
+  unlock command so the relay uses the correct contacts for its wiring
+  (type) and the intended activation behavior (mode).
 - **FR-007**: System MUST gracefully handle missing, empty, or invalid config
   values by falling back to safe defaults and logging a warning.
 - **FR-008**: System MUST depend on a device communication library version

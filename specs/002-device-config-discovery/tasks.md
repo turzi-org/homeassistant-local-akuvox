@@ -40,7 +40,7 @@ all subsequent phases.
 - [ ] T001 Add device config key constants and default values
   to custom_components/akuvox/const.py — add
   `CONFIG_KEY_PREFIX = "Config.DoorSetting"`,
-  `CONFIG_KEY_LOCATION = "...DEVICENODE.Location"`,
+  `CONFIG_KEY_LOCATION = "Config.DoorSetting.DEVICENODE.Location"`,
   relay key patterns (Name, HoldDelay, Type, Mode),
   `DEFAULT_HOLD_DELAY_SECONDS = 5`,
   `DEFAULT_RELAY_TYPE = 0`, `DEFAULT_RELAY_MODE = 0`
