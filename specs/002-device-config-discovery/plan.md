@@ -60,7 +60,7 @@ specs/002-device-config-discovery/
 ├── quickstart.md        # Phase 1 output
 ├── checklists/
 │   └── requirements.md  # Spec quality checklist
-└── tasks.md             # Phase 2 output (future, via /speckit.tasks)
+└── tasks.md             # Phase 2 output (via /speckit.tasks)
 ```
 
 ### Source Code (repository root)

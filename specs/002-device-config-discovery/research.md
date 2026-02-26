@@ -114,6 +114,11 @@ The `level` parameter in `trigger_relay` corresponds to the relay type value:
 - Making state interpretation user-configurable: Rejected — the device already
   stores the correct relay type, and the spec says to read it from config.
 
+**String state handling**: NC inversion applies only to integer relay states
+(0/1). String states ("closed"/"open", "inactive"/"active") represent logical
+lock state and are NOT inverted based on relay type, since their semantics are
+already unambiguous.
+
 ## R5: Config Value Validation
 
 **Decision**: Parse string config values with safe fallbacks. Use `int()` with

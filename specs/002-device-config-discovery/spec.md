@@ -138,6 +138,11 @@ that a state value of 0 is interpreted as "unlocked" instead of "locked".
 - What happens when a relay exists in relay status but has no matching config
   entry (e.g., the device has a third relay but config only has A/B entries)?
   The integration should use defaults for that relay.
+- What happens when the device reports relay state as a string ("closed",
+  "open") rather than an integer for an NC relay? NC state inversion applies
+  only to integer relay states (0/1). String states ("closed"/"open",
+  "inactive"/"active") represent logical lock state and are NOT inverted
+  based on relay type, since their semantics are already unambiguous.
 - What happens if device config changes while the integration is running and
   the device stays connected? Config is refreshed on the next reconnection
   event. If the user changes config on the device's web UI and the device
@@ -166,8 +171,9 @@ that a state value of 0 is interpreted as "unlocked" instead of "locked".
   the value is missing or invalid.
 - **FR-005**: System MUST use the device's per-relay type value (NO/NC) to
   correctly interpret relay state when determining locked vs unlocked status.
-- **FR-006**: System MUST pass the device's relay type to the unlock command
-  so the relay activates in the correct mode for its wiring.
+- **FR-006**: System MUST pass the device's relay type and relay mode to the
+  unlock command so the relay uses the correct contacts for its wiring
+  (type) and the intended activation behavior (mode).
 - **FR-007**: System MUST gracefully handle missing, empty, or invalid config
   values by falling back to safe defaults and logging a warning.
 - **FR-008**: System MUST depend on a device communication library version
