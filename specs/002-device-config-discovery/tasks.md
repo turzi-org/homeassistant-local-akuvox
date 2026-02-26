@@ -184,34 +184,34 @@ relay names and verify entities appear with those names.
 > **NOTE: Write these tests FIRST, ensure they FAIL before
 > implementation**
 
-- [ ] T018 [P] [US1] Write tests for device name from config
+- [x] T018 [P] [US1] Write tests for device name from config
   location in tests/test_init.py — when DeviceConfig has
   location "Front Door", verify HA device name is "Front
   Door"; when location is empty, verify fallback to
   "Akuvox {model}"
-- [ ] T019 [P] [US1] Write tests for relay entity naming from
+- [x] T019 [P] [US1] Write tests for relay entity naming from
   config in tests/test_lock.py — when DeviceConfig has
   NameA="Main Gate", verify entity name is "Main Gate";
   when NameA is empty, verify fallback to "Relay A"
-- [ ] T020 [P] [US1] Write tests for name update on
+- [x] T020 [P] [US1] Write tests for name update on
   reconnection in tests/test_coordinator.py — simulate
   unavailable→available with changed location name, verify
   device_name updates to new value
 
 ### Implementation for User Story 1
 
-- [ ] T021 [US1] Update `device_info` property to use
+- [x] T021 [US1] Update `device_info` property to use
   device_name from coordinator data in
   custom_components/akuvox/entity.py — replace hardcoded
   `f"Akuvox {lib_info.model}"` with
   `self.coordinator.data.device_name`
-- [ ] T022 [US1] Update AkuvoxLockEntity to use
+- [x] T022 [US1] Update AkuvoxLockEntity to use
   RelayConfig.name for entity naming in
   custom_components/akuvox/lock.py — in `__init__`, look up
   relay letter in coordinator.data.relay_configs, if
   config name is non-empty use it, otherwise fall back to
   existing `_relay_key_to_label(relay_key)`
-- [ ] T023 [US1] Update existing tests that reference
+- [x] T023 [US1] Update existing tests that reference
   hardcoded entity IDs in tests/ — entity IDs derived
   from device name may change when config provides a
   custom name; ensure test fixtures provide consistent
