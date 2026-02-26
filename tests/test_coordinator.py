@@ -22,10 +22,20 @@ from pylocal_akuvox import (
 )
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.akuvox.const import DEFAULT_SCAN_INTERVAL, DOMAIN
+from custom_components.akuvox.const import (
+    CONFIG_KEY_RELAY_NAME,
+    DEFAULT_HOLD_DELAY_SECONDS,
+    DEFAULT_RELAY_MODE,
+    DEFAULT_RELAY_TYPE,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+)
 from custom_components.akuvox.coordinator import (
     AkuvoxCoordinatorData,
     AkuvoxDataUpdateCoordinator,
+    RelayConfig,
+    _build_relay_config,
+    _parse_config_int,
 )
 from tests.conftest import MOCK_MAC
 
@@ -330,3 +340,120 @@ async def test_coordinator_multi_relay_state_change(
         assert state_b is not None
         assert state_a.state == "locked"
         assert state_b.state == "unlocked"
+
+
+# --- T004: RelayConfig dataclass tests ---
+
+
+def test_relay_config_defaults() -> None:
+    """Test RelayConfig uses correct default values."""
+    config = RelayConfig()
+    assert config.name == ""
+    assert config.hold_delay == DEFAULT_HOLD_DELAY_SECONDS
+    assert config.relay_type == DEFAULT_RELAY_TYPE
+    assert config.relay_mode == DEFAULT_RELAY_MODE
+
+
+def test_relay_config_custom_values() -> None:
+    """Test RelayConfig stores custom field values."""
+    config = RelayConfig(
+        name="Front Gate",
+        hold_delay=10,
+        relay_type=1,
+        relay_mode=1,
+    )
+    assert config.name == "Front Gate"
+    assert config.hold_delay == 10
+    assert config.relay_type == 1
+    assert config.relay_mode == 1
+
+
+def test_relay_config_frozen() -> None:
+    """Test RelayConfig is immutable (frozen)."""
+    config = RelayConfig()
+    with pytest.raises(AttributeError):
+        config.name = "changed"  # type: ignore[misc]
+
+
+# --- T005: _parse_config_int tests ---
+
+
+def test_parse_config_int_valid() -> None:
+    """Test _parse_config_int returns int for valid string."""
+    assert _parse_config_int("42", default=0) == 42
+
+
+def test_parse_config_int_non_numeric() -> None:
+    """Test _parse_config_int returns default for non-numeric."""
+    assert _parse_config_int("abc", default=5) == 5
+
+
+def test_parse_config_int_empty() -> None:
+    """Test _parse_config_int returns default for empty string."""
+    assert _parse_config_int("", default=5) == 5
+
+
+def test_parse_config_int_negative() -> None:
+    """Test _parse_config_int returns default for negative value."""
+    assert _parse_config_int("-1", default=5, min_val=0) == 5
+
+
+def test_parse_config_int_above_max() -> None:
+    """Test _parse_config_int returns default for value above max."""
+    assert _parse_config_int("999", default=5, max_val=100) == 5
+
+
+def test_parse_config_int_at_boundary() -> None:
+    """Test _parse_config_int accepts boundary values."""
+    assert _parse_config_int("0", default=5, min_val=0, max_val=10) == 0
+    assert _parse_config_int("10", default=5, min_val=0, max_val=10) == 10
+
+
+def test_parse_config_int_allowed_values() -> None:
+    """Test _parse_config_int validates against allowed values."""
+    assert _parse_config_int("1", default=0, allowed={0, 1}) == 1
+    assert _parse_config_int("2", default=0, allowed={0, 1}) == 0
+
+
+def test_parse_config_int_warns_on_invalid(caplog: Any) -> None:
+    """Test _parse_config_int logs warning for invalid values."""
+    _parse_config_int("bad", default=0, key="TestKey")
+    assert "TestKey" in caplog.text
+
+
+# --- T006: _build_relay_config tests ---
+
+
+def test_build_relay_config_full(mock_device_config: Any) -> None:
+    """Test _build_relay_config returns populated RelayConfig."""
+    config = _build_relay_config(mock_device_config, "A")
+    assert config.name == "Front Gate"
+    assert config.hold_delay == 5
+    assert config.relay_type == 0
+    assert config.relay_mode == 0
+
+
+def test_build_relay_config_empty() -> None:
+    """Test _build_relay_config returns defaults for empty config."""
+    from pylocal_akuvox import (  # type: ignore[attr-defined]
+        DeviceConfig,
+    )
+
+    empty = DeviceConfig(data={})
+    config = _build_relay_config(empty, "A")
+    assert config.name == ""
+    assert config.hold_delay == DEFAULT_HOLD_DELAY_SECONDS
+    assert config.relay_type == DEFAULT_RELAY_TYPE
+    assert config.relay_mode == DEFAULT_RELAY_MODE
+
+
+def test_build_relay_config_partial(
+    mock_device_config_factory: Any,
+) -> None:
+    """Test _build_relay_config fills defaults for missing keys."""
+    partial = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_NAME}A": "Lobby Door"},
+    )
+    config = _build_relay_config(partial, "A")
+    assert config.name == "Lobby Door"
+    assert config.hold_delay == DEFAULT_HOLD_DELAY_SECONDS
