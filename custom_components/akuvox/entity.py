@@ -39,9 +39,12 @@ class AkuvoxEntity(CoordinatorEntity[AkuvoxDataUpdateCoordinator]):
         """
         lib_info = self.coordinator.data.device_info
         mac_clean = lib_info.mac_address.lower().replace(":", "")
+        device_name = self.coordinator.data.device_name
+        if not device_name:
+            device_name = f"Akuvox {lib_info.model}"
         return DeviceInfo(
             identifiers={(DOMAIN, mac_clean)},
-            name=f"Akuvox {lib_info.model}",
+            name=device_name,
             manufacturer="Akuvox",
             model=lib_info.model,
             sw_version=lib_info.firmware_version,
