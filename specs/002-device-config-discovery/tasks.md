@@ -37,20 +37,20 @@ tests/                      # Test files
 **Purpose**: Add constants, imports, and test fixtures needed by
 all subsequent phases.
 
-- [ ] T001 Add device config key constants and default values
+- [x] T001 Add device config key constants and default values
   to custom_components/akuvox/const.py — add
   `CONFIG_KEY_PREFIX = "Config.DoorSetting"`,
   `CONFIG_KEY_LOCATION = "Config.DoorSetting.DEVICENODE.Location"`,
   relay key patterns (Name, HoldDelay, Type, Mode),
   `DEFAULT_HOLD_DELAY_SECONDS = 5`,
   `DEFAULT_RELAY_TYPE = 0`, `DEFAULT_RELAY_MODE = 0`
-- [ ] T002 [P] Add DeviceConfig mock fixture to
+- [x] T002 [P] Add DeviceConfig mock fixture to
   tests/conftest.py — import `DeviceConfig` from
   `pylocal_akuvox`, create `mock_device_config` factory
   fixture returning `DeviceConfig` with configurable keys;
   add `get_device_config` mock to `mock_akuvox_device`
   fixture returning default DeviceConfig
-- [ ] T003 [P] Add `DeviceConfig` import to
+- [x] T003 [P] Add `DeviceConfig` import to
   custom_components/akuvox/coordinator.py — import
   `DeviceConfig` from `pylocal_akuvox` alongside existing
   imports
@@ -70,17 +70,17 @@ complete.
 > **NOTE: Write these tests FIRST, ensure they FAIL before
 > implementation**
 
-- [ ] T004 [P] Write tests for RelayConfig dataclass creation
+- [x] T004 [P] Write tests for RelayConfig dataclass creation
   with defaults and field validation in
   tests/test_coordinator.py — verify default field values
   (name="", hold_delay=5, relay_type=0, relay_mode=0),
   verify frozen/immutable behavior
-- [ ] T005 [P] Write tests for `_parse_config_int` helper in
+- [x] T005 [P] Write tests for `_parse_config_int` helper in
   tests/test_coordinator.py — valid int string returns int,
   non-numeric string returns default, empty string returns
   default, out-of-range value returns default, negative
   value returns default; verify warning logged for invalid
-- [ ] T006 [P] Write tests for `_build_relay_config` helper in
+- [x] T006 [P] Write tests for `_build_relay_config` helper in
   tests/test_coordinator.py — given DeviceConfig with all
   keys for letter "A", returns populated RelayConfig; given
   empty DeviceConfig, returns RelayConfig with all defaults;
@@ -89,16 +89,16 @@ complete.
 
 ### Implementation for Foundational
 
-- [ ] T007 Implement `RelayConfig` frozen dataclass in
+- [x] T007 Implement `RelayConfig` frozen dataclass in
   custom_components/akuvox/coordinator.py — fields: name
   (str, default ""), hold_delay (int, default 5),
   relay_type (int, default 0), relay_mode (int, default 0)
-- [ ] T008 Implement `_parse_config_int` helper in
+- [x] T008 Implement `_parse_config_int` helper in
   custom_components/akuvox/coordinator.py — parse string to
   int with try/except, validate against min/max/allowed
   values, return default on failure, log warning for
   invalid values
-- [ ] T009 Implement `_build_relay_config` helper in
+- [x] T009 Implement `_build_relay_config` helper in
   custom_components/akuvox/coordinator.py — accepts
   DeviceConfig and relay letter suffix, builds full config
   keys using patterns from research.md R3 (Name{L},
@@ -107,17 +107,17 @@ complete.
 
 ### Coordinator Integration Tests
 
-- [ ] T010 Write tests for updated AkuvoxCoordinatorData in
+- [x] T010 Write tests for updated AkuvoxCoordinatorData in
   tests/test_coordinator.py — verify data includes
   device_name (str) and relay_configs (dict[str,
   RelayConfig]) fields alongside existing device_info and
   relay_status
-- [ ] T011 Write tests for DeviceConfig fetch on first
+- [x] T011 Write tests for DeviceConfig fetch on first
   successful poll in tests/test_coordinator.py — mock
   device.get_device_config, verify called once on first
   _async_update_data, verify device_name and relay_configs
   populated from DeviceConfig values
-- [ ] T012 Write tests for config fetch failure graceful
+- [x] T012 Write tests for config fetch failure graceful
   degradation in tests/test_coordinator.py — cover BOTH:
   (a) first-ever config fetch failure: when initial
   get_device_config call raises AkuvoxConnectionError and
@@ -129,7 +129,7 @@ complete.
   verify coordinator keeps the previously cached
   device_name and RelayConfigs unchanged and logs a
   warning
-- [ ] T013 Write tests for `_was_unavailable` reconnection
+- [x] T013 Write tests for `_was_unavailable` reconnection
   config refresh in tests/test_coordinator.py — simulate
   update failure (UpdateFailed) followed by successful
   update, verify get_device_config called again on
@@ -138,12 +138,12 @@ complete.
 
 ### Coordinator Integration Implementation
 
-- [ ] T014 Add device_name and relay_configs fields to
+- [x] T014 Add device_name and relay_configs fields to
   AkuvoxCoordinatorData in
   custom_components/akuvox/coordinator.py — device_name:
   str, relay_configs: dict[str, RelayConfig]; update
   _async_update_data return to populate these fields
-- [ ] T015 Implement DeviceConfig fetch and parsing in
+- [x] T015 Implement DeviceConfig fetch and parsing in
   _async_update_data in
   custom_components/akuvox/coordinator.py — call
   get_device_config on first successful poll, parse
@@ -153,13 +153,13 @@ complete.
   exists use defaults, if cached config exists preserve
   last known-good values (do NOT overwrite with defaults
   on transient failure); log warning on failure
-- [ ] T016 Implement `_was_unavailable` flag and reconnection
+- [x] T016 Implement `_was_unavailable` flag and reconnection
   logic in custom_components/akuvox/coordinator.py — add
   `_was_unavailable: bool = False` to `__init__`, set True
   when `_async_update_data` raises UpdateFailed (via
   override or tracking), on next successful update if flag
   is True re-fetch DeviceConfig and clear flag
-- [ ] T017 Update existing coordinator tests that may break
+- [x] T017 Update existing coordinator tests that may break
   due to AkuvoxCoordinatorData field changes in
   tests/test_coordinator.py — existing tests asserting on
   AkuvoxCoordinatorData may need updates for new fields;
