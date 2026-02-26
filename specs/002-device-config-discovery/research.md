@@ -12,7 +12,10 @@ dotted, dot-separated key names.
 
 **Rationale**: `DeviceConfig` is a frozen dataclass wrapping `dict[str, str]`.
 All values are strings. The `.get()` method with a default safely handles
-missing keys. Keys follow the pattern `Config.DoorSetting.RELAY.{Property}{Letter}`.
+missing keys. Keys use varying patterns under `Config.DoorSetting`:
+relay properties use `RELAY.{Property}{Letter}` (e.g., `NameA`) or
+`RELAY.Relay{Letter}{Property}` (e.g., `RelayAType`), while the
+device name uses `DEVICENODE.Location`.
 
 **Key mapping** (from live E18 device polling):
 

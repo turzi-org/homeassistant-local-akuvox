@@ -51,7 +51,8 @@ event.
 
 1. Lock entity reads `hold_delay` from its `RelayConfig`
 2. Passes config delay to `trigger_relay(delay=hold_delay)`
-3. Adjusts delayed refresh timer to `hold_delay + buffer`
+3. Adjusts delayed refresh timer to `hold_delay + 1s` buffer
+   (existing `_RELAY_REFRESH_BUFFER_SECONDS` constant)
 4. Falls back to 5 seconds if config unavailable
 
 ### Phase 3 — Relay Type Awareness (US3, P3)

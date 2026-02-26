@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 # Implementation Plan: Device Config Discovery
 
 **Branch**: `002-device-config-discovery` | **Date**: 2026-02-25
-**Spec**: `specs/002-device-config-discovery/spec.md`
+**Spec**: [spec.md](spec.md)
 
 ## Summary
 
@@ -28,8 +28,8 @@ dict-like object with all relevant keys.
 **Project Type**: HA custom component (custom_components/akuvox/)
 **Performance Goals**: Config fetch adds one HTTP request per connection event;
 must not block event loop
-**Constraints**: All async, no blocking calls; config refresh must not delay
-coordinator polling cycle
+**Constraints**: All async, no blocking calls; config fetch runs
+inside `_async_update_data` on connection events only (not every poll)
 **Scale/Scope**: Single device integration; 2 relays per device typical
 
 ## Constitution Check
