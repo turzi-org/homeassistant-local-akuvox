@@ -225,7 +225,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         )
         self._attr_unique_id = f"{mac_clean}_relay_{self._relay_number}"
         self._attr_has_entity_name = True
-        self._attr_name = _relay_key_to_label(relay_key)
+        # Use config-sourced name if available, fallback to label
+        letter = chr(ord("A") + self._relay_number - 1)
+        relay_cfg = coordinator.data.relay_configs.get(letter)
+        config_name = (relay_cfg.name if relay_cfg else "").strip()
+        self._attr_name = config_name if config_name else _relay_key_to_label(relay_key)
         self._optimistic_locked: bool | None = None
         self._delayed_refresh_cancel: CALLBACK_TYPE | None = None
 

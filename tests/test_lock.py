@@ -15,7 +15,11 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.akuvox.const import DOMAIN
+from custom_components.akuvox.const import (
+    CONFIG_KEY_LOCATION,
+    CONFIG_KEY_RELAY_NAME,
+    DOMAIN,
+)
 from tests.conftest import MOCK_MAC
 
 
@@ -35,11 +39,11 @@ async def test_entity_unique_id(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    state = hass.states.get("lock.testlab_intercom_front_gate")
     assert state is not None
 
     ent_reg = er.async_get(hass)
-    entity_entry = ent_reg.async_get("lock.akuvox_e21v_relay_a")
+    entity_entry = ent_reg.async_get("lock.testlab_intercom_front_gate")
     assert entity_entry is not None
     expected_uid = f"{MOCK_MAC.lower().replace(':', '')}_relay_1"
     assert entity_entry.unique_id == expected_uid
@@ -50,7 +54,7 @@ async def test_entity_name(
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
 ) -> None:
-    """Test entity name is 'Relay A'."""
+    """Test entity name uses config-sourced relay name."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         data=mock_config_entry_data_none,
@@ -61,9 +65,9 @@ async def test_entity_name(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    state = hass.states.get("lock.testlab_intercom_front_gate")
     assert state is not None
-    assert state.attributes.get("friendly_name") == "Akuvox E21V Relay A"
+    assert state.attributes.get("friendly_name") == "TestLab Intercom Front Gate"
 
 
 async def test_entity_device_info(
@@ -139,7 +143,7 @@ async def test_is_locked_true(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == expected_ha_state
 
@@ -191,7 +195,7 @@ async def test_is_locked_false(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == expected_ha_state
 
@@ -239,7 +243,7 @@ async def test_is_locked_unknown_for_unexpected_int(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "unknown"
 
@@ -287,7 +291,7 @@ async def test_is_locked_unknown_for_unexpected_str(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "unknown"
 
@@ -338,7 +342,7 @@ async def test_is_locked_none_for_missing_relay_key(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "locked"
 
@@ -349,7 +353,7 @@ async def test_is_locked_none_for_missing_relay_key(
         await coordinator.async_refresh()
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "unknown"
 
@@ -401,7 +405,7 @@ async def test_is_locked_handles_dict_int_state(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == expected_ha_state
 
@@ -447,7 +451,7 @@ async def test_entity_unavailable_when_coordinator_fails(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "locked"
 
@@ -460,7 +464,7 @@ async def test_entity_unavailable_when_coordinator_fails(
         await coordinator.async_refresh()
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "unavailable"
 
@@ -506,21 +510,21 @@ async def test_multi_relay_entities_created(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
+        state_a = hass.states.get("lock.testlab_intercom_front_gate")
         assert state_a is not None
         assert state_a.state == "locked"
 
-        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        state_b = hass.states.get("lock.testlab_intercom_side_gate")
         assert state_b is not None
         assert state_b.state == "unlocked"
 
         ent_reg = er.async_get(hass)
         mac_clean = MOCK_MAC.lower().replace(":", "")
-        entry_a = ent_reg.async_get("lock.akuvox_e21v_relay_a")
+        entry_a = ent_reg.async_get("lock.testlab_intercom_front_gate")
         assert entry_a is not None
         assert entry_a.unique_id == f"{mac_clean}_relay_1"
 
-        entry_b = ent_reg.async_get("lock.akuvox_e21v_relay_b")
+        entry_b = ent_reg.async_get("lock.testlab_intercom_side_gate")
         assert entry_b is not None
         assert entry_b.unique_id == f"{mac_clean}_relay_2"
 
@@ -566,8 +570,8 @@ async def test_multi_relay_distinct_names(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
-        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        state_a = hass.states.get("lock.testlab_intercom_front_gate")
+        state_b = hass.states.get("lock.testlab_intercom_side_gate")
         assert state_a is not None
         assert state_b is not None
 
@@ -576,8 +580,8 @@ async def test_multi_relay_distinct_names(
         assert name_a is not None
         assert name_b is not None
         assert name_a != name_b
-        assert "Relay A" in name_a
-        assert "Relay B" in name_b
+        assert "Front Gate" in name_a
+        assert "Side Gate" in name_b
 
 
 async def test_unlock_relay_a_does_not_change_relay_b(
@@ -625,8 +629,8 @@ async def test_unlock_relay_a_does_not_change_relay_b(
         await hass.async_block_till_done()
 
         # Both start locked
-        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
-        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        state_a = hass.states.get("lock.testlab_intercom_front_gate")
+        state_b = hass.states.get("lock.testlab_intercom_side_gate")
         assert state_a is not None
         assert state_b is not None
         assert state_a.state == "locked"
@@ -636,18 +640,18 @@ async def test_unlock_relay_a_does_not_change_relay_b(
         await hass.services.async_call(
             "lock",
             "unlock",
-            {"entity_id": "lock.akuvox_e21v_relay_a"},
+            {"entity_id": "lock.testlab_intercom_front_gate"},
             blocking=True,
         )
         await hass.async_block_till_done()
 
         # Relay A is now unlocked (optimistic)
-        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
+        state_a = hass.states.get("lock.testlab_intercom_front_gate")
         assert state_a is not None
         assert state_a.state == "unlocked"
 
         # Relay B remains locked
-        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        state_b = hass.states.get("lock.testlab_intercom_side_gate")
         assert state_b is not None
         assert state_b.state == "locked"
 
@@ -699,7 +703,7 @@ async def test_is_locked_handles_dict_state_format(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "locked"
 
@@ -750,7 +754,7 @@ async def test_unrecognized_relay_keys_skipped(
         await hass.async_block_till_done()
 
         # Only RelayA should be created
-        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
+        state_a = hass.states.get("lock.testlab_intercom_front_gate")
         assert state_a is not None
 
         ent_reg = er.async_get(hass)
@@ -785,7 +789,7 @@ async def test_async_unlock_calls_trigger_relay(
     await hass.services.async_call(
         "lock",
         "unlock",
-        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        {"entity_id": "lock.testlab_intercom_front_gate"},
         blocking=True,
     )
 
@@ -820,12 +824,12 @@ async def test_async_unlock_shows_unlocked_optimistically(
     await hass.services.async_call(
         "lock",
         "unlock",
-        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        {"entity_id": "lock.testlab_intercom_front_gate"},
         blocking=True,
     )
 
     # State must be unlocked optimistically despite device lag
-    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    state = hass.states.get("lock.testlab_intercom_front_gate")
     assert state is not None
     assert state.state == "unlocked"
 
@@ -854,7 +858,7 @@ async def test_optimistic_state_survives_coordinator_update(
     await hass.services.async_call(
         "lock",
         "unlock",
-        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        {"entity_id": "lock.testlab_intercom_front_gate"},
         blocking=True,
     )
 
@@ -864,7 +868,7 @@ async def test_optimistic_state_survives_coordinator_update(
     await hass.async_block_till_done()
 
     # Entity must still report unlocked despite stale coordinator data
-    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    state = hass.states.get("lock.testlab_intercom_front_gate")
     assert state is not None
     assert state.state == "unlocked"
 
@@ -908,7 +912,7 @@ async def test_rapid_unlock_resets_optimistic_window(
     await hass.services.async_call(
         "lock",
         "unlock",
-        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        {"entity_id": "lock.testlab_intercom_front_gate"},
         blocking=True,
     )
 
@@ -926,7 +930,7 @@ async def test_rapid_unlock_resets_optimistic_window(
     await hass.services.async_call(
         "lock",
         "unlock",
-        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        {"entity_id": "lock.testlab_intercom_front_gate"},
         blocking=True,
     )
 
@@ -943,7 +947,7 @@ async def test_rapid_unlock_resets_optimistic_window(
     await hass.async_block_till_done()
 
     # Entity must still report unlocked (second timer hasn't fired)
-    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    state = hass.states.get("lock.testlab_intercom_front_gate")
     assert state is not None
     assert state.state == "unlocked"
 
@@ -959,7 +963,7 @@ async def test_rapid_unlock_resets_optimistic_window(
     await hass.async_block_till_done()
 
     # Now entity should reflect real device state (locked)
-    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    state = hass.states.get("lock.testlab_intercom_front_gate")
     assert state is not None
     assert state.state == "locked"
 
@@ -1002,7 +1006,7 @@ async def test_delayed_refresh_clears_optimistic_state(
     await hass.services.async_call(
         "lock",
         "unlock",
-        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        {"entity_id": "lock.testlab_intercom_front_gate"},
         blocking=True,
     )
 
@@ -1020,7 +1024,7 @@ async def test_delayed_refresh_clears_optimistic_state(
     await hass.async_block_till_done()
 
     # Entity should now reflect real device state (locked)
-    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    state = hass.states.get("lock.testlab_intercom_front_gate")
     assert state is not None
     assert state.state == "locked"
 
@@ -1064,7 +1068,7 @@ async def test_entity_removal_cancels_delayed_refresh(
     await hass.services.async_call(
         "lock",
         "unlock",
-        {"entity_id": "lock.akuvox_e21v_relay_a"},
+        {"entity_id": "lock.testlab_intercom_front_gate"},
         blocking=True,
     )
 
@@ -1149,7 +1153,7 @@ async def test_async_unlock_raises_on_device_error(
             await hass.services.async_call(
                 "lock",
                 "unlock",
-                {"entity_id": "lock.akuvox_e21v_relay_a"},
+                {"entity_id": "lock.testlab_intercom_front_gate"},
                 blocking=True,
             )
 
@@ -1176,7 +1180,7 @@ async def test_async_lock_raises_error(
         await hass.services.async_call(
             "lock",
             "lock",
-            {"entity_id": "lock.akuvox_e21v_relay_a"},
+            {"entity_id": "lock.testlab_intercom_front_gate"},
             blocking=True,
         )
 
@@ -1230,8 +1234,71 @@ async def test_async_unlock_completes_within_5s(
         await hass.services.async_call(
             "lock",
             "unlock",
-            {"entity_id": "lock.akuvox_e21v_relay_a"},
+            {"entity_id": "lock.testlab_intercom_front_gate"},
             blocking=True,
         )
         elapsed = time.monotonic() - start
         assert elapsed < 5.0, f"Unlock took {elapsed:.2f}s, exceeds 5s budget"
+
+
+# ── T019: Relay entity naming from config ────────────────────────
+
+
+async def test_relay_entity_name_from_config(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test relay entity name uses NameA from DeviceConfig."""
+    cfg = mock_device_config_factory(
+        **{
+            CONFIG_KEY_LOCATION: "Front Door",
+            f"{CONFIG_KEY_RELAY_NAME}A": "Main Gate",
+        },
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.front_door_main_gate")
+    assert state is not None
+    assert state.attributes.get("friendly_name") == "Front Door Main Gate"
+
+
+async def test_relay_entity_name_fallback_when_empty(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test relay entity falls back to 'Relay A' when config name empty."""
+    cfg = mock_device_config_factory(
+        **{
+            CONFIG_KEY_LOCATION: "Front Door",
+            f"{CONFIG_KEY_RELAY_NAME}A": "",
+        },
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.front_door_relay_a")
+    assert state is not None
+    assert state.attributes.get("friendly_name") == "Front Door Relay A"

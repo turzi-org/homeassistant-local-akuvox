@@ -361,6 +361,7 @@ async def test_unknown_error(
 async def test_options_flow_shows_current_values(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test options flow init step shows form with current values."""
     with patch(
@@ -380,6 +381,9 @@ async def test_options_flow_shows_current_values(
             return_value={"RelayA": 0},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -415,6 +419,7 @@ async def test_options_flow_shows_current_values(
 async def test_options_flow_updates_entry(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test options flow saves updated values to entry.options."""
     with patch(
@@ -434,6 +439,9 @@ async def test_options_flow_updates_entry(
             return_value={"RelayA": 0},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -470,6 +478,7 @@ async def test_options_flow_updates_entry(
 async def test_options_flow_triggers_reload(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test integration reloads after options change."""
     with patch(
@@ -489,6 +498,9 @@ async def test_options_flow_triggers_reload(
             return_value={"RelayA": 0},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -529,6 +541,7 @@ async def test_options_flow_rejects_empty_host(
     mock_relay_status: dict[str, Any],
     mock_device_info: DeviceInfo,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test options flow rejects empty host with invalid_host error."""
     entry = MockConfigEntry(
@@ -548,6 +561,9 @@ async def test_options_flow_rejects_empty_host(
         instance.__aexit__ = AsyncMock(return_value=False)
         instance.get_relay_status = AsyncMock(return_value=mock_relay_status)
         instance.get_info = AsyncMock(return_value=mock_device_info)
+        instance.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -574,6 +590,7 @@ async def test_options_flow_rejects_whitespace_host(
     mock_relay_status: dict[str, Any],
     mock_device_info: DeviceInfo,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test options flow rejects whitespace-only host."""
     entry = MockConfigEntry(
@@ -593,6 +610,9 @@ async def test_options_flow_rejects_whitespace_host(
         instance.__aexit__ = AsyncMock(return_value=False)
         instance.get_relay_status = AsyncMock(return_value=mock_relay_status)
         instance.get_info = AsyncMock(return_value=mock_device_info)
+        instance.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -619,6 +639,7 @@ async def test_options_flow_rejects_missing_credentials(
     mock_relay_status: dict[str, Any],
     mock_device_info: DeviceInfo,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test options flow rejects auth methods without credentials."""
     entry = MockConfigEntry(
@@ -638,6 +659,9 @@ async def test_options_flow_rejects_missing_credentials(
         instance.__aexit__ = AsyncMock(return_value=False)
         instance.get_relay_status = AsyncMock(return_value=mock_relay_status)
         instance.get_info = AsyncMock(return_value=mock_device_info)
+        instance.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -664,6 +688,7 @@ async def test_options_flow_host_error_takes_precedence(
     mock_relay_status: dict[str, Any],
     mock_device_info: DeviceInfo,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test invalid_host error is not overwritten by invalid_auth."""
     entry = MockConfigEntry(
@@ -683,6 +708,9 @@ async def test_options_flow_host_error_takes_precedence(
         instance.__aexit__ = AsyncMock(return_value=False)
         instance.get_relay_status = AsyncMock(return_value=mock_relay_status)
         instance.get_info = AsyncMock(return_value=mock_device_info)
+        instance.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
