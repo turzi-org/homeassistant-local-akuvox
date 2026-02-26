@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import time
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -1360,8 +1360,6 @@ async def test_unlock_each_relay_uses_own_hold_delay(
 
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-
-    from unittest.mock import call
 
     await hass.services.async_call(
         "lock",
