@@ -242,6 +242,11 @@ verify unlock command uses the updated value.
   empty or missing relay letter, verify trigger_relay uses
   DEFAULT_HOLD_DELAY_SECONDS (5); verify refresh timer
   uses 5 + 1 = 6s
+- [ ] T026b [US2] Write test for hold_delay update after
+  reconnection in tests/test_lock.py — simulate device
+  unavailable→available with changed HoldDelay value,
+  verify next unlock uses updated hold_delay (spec
+  US2-AS5)
 
 ### Implementation for User Story 2
 
@@ -250,7 +255,9 @@ verify unlock command uses the updated value.
   read relay letter's RelayConfig from
   coordinator.data.relay_configs, pass
   `delay=relay_config.hold_delay` to trigger_relay;
-  replace `_RELAY_UNLOCK_DELAY_SECONDS` constant usage
+  replace `_RELAY_UNLOCK_DELAY_SECONDS` constant usage;
+  remove `_RELAY_UNLOCK_DELAY_SECONDS` constant if all
+  usages are replaced
 - [ ] T028 [US2] Update _schedule_delayed_refresh to use
   config hold_delay + buffer in
   custom_components/akuvox/lock.py — replace
