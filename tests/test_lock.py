@@ -893,10 +893,7 @@ async def test_rapid_unlock_resets_optimistic_window(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import (
-        _RELAY_REFRESH_BUFFER_SECONDS,
-        _RELAY_UNLOCK_DELAY_SECONDS,
-    )
+    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -923,7 +920,7 @@ async def test_rapid_unlock_resets_optimistic_window(
         hass,
         start
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS - 1,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS - 1,
         ),
     )
     await hass.async_block_till_done()
@@ -943,7 +940,7 @@ async def test_rapid_unlock_resets_optimistic_window(
         hass,
         second_unlock
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS,
         ),
     )
     await hass.async_block_till_done()
@@ -959,7 +956,7 @@ async def test_rapid_unlock_resets_optimistic_window(
         hass,
         second_unlock
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
         ),
     )
     await hass.async_block_till_done()
@@ -988,10 +985,7 @@ async def test_delayed_refresh_clears_optimistic_state(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import (
-        _RELAY_REFRESH_BUFFER_SECONDS,
-        _RELAY_UNLOCK_DELAY_SECONDS,
-    )
+    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -1020,7 +1014,7 @@ async def test_delayed_refresh_clears_optimistic_state(
         hass,
         start
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
         ),
     )
     await hass.async_block_till_done()
@@ -1049,10 +1043,7 @@ async def test_entity_removal_cancels_delayed_refresh(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import (
-        _RELAY_REFRESH_BUFFER_SECONDS,
-        _RELAY_UNLOCK_DELAY_SECONDS,
-    )
+    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -1086,7 +1077,7 @@ async def test_entity_removal_cancels_delayed_refresh(
         hass,
         start
         + datetime.timedelta(
-            seconds=_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+            seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
         ),
     )
     await hass.async_block_till_done()
