@@ -31,8 +31,8 @@ device name uses `DEVICENODE.Location`.
 | `...RELAY.HoldDelayB` | Relay B delay (s) | `"5"` |
 | `...RELAY.RelayAType` | A type (0=NO, 1=NC) | `"0"` |
 | `...RELAY.RelayBType` | B type (0=NO, 1=NC) | `"0"` |
-| `...RELAY.RelayAMode` | A mode (0=Auto, 1=Manual) | `"0"` |
-| `...RELAY.RelayBMode` | B mode (0=Auto, 1=Manual) | `"0"` |
+| `...RELAY.RelayAMode` | A mode (0=Auto-close, 1=Manual) | `"0"` |
+| `...RELAY.RelayBMode` | B mode (0=Auto-close, 1=Manual) | `"0"` |
 
 All keys are prefixed with `Config.DoorSetting`.
 
@@ -102,7 +102,7 @@ For NC relays: 0=unlocked, 1=locked (inverted).
 **Rationale**: In a NO relay, the circuit is open (de-energized) at rest, so
 state 0 = locked. Energizing closes the circuit (state 1 = unlocked). In NC,
 the circuit is closed at rest, so state 0 = unlocked (circuit is already
-closed/door open). This matches the spec acceptance scenarios.
+closed/door unlocked). This matches the spec acceptance scenarios.
 
 The `level` parameter in `trigger_relay` corresponds to the relay type value:
 
@@ -128,7 +128,7 @@ should not crash the integration.
 
 - Hold delay: Positive integer ≥1. Default: 5.
 - Relay type: Must be 0 or 1. Default: 0 (NO).
-- Relay mode: Must be 0 or 1. Default: 0 (Auto).
+- Relay mode: Must be 0 or 1. Default: 0 (Auto-close).
 - Names: Any non-empty string is valid. Empty/missing → use existing fallback.
 
 **Alternatives considered**:
