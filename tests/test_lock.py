@@ -1361,13 +1361,14 @@ async def test_unlock_each_relay_uses_own_hold_delay(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
+    from unittest.mock import call
+
     await hass.services.async_call(
         "lock",
         "unlock",
         {"entity_id": "lock.testlab_intercom_front_gate"},
         blocking=True,
     )
-    mock_akuvox_device.trigger_relay.assert_called_with(num=1, delay=3)
 
     await hass.services.async_call(
         "lock",
@@ -1375,7 +1376,14 @@ async def test_unlock_each_relay_uses_own_hold_delay(
         {"entity_id": "lock.testlab_intercom_side_gate"},
         blocking=True,
     )
-    mock_akuvox_device.trigger_relay.assert_called_with(num=2, delay=10)
+
+    assert mock_akuvox_device.trigger_relay.call_count == 2
+    mock_akuvox_device.trigger_relay.assert_has_calls(
+        [
+            call(num=1, delay=3),
+            call(num=2, delay=10),
+        ],
+    )
 
 
 # ── T025: Refresh timer uses config hold_delay + buffer ──────────
