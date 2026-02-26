@@ -666,6 +666,8 @@ async def test_unlock_relay_a_does_not_change_relay_b(
         device.trigger_relay.assert_awaited_once_with(
             num=1,
             delay=5,
+            level=0,
+            mode=0,
         )
 
 
@@ -800,7 +802,12 @@ async def test_async_unlock_calls_trigger_relay(
         blocking=True,
     )
 
-    mock_akuvox_device.trigger_relay.assert_called_once_with(num=1, delay=5)
+    mock_akuvox_device.trigger_relay.assert_called_once_with(
+        num=1,
+        delay=5,
+        level=0,
+        mode=0,
+    )
 
 
 async def test_async_unlock_shows_unlocked_optimistically(
@@ -1334,7 +1341,12 @@ async def test_unlock_uses_config_hold_delay(
         blocking=True,
     )
 
-    mock_akuvox_device.trigger_relay.assert_called_once_with(num=1, delay=7)
+    mock_akuvox_device.trigger_relay.assert_called_once_with(
+        num=1,
+        delay=7,
+        level=0,
+        mode=0,
+    )
 
 
 async def test_unlock_each_relay_uses_own_hold_delay(
@@ -1383,8 +1395,8 @@ async def test_unlock_each_relay_uses_own_hold_delay(
     assert mock_akuvox_device.trigger_relay.call_count == 2
     mock_akuvox_device.trigger_relay.assert_has_calls(
         [
-            call(num=1, delay=3),
-            call(num=2, delay=10),
+            call(num=1, delay=3, level=0, mode=0),
+            call(num=2, delay=10, level=0, mode=0),
         ],
     )
 
@@ -1520,6 +1532,8 @@ async def test_unlock_fallback_delay_when_relay_not_in_configs(
     mock_akuvox_device.trigger_relay.assert_called_once_with(
         num=1,
         delay=DEFAULT_HOLD_DELAY_SECONDS,
+        level=DEFAULT_RELAY_TYPE,
+        mode=DEFAULT_RELAY_MODE,
     )
 
     # Refresh timer: DEFAULT_HOLD_DELAY + buffer + 1
@@ -1594,6 +1608,8 @@ async def test_hold_delay_updates_after_reconnection(
     mock_akuvox_device.trigger_relay.assert_called_once_with(
         num=1,
         delay=10,
+        level=0,
+        mode=0,
     )
 
 
