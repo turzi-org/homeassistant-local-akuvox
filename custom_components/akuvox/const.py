@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
@@ -43,6 +44,9 @@ CONFIG_KEY_RELAY_HOLD_DELAY: Final = f"{CONFIG_KEY_PREFIX}.RELAY.HoldDelay"
 CONFIG_KEY_RELAY_PREFIX: Final = f"{CONFIG_KEY_PREFIX}.RELAY.Relay"
 CONFIG_KEY_RELAY_TYPE_SUFFIX: Final = "Type"
 CONFIG_KEY_RELAY_MODE_SUFFIX: Final = "Mode"
+
+# Relay key pattern — matches "RelayA", "RelayB", etc.
+RELAY_KEY_RE: Final = re.compile(r"Relay([A-Z])")
 
 # Device config defaults
 DEFAULT_HOLD_DELAY_SECONDS: Final = 5

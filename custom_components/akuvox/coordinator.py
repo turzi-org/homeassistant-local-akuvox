@@ -37,6 +37,7 @@ from .const import (
     DEFAULT_RELAY_TYPE,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    RELAY_KEY_RE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ class RelayConfig:
 
 
 def _parse_config_int(
-    value: str,
+    value: str | None,
     *,
     default: int,
     min_val: int | None = None,
@@ -72,7 +73,7 @@ def _parse_config_int(
     """Parse a string config value to an integer with validation.
 
     Args:
-        value: The string value to parse.
+        value: The string value to parse (None returns default).
         default: Default to return on parse/validation failure.
         min_val: Minimum acceptable value (inclusive).
         max_val: Maximum acceptable value (inclusive).
@@ -83,6 +84,8 @@ def _parse_config_int(
         Parsed integer or default on failure.
 
     """
+    if value is None:
+        return default
     try:
         result = int(value)
     except (ValueError, TypeError):
@@ -245,8 +248,9 @@ class AkuvoxDataUpdateCoordinator(
         )
         relay_configs: dict[str, RelayConfig] = {}
         for key in relay_status:
-            if key.startswith("Relay") and len(key) == 6 and key[5].isupper():
-                letter = key[5]
+            match = RELAY_KEY_RE.fullmatch(key)
+            if match:
+                letter = match.group(1)
                 relay_configs[letter] = _build_relay_config(
                     device_config,
                     letter,
@@ -272,8 +276,9 @@ class AkuvoxDataUpdateCoordinator(
         if self._cached_relay_configs is None:
             relay_configs: dict[str, RelayConfig] = {}
             for key in relay_status:
-                if key.startswith("Relay") and len(key) == 6 and key[5].isupper():
-                    letter = key[5]
+                match = RELAY_KEY_RE.fullmatch(key)
+                if match:
+                    letter = match.group(1)
                     relay_configs[letter] = RelayConfig()
             self._cached_relay_configs = relay_configs
 
@@ -293,10 +298,23 @@ class AkuvoxDataUpdateCoordinator(
         if not self._should_fetch_config():
             return
 
-        try:
-            device_config = (
-                await self.device.get_device_config()  # type: ignore[attr-defined]
+        get_device_config = getattr(self.device, "get_device_config", None)
+        if not callable(get_device_config):
+            _LOGGER.warning(
+                "Device does not support get_device_config; using %s values",
+                "cached" if self._cached_device_name is not None else "default",
             )
+            self._apply_default_config(
+                relay_status,
+                self._cached_device_info.model
+                if self._cached_device_info is not None
+                else "Unknown",
+            )
+            self._was_unavailable = False
+            return
+
+        try:
+            device_config = await get_device_config()
             self._fetch_config_from_device_config(
                 device_config,
                 relay_status,
@@ -309,9 +327,10 @@ class AkuvoxDataUpdateCoordinator(
             AkuvoxConnectionError,
             AkuvoxDeviceError,
             AkuvoxParseError,
-        ):
+        ) as err:
             _LOGGER.warning(
-                "Failed to fetch device config, using %s values",
+                "Failed to fetch device config (%s), using %s values",
+                err,
                 "cached" if self._cached_device_name is not None else "default",
             )
             self._apply_default_config(

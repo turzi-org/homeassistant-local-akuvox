@@ -423,8 +423,8 @@ def test_parse_config_int_at_boundary() -> None:
 
 def test_parse_config_int_allowed_values() -> None:
     """Test _parse_config_int validates against allowed values."""
-    assert _parse_config_int("1", default=0, allowed={0, 1}) == 1
-    assert _parse_config_int("2", default=0, allowed={0, 1}) == 0
+    assert _parse_config_int("1", default=0, allowed={0, 1}, key="AllowTest") == 1
+    assert _parse_config_int("2", default=0, allowed={0, 1}, key="AllowTest") == 0
 
 
 def test_parse_config_int_warns_on_invalid(caplog: Any) -> None:

@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any
 
 from homeassistant.components.lock import LockEntity
@@ -17,7 +16,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 from pylocal_akuvox import AkuvoxError
 
-from .const import DOMAIN
+from .const import DOMAIN, RELAY_KEY_RE
 from .coordinator import AkuvoxDataUpdateCoordinator
 from .entity import AkuvoxEntity
 
@@ -33,7 +32,6 @@ _RELAY_REFRESH_BUFFER_SECONDS = 1
 
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
-_RELAY_NUM_RE = re.compile(r"Relay([A-Z])")
 
 
 def _relay_key_to_number(relay_key: str) -> int | None:
@@ -46,7 +44,7 @@ def _relay_key_to_number(relay_key: str) -> int | None:
         The 1-based relay number, or None if format is unrecognized.
 
     """
-    match = _RELAY_NUM_RE.fullmatch(relay_key)
+    match = RELAY_KEY_RE.fullmatch(relay_key)
     if match:
         return ord(match.group(1)) - ord("A") + 1
     _LOGGER.warning(
@@ -66,7 +64,7 @@ def _relay_key_to_label(relay_key: str) -> str:
         A human-readable label (e.g., "Relay A").
 
     """
-    match = _RELAY_NUM_RE.fullmatch(relay_key)
+    match = RELAY_KEY_RE.fullmatch(relay_key)
     if match:
         return f"Relay {match.group(1)}"
     _LOGGER.warning(
