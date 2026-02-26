@@ -18,8 +18,13 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.akuvox.const import (
     CONFIG_KEY_LOCATION,
     CONFIG_KEY_RELAY_HOLD_DELAY,
+    CONFIG_KEY_RELAY_MODE_SUFFIX,
     CONFIG_KEY_RELAY_NAME,
+    CONFIG_KEY_RELAY_PREFIX,
+    CONFIG_KEY_RELAY_TYPE_SUFFIX,
     DEFAULT_HOLD_DELAY_SECONDS,
+    DEFAULT_RELAY_MODE,
+    DEFAULT_RELAY_TYPE,
     DOMAIN,
 )
 from tests.conftest import MOCK_MAC
@@ -1589,4 +1594,347 @@ async def test_hold_delay_updates_after_reconnection(
     mock_akuvox_device.trigger_relay.assert_called_once_with(
         num=1,
         delay=10,
+    )
+
+
+# ── T029: NO relay state interpretation (regression) ─────────────
+
+
+async def test_no_relay_state_0_is_locked(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test NO relay (type=0): state 0 → locked."""
+    cfg = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "0"},
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 0},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "locked"
+
+
+async def test_no_relay_state_1_is_unlocked(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test NO relay (type=0): state 1 → unlocked."""
+    cfg = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "0"},
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 1},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "unlocked"
+
+
+# ── T030: NC relay state interpretation (inverted) ───────────────
+
+
+async def test_nc_relay_state_0_is_unlocked(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test NC relay (type=1): state 0 → unlocked (inverted)."""
+    cfg = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "1"},
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 0},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "unlocked"
+
+
+async def test_nc_relay_state_1_is_locked(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test NC relay (type=1): state 1 → locked (inverted)."""
+    cfg = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "1"},
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 1},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "locked"
+
+
+# ── T031: trigger_relay level and mode parameters ────────────────
+
+
+async def test_unlock_no_relay_sends_level_0_mode_0(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test NO relay (type=0, mode=0): trigger_relay level=0, mode=0."""
+    cfg = mock_device_config_factory(
+        **{
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "0",
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_MODE_SUFFIX}": "0",
+        },
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    mock_akuvox_device.trigger_relay.assert_called_once_with(
+        num=1,
+        delay=DEFAULT_HOLD_DELAY_SECONDS,
+        level=DEFAULT_RELAY_TYPE,
+        mode=DEFAULT_RELAY_MODE,
+    )
+
+
+async def test_unlock_nc_relay_sends_level_1(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test NC relay (type=1): trigger_relay called with level=1."""
+    cfg = mock_device_config_factory(
+        **{
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "1",
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_MODE_SUFFIX}": "0",
+        },
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    mock_akuvox_device.trigger_relay.assert_called_once_with(
+        num=1,
+        delay=DEFAULT_HOLD_DELAY_SECONDS,
+        level=1,
+        mode=0,
+    )
+
+
+async def test_unlock_manual_mode_sends_mode_1(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test manual mode relay (mode=1): trigger_relay mode=1."""
+    cfg = mock_device_config_factory(
+        **{
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "0",
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_MODE_SUFFIX}": "1",
+        },
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    mock_akuvox_device.trigger_relay.assert_called_once_with(
+        num=1,
+        delay=DEFAULT_HOLD_DELAY_SECONDS,
+        level=0,
+        mode=1,
+    )
+
+
+# ── T032: Fallback to NO when relay_type missing ────────────────
+
+
+async def test_state_fallback_no_when_relay_not_in_configs(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test NO interpretation when relay_configs is empty.
+
+    When relay_configs does not have the relay letter, state parsing
+    must fall back to NO (0=locked, 1=unlocked).
+    """
+    from custom_components.akuvox.coordinator import AkuvoxCoordinatorData
+
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 0},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Clear relay_configs to simulate missing config
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    original = coordinator.data
+    coordinator.data = AkuvoxCoordinatorData(
+        device_info=original.device_info,
+        relay_status={"RelayA": 0},
+        device_name=original.device_name,
+        relay_configs={},
+    )
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    # Force entity to re-evaluate state
+    coordinator.async_set_updated_data(coordinator.data)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "locked"
+
+
+async def test_unlock_fallback_level_0_when_relay_not_in_configs(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test trigger_relay uses level=0 when relay_configs is empty."""
+    from custom_components.akuvox.coordinator import AkuvoxCoordinatorData
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Clear relay_configs to simulate missing config
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    original = coordinator.data
+    coordinator.data = AkuvoxCoordinatorData(
+        device_info=original.device_info,
+        relay_status=original.relay_status,
+        device_name=original.device_name,
+        relay_configs={},
+    )
+
+    mock_akuvox_device.trigger_relay.reset_mock()
+
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    mock_akuvox_device.trigger_relay.assert_called_once_with(
+        num=1,
+        delay=DEFAULT_HOLD_DELAY_SECONDS,
+        level=DEFAULT_RELAY_TYPE,
+        mode=DEFAULT_RELAY_MODE,
     )
