@@ -24,6 +24,12 @@ from custom_components.akuvox.const import (
     CONF_USE_SSL,
     CONF_USERNAME,
     CONF_VERIFY_SSL,
+    CONFIG_KEY_LOCATION,
+    CONFIG_KEY_RELAY_HOLD_DELAY,
+    CONFIG_KEY_RELAY_MODE_SUFFIX,
+    CONFIG_KEY_RELAY_NAME,
+    CONFIG_KEY_RELAY_PREFIX,
+    CONFIG_KEY_RELAY_TYPE_SUFFIX,
 )
 
 MOCK_HOST = "192.168.1.100"
@@ -108,9 +114,79 @@ def mock_config_entry_data_digest() -> dict[str, Any]:
 
 
 @pytest.fixture
+def mock_device_config() -> Any:
+    """Return a default mock DeviceConfig.
+
+    Provides config for a two-relay device with typical values.
+    Use mock_device_config_factory for customized configs.
+
+    Returns:
+        A DeviceConfig instance with default two-relay config.
+
+    """
+    from pylocal_akuvox import (  # type: ignore[attr-defined]
+        DeviceConfig,
+    )
+
+    return DeviceConfig(
+        data={
+            CONFIG_KEY_LOCATION: "TestLab Intercom",
+            f"{CONFIG_KEY_RELAY_NAME}A": "Front Gate",
+            f"{CONFIG_KEY_RELAY_NAME}B": "Side Gate",
+            f"{CONFIG_KEY_RELAY_HOLD_DELAY}A": "5",
+            f"{CONFIG_KEY_RELAY_HOLD_DELAY}B": "5",
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "0",
+            f"{CONFIG_KEY_RELAY_PREFIX}B{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "0",
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_MODE_SUFFIX}": "0",
+            f"{CONFIG_KEY_RELAY_PREFIX}B{CONFIG_KEY_RELAY_MODE_SUFFIX}": "0",
+        },
+    )
+
+
+@pytest.fixture
+def mock_device_config_factory() -> Any:
+    """Return a factory for creating customized DeviceConfig objects.
+
+    Returns:
+        A callable that accepts keyword overrides for config keys.
+
+    """
+    from pylocal_akuvox import (  # type: ignore[attr-defined]
+        DeviceConfig,
+    )
+
+    def _factory(**overrides: str) -> Any:
+        """Create a DeviceConfig with optional key overrides.
+
+        Args:
+            **overrides: Key-value pairs to override default config.
+
+        Returns:
+            A DeviceConfig with the merged data.
+
+        """
+        base: dict[str, str] = {
+            CONFIG_KEY_LOCATION: "TestLab Intercom",
+            f"{CONFIG_KEY_RELAY_NAME}A": "Front Gate",
+            f"{CONFIG_KEY_RELAY_NAME}B": "Side Gate",
+            f"{CONFIG_KEY_RELAY_HOLD_DELAY}A": "5",
+            f"{CONFIG_KEY_RELAY_HOLD_DELAY}B": "5",
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "0",
+            f"{CONFIG_KEY_RELAY_PREFIX}B{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "0",
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_MODE_SUFFIX}": "0",
+            f"{CONFIG_KEY_RELAY_PREFIX}B{CONFIG_KEY_RELAY_MODE_SUFFIX}": "0",
+        }
+        base.update(overrides)
+        return DeviceConfig(data=base)
+
+    return _factory
+
+
+@pytest.fixture
 def mock_akuvox_device(
     mock_device_info: DeviceInfo,
     mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
 ) -> Generator[AsyncMock]:
     """Return a mocked AkuvoxDevice."""
     with patch(
@@ -121,6 +197,9 @@ def mock_akuvox_device(
         device.get_info = AsyncMock(return_value=mock_device_info)
         device.get_relay_status = AsyncMock(
             return_value=mock_relay_status,
+        )
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
         )
         device.trigger_relay = AsyncMock(return_value=None)
         device.__aenter__ = AsyncMock(return_value=device)
