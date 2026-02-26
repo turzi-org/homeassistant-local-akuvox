@@ -33,9 +33,18 @@ device name uses `DEVICENODE.Location`.
 | `...RELAY.RelayBType` | B type (0=NO, 1=NC) | `"0"` |
 | `...RELAY.RelayAMode` | A mode (0=Auto, 1=Manual) | `"0"` |
 | `...RELAY.RelayBMode` | B mode (0=Auto, 1=Manual) | `"0"` |
-| `...RELAY.TriggerDelayA` | Pre-trigger delay | `"0"` |
 
 All keys are prefixed with `Config.DoorSetting`.
+
+### Additional discovered keys
+
+During config polling, we also observed
+`Config.DoorSetting.RELAY.TriggerDelayA` with a value defaulting
+to `"0"`. No corresponding `TriggerDelayB` key has been
+identified, and `TriggerDelayA` is not used in the
+`DeviceConfig` data model or implementation. It is recorded
+here for completeness but is intentionally excluded from the
+primary key mapping above.
 
 **Alternatives considered**:
 
