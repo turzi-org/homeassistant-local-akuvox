@@ -291,37 +291,37 @@ state value 0 shows "unlocked" instead of "locked".
 > **NOTE: Write these tests FIRST, ensure they FAIL before
 > implementation**
 
-- [ ] T029 [P] [US3] Write tests for NO relay state
+- [x] T029 [P] [US3] Write tests for NO relay state
   interpretation in tests/test_lock.py — NO relay (type=0):
   state 0 → locked, state 1 → unlocked (current behavior,
   regression test)
-- [ ] T030 [P] [US3] Write tests for NC relay state
+- [x] T030 [P] [US3] Write tests for NC relay state
   interpretation in tests/test_lock.py — NC relay (type=1):
   state 0 → unlocked, state 1 → locked (inverted)
-- [ ] T031 [P] [US3] Write tests for trigger_relay level and
+- [x] T031 [P] [US3] Write tests for trigger_relay level and
   mode parameters in tests/test_lock.py — NO relay:
   verify trigger_relay called with level=0, mode=0;
   NC relay: verify trigger_relay called with level=1;
   auto-close mode: mode=0; manual mode: mode=1
-- [ ] T032 [US3] Write tests for fallback to NO interpretation
+- [x] T032 [US3] Write tests for fallback to NO interpretation
   when relay_type missing in tests/test_lock.py — when
   relay_configs has no entry for relay letter, verify NO
   interpretation (0=locked, 1=unlocked) and level=0
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] Update state parsing to accept relay_type for
+- [x] T033 [US3] Update state parsing to accept relay_type for
   NO/NC inversion in custom_components/akuvox/lock.py —
   add relay_type parameter to `_parse_relay_state` and
   `_parse_int_state`; when relay_type=1 (NC), invert the
   int state mapping (0=unlocked, 1=locked); leave string
   state parsing unchanged
-- [ ] T034 [US3] Update is_locked to pass relay_type from
+- [x] T034 [US3] Update is_locked to pass relay_type from
   RelayConfig to state parser in
   custom_components/akuvox/lock.py — read relay_type from
   coordinator.data.relay_configs for this relay's letter,
   pass to `_parse_relay_state`
-- [ ] T035 [US3] Update async_unlock to pass level and mode
+- [x] T035 [US3] Update async_unlock to pass level and mode
   to trigger_relay in custom_components/akuvox/lock.py —
   add `level=relay_config.relay_type` and
   `mode=relay_config.relay_mode` to the trigger_relay call

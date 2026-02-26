@@ -16,7 +16,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 from pylocal_akuvox import AkuvoxError
 
-from .const import DEFAULT_HOLD_DELAY_SECONDS, DOMAIN, RELAY_KEY_RE
+from .const import (
+    DEFAULT_HOLD_DELAY_SECONDS,
+    DEFAULT_RELAY_MODE,
+    DEFAULT_RELAY_TYPE,
+    DOMAIN,
+    RELAY_KEY_RE,
+)
 from .coordinator import AkuvoxDataUpdateCoordinator
 from .entity import AkuvoxEntity
 
@@ -73,19 +79,21 @@ def _relay_key_to_label(relay_key: str) -> str:
 def _parse_relay_state(
     relay_key: str,
     state: object,
+    relay_type: int = DEFAULT_RELAY_TYPE,
 ) -> bool | None:
     """Parse a relay state value into a locked boolean.
 
     Args:
         relay_key: The relay key for logging context.
         state: The raw state value from the device.
+        relay_type: 0 for NO (normal-open), 1 for NC (normal-closed).
 
     Returns:
         True if locked, False if unlocked, None if unknown.
 
     """
     if isinstance(state, int):
-        return _parse_int_state(relay_key, state)
+        return _parse_int_state(relay_key, state, relay_type)
 
     if isinstance(state, str):
         return _parse_str_state(relay_key, state)
@@ -93,7 +101,7 @@ def _parse_relay_state(
     if isinstance(state, dict):
         inner = state.get("state")
         if isinstance(inner, int):
-            return _parse_int_state(relay_key, inner)
+            return _parse_int_state(relay_key, inner, relay_type)
         if isinstance(inner, str):
             return _parse_str_state(relay_key, inner)
         _LOGGER.debug(
@@ -112,21 +120,27 @@ def _parse_relay_state(
     return None
 
 
-def _parse_int_state(relay_key: str, state: int) -> bool | None:
+def _parse_int_state(
+    relay_key: str,
+    state: int,
+    relay_type: int = DEFAULT_RELAY_TYPE,
+) -> bool | None:
     """Parse an integer relay state value.
 
     Args:
         relay_key: The relay key for logging context.
-        state: The integer state value (0=locked, 1=unlocked).
+        state: The integer state value.
+        relay_type: 0 for NO (0=locked, 1=unlocked),
+                    1 for NC (0=unlocked, 1=locked).
 
     Returns:
         True if locked, False if unlocked, None if unknown.
 
     """
     if state == 0:
-        return True
+        return relay_type != 1
     if state == 1:
-        return False
+        return relay_type == 1
     _LOGGER.debug(
         "Unexpected integer relay state %d for %s",
         state,
@@ -247,7 +261,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if state is None:
             return None
 
-        return _parse_relay_state(self._relay_key, state)
+        letter = chr(ord("A") + self._relay_number - 1)
+        relay_cfg = self.coordinator.data.relay_configs.get(letter)
+        relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
+
+        return _parse_relay_state(self._relay_key, state, relay_type)
 
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the door (not supported — auto-locks via hardware).
@@ -275,10 +293,14 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         letter = chr(ord("A") + self._relay_number - 1)
         relay_cfg = self.coordinator.data.relay_configs.get(letter)
         hold_delay = relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS
+        relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
+        relay_mode = relay_cfg.relay_mode if relay_cfg else DEFAULT_RELAY_MODE
         try:
             await self.coordinator.device.trigger_relay(
                 num=self._relay_number,
                 delay=hold_delay,
+                level=relay_type,
+                mode=relay_mode,
             )
         except AkuvoxError as err:
             raise HomeAssistantError(
