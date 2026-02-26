@@ -5,6 +5,9 @@ SPDX-License-Identifier: Apache-2.0
 
 # Data Model: Device Config Discovery
 
+**Feature**: 002-device-config-discovery
+**Date**: 2026-02-25
+
 ## Entities
 
 ### RelayConfig

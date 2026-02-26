@@ -5,6 +5,9 @@ SPDX-License-Identifier: Apache-2.0
 
 # Research: Device Config Discovery
 
+**Feature**: 002-device-config-discovery
+**Date**: 2026-02-25
+
 ## R1: DeviceConfig API Shape and Key Naming
 
 **Decision**: Use `DeviceConfig.get(key, default)` for all config reads with
@@ -28,8 +31,8 @@ device name uses `DEVICENODE.Location`.
 | `...RELAY.HoldDelayB` | Relay B delay (s) | `"5"` |
 | `...RELAY.RelayAType` | A type (0=NO, 1=NC) | `"0"` |
 | `...RELAY.RelayBType` | B type (0=NO, 1=NC) | `"0"` |
-| `...RELAY.RelayAMode` | A mode (0=Auto, 1=Man) | `"0"` |
-| `...RELAY.RelayBMode` | B mode (0=Auto, 1=Man) | `"0"` |
+| `...RELAY.RelayAMode` | A mode (0=Auto, 1=Manual) | `"0"` |
+| `...RELAY.RelayBMode` | B mode (0=Auto, 1=Manual) | `"0"` |
 | `...RELAY.TriggerDelayA` | Pre-trigger delay | `"0"` |
 
 All keys are prefixed with `Config.DoorSetting`.
