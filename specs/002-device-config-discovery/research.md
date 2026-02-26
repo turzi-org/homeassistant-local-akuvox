@@ -8,7 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 ## R1: DeviceConfig API Shape and Key Naming
 
 **Decision**: Use `DeviceConfig.get(key, default)` for all config reads with
-dotted autop-format key names.
+dotted, dot-separated key names.
 
 **Rationale**: `DeviceConfig` is a frozen dataclass wrapping `dict[str, str]`.
 All values are strings. The `.get()` method with a default safely handles
