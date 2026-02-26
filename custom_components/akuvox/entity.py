@@ -39,7 +39,7 @@ class AkuvoxEntity(CoordinatorEntity[AkuvoxDataUpdateCoordinator]):
         """
         lib_info = self.coordinator.data.device_info
         mac_clean = lib_info.mac_address.lower().replace(":", "")
-        device_name = self.coordinator.data.device_name
+        device_name = (self.coordinator.data.device_name or "").strip()
         if not device_name:
             device_name = f"Akuvox {lib_info.model}"
         return DeviceInfo(
