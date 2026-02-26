@@ -236,22 +236,22 @@ verify unlock command uses the updated value.
 > **NOTE: Write these tests FIRST, ensure they FAIL before
 > implementation**
 
-- [ ] T024 [P] [US2] Write tests for per-relay hold_delay in
+- [x] T024 [P] [US2] Write tests for per-relay hold_delay in
   trigger_relay call in tests/test_lock.py — when
   RelayConfig has hold_delay=7, verify trigger_relay
   called with delay=7; verify different relays use their
   own hold_delay values
-- [ ] T025 [P] [US2] Write tests for refresh timer using
+- [x] T025 [P] [US2] Write tests for refresh timer using
   config hold_delay + buffer in tests/test_lock.py —
   verify async_call_later uses hold_delay +
   _RELAY_REFRESH_BUFFER_SECONDS (1s); when hold_delay=7,
   timer should be 8s
-- [ ] T026 [US2] Write tests for hold_delay fallback to 5s
+- [x] T026 [US2] Write tests for hold_delay fallback to 5s
   default in tests/test_lock.py — when relay_configs is
   empty or missing relay letter, verify trigger_relay uses
   DEFAULT_HOLD_DELAY_SECONDS (5); verify refresh timer
   uses 5 + 1 = 6s
-- [ ] T026b [US2] Write test for hold_delay update after
+- [x] T026b [US2] Write test for hold_delay update after
   reconnection in tests/test_lock.py — simulate device
   unavailable→available with changed HoldDelay value,
   verify next unlock uses updated hold_delay (spec
@@ -259,7 +259,7 @@ verify unlock command uses the updated value.
 
 ### Implementation for User Story 2
 
-- [ ] T027 [US2] Update async_unlock to use hold_delay from
+- [x] T027 [US2] Update async_unlock to use hold_delay from
   RelayConfig in custom_components/akuvox/lock.py —
   read relay letter's RelayConfig from
   coordinator.data.relay_configs, pass
@@ -267,7 +267,7 @@ verify unlock command uses the updated value.
   replace `_RELAY_UNLOCK_DELAY_SECONDS` constant usage;
   remove `_RELAY_UNLOCK_DELAY_SECONDS` constant if all
   usages are replaced
-- [ ] T028 [US2] Update _schedule_delayed_refresh to use
+- [x] T028 [US2] Update _schedule_delayed_refresh to use
   config hold_delay + buffer in
   custom_components/akuvox/lock.py — replace
   `_RELAY_UNLOCK_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS`
