@@ -36,7 +36,7 @@ Python ≥3.13.2: Follow standard HA integration conventions
 ## Recent Changes
 - 002-device-config-discovery: Added Python ≥3.13.2 (HA 2026.2.0 requirement) + homeassistant, pylocal-akuvox ≥0.2.0, voluptuous
 
-- 001-akuvox-lock-integration: Added Python 3.14+ with
+- 001-akuvox-lock-integration: Added Python ≥3.13.2 with
   pylocal-akuvox for device communication
 
 <!-- MANUAL ADDITIONS START -->

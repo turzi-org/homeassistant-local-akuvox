@@ -111,7 +111,7 @@ should not crash the integration.
 
 **Validation rules**:
 
-- Hold delay: Must be a positive integer. Default: 5.
+- Hold delay: Positive integer ≥1. Default: 5.
 - Relay type: Must be 0 or 1. Default: 0 (NO).
 - Relay mode: Must be 0 or 1. Default: 0 (Auto).
 - Names: Any non-empty string is valid. Empty/missing → use existing fallback.
