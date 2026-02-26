@@ -23,6 +23,7 @@ from pylocal_akuvox import (
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.akuvox.const import (
+    CONFIG_KEY_LOCATION,
     CONFIG_KEY_RELAY_NAME,
     DEFAULT_HOLD_DELAY_SECONDS,
     DEFAULT_RELAY_MODE,
@@ -191,7 +192,7 @@ async def test_state_reflects_relay_change_after_update(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "locked"
 
@@ -202,7 +203,7 @@ async def test_state_reflects_relay_change_after_update(
         await coordinator.async_refresh()
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "unlocked"
 
@@ -243,7 +244,7 @@ async def test_entity_recovers_after_coordinator_failure(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "locked"
 
@@ -256,7 +257,7 @@ async def test_entity_recovers_after_coordinator_failure(
         await coordinator.async_refresh()
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "unavailable"
 
@@ -267,7 +268,7 @@ async def test_entity_recovers_after_coordinator_failure(
         await coordinator.async_refresh()
         await hass.async_block_till_done()
 
-        state = hass.states.get("lock.akuvox_e21v_relay_a")
+        state = hass.states.get("lock.testlab_intercom_front_gate")
         assert state is not None
         assert state.state == "locked"
 
@@ -332,8 +333,8 @@ async def test_coordinator_multi_relay_state_change(
         await hass.async_block_till_done()
 
         # Both locked
-        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
-        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        state_a = hass.states.get("lock.testlab_intercom_front_gate")
+        state_b = hass.states.get("lock.testlab_intercom_side_gate")
         assert state_a is not None
         assert state_b is not None
         assert state_a.state == "locked"
@@ -346,8 +347,8 @@ async def test_coordinator_multi_relay_state_change(
         await coordinator.async_refresh()
         await hass.async_block_till_done()
 
-        state_a = hass.states.get("lock.akuvox_e21v_relay_a")
-        state_b = hass.states.get("lock.akuvox_e21v_relay_b")
+        state_a = hass.states.get("lock.testlab_intercom_front_gate")
+        state_b = hass.states.get("lock.testlab_intercom_side_gate")
         assert state_a is not None
         assert state_b is not None
         assert state_a.state == "locked"
@@ -666,3 +667,44 @@ async def test_coordinator_no_refetch_on_normal_polls(
     await coordinator._async_update_data()
 
     assert device.get_device_config.await_count == 1
+
+
+# ── T020: Name update on reconnection ───────────────────────────
+
+
+async def test_device_name_updates_on_reconnection(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test device_name updates when config changes after reconnect."""
+    config_v1 = mock_device_config_factory(
+        **{CONFIG_KEY_LOCATION: "Lobby"},
+    )
+    config_v2 = mock_device_config_factory(
+        **{CONFIG_KEY_LOCATION: "Entrance"},
+    )
+
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value={"RelayA": 0})
+    device.get_device_config = AsyncMock(return_value=config_v1)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+
+    # First poll — fetch config v1
+    data = await coordinator._async_update_data()
+    assert data.device_name == "Lobby"
+
+    # Simulate unavailable
+    device.get_relay_status.side_effect = AkuvoxConnectionError("down")
+    with pytest.raises(UpdateFailed):
+        await coordinator._async_update_data()
+
+    # Recovery with new config
+    device.get_relay_status.side_effect = None
+    device.get_relay_status.return_value = {"RelayA": 0}
+    device.get_device_config = AsyncMock(return_value=config_v2)
+
+    data = await coordinator._async_update_data()
+    assert data.device_name == "Entrance"

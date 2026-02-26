@@ -10,9 +10,11 @@ from unittest.mock import AsyncMock, patch
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.akuvox.const import DOMAIN
+from tests.conftest import MOCK_MAC
 
 
 async def test_setup_entry_creates_coordinator(
@@ -58,7 +60,7 @@ async def test_setup_entry_forwards_to_lock(
 
     assert entry.state is ConfigEntryState.LOADED
     # Verify lock entity was created (platform was forwarded)
-    state = hass.states.get("lock.akuvox_e21v_relay_a")
+    state = hass.states.get("lock.testlab_intercom_front_gate")
     assert state is not None
 
 
@@ -118,3 +120,64 @@ async def test_setup_fails_on_connection_error(
         await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.SETUP_RETRY
+
+
+# ── T018: Device name from config location ──────────────────────
+
+
+async def test_device_name_from_config_location(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test HA device name matches DeviceConfig location."""
+    cfg = mock_device_config_factory(
+        **{"Config.DoorSetting.DEVICENODE.Location": "Front Door"},
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    dev_reg = dr.async_get(hass)
+    mac_clean = MOCK_MAC.lower().replace(":", "")
+    device = dev_reg.async_get_device(identifiers={(DOMAIN, mac_clean)})
+    assert device is not None
+    assert device.name == "Front Door"
+
+
+async def test_device_name_fallback_when_location_empty(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test fallback to 'Akuvox {model}' when location is empty."""
+    cfg = mock_device_config_factory(
+        **{"Config.DoorSetting.DEVICENODE.Location": ""},
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    dev_reg = dr.async_get(hass)
+    mac_clean = MOCK_MAC.lower().replace(":", "")
+    device = dev_reg.async_get_device(identifiers={(DOMAIN, mac_clean)})
+    assert device is not None
+    assert device.name == "Akuvox E21V"
