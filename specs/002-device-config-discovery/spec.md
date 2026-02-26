@@ -143,6 +143,8 @@ that a state value of 0 is interpreted as "unlocked" instead of "locked".
   only to integer relay states (0/1). String states ("closed"/"open",
   "inactive"/"active") represent logical lock state and are NOT inverted
   based on relay type, since their semantics are already unambiguous.
+- What happens if device config changes while the integration is running and
+  the device stays connected? Config is refreshed on the next reconnection
   event. If the user changes config on the device's web UI and the device
   remains continuously reachable, they can reload the integration to pick up
   the new values.
