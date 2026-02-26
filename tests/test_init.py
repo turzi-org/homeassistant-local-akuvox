@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.akuvox.const import DOMAIN
+from custom_components.akuvox.const import CONFIG_KEY_LOCATION, DOMAIN
 from tests.conftest import MOCK_MAC
 
 
@@ -133,7 +133,7 @@ async def test_device_name_from_config_location(
 ) -> None:
     """Test HA device name matches DeviceConfig location."""
     cfg = mock_device_config_factory(
-        **{"Config.DoorSetting.DEVICENODE.Location": "Front Door"},
+        **{CONFIG_KEY_LOCATION: "Front Door"},
     )
     mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
 
@@ -162,7 +162,7 @@ async def test_device_name_fallback_when_location_empty(
 ) -> None:
     """Test fallback to 'Akuvox {model}' when location is empty."""
     cfg = mock_device_config_factory(
-        **{"Config.DoorSetting.DEVICENODE.Location": ""},
+        **{CONFIG_KEY_LOCATION: ""},
     )
     mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
 

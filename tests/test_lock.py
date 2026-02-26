@@ -15,7 +15,11 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.akuvox.const import DOMAIN
+from custom_components.akuvox.const import (
+    CONFIG_KEY_LOCATION,
+    CONFIG_KEY_RELAY_NAME,
+    DOMAIN,
+)
 from tests.conftest import MOCK_MAC
 
 
@@ -1249,8 +1253,8 @@ async def test_relay_entity_name_from_config(
     """Test relay entity name uses NameA from DeviceConfig."""
     cfg = mock_device_config_factory(
         **{
-            "Config.DoorSetting.DEVICENODE.Location": "Front Door",
-            "Config.DoorSetting.RELAY.NameA": "Main Gate",
+            CONFIG_KEY_LOCATION: "Front Door",
+            f"{CONFIG_KEY_RELAY_NAME}A": "Main Gate",
         },
     )
     mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
@@ -1279,8 +1283,8 @@ async def test_relay_entity_name_fallback_when_empty(
     """Test relay entity falls back to 'Relay A' when config name empty."""
     cfg = mock_device_config_factory(
         **{
-            "Config.DoorSetting.DEVICENODE.Location": "Front Door",
-            "Config.DoorSetting.RELAY.NameA": "",
+            CONFIG_KEY_LOCATION: "Front Door",
+            f"{CONFIG_KEY_RELAY_NAME}A": "",
         },
     )
     mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
