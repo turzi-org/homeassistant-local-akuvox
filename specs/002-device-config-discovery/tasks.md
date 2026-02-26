@@ -118,11 +118,17 @@ complete.
   _async_update_data, verify device_name and relay_configs
   populated from DeviceConfig values
 - [ ] T012 Write tests for config fetch failure graceful
-  degradation in tests/test_coordinator.py — when
-  get_device_config raises AkuvoxConnectionError, verify
-  coordinator still returns data with default device_name
-  ("Akuvox {model}") and default RelayConfigs; verify
-  warning logged
+  degradation in tests/test_coordinator.py — cover BOTH:
+  (a) first-ever config fetch failure: when initial
+  get_device_config call raises AkuvoxConnectionError and
+  no cached config exists, verify coordinator returns data
+  with default device_name ("Akuvox {model}") and default
+  RelayConfigs and logs a warning; and (b) subsequent
+  config fetch failure: when get_device_config raises
+  AkuvoxConnectionError after a previous successful fetch,
+  verify coordinator keeps the previously cached
+  device_name and RelayConfigs unchanged and logs a
+  warning
 - [ ] T013 Write tests for `_was_unavailable` reconnection
   config refresh in tests/test_coordinator.py — simulate
   update failure (UpdateFailed) followed by successful
@@ -143,7 +149,10 @@ complete.
   get_device_config on first successful poll, parse
   location for device_name (fallback to "Akuvox {model}"),
   build RelayConfig per relay letter from relay_status
-  keys, wrap in try/except for graceful failure
+  keys; on config fetch failure: if no cached config
+  exists use defaults, if cached config exists preserve
+  last known-good values (do NOT overwrite with defaults
+  on transient failure); log warning on failure
 - [ ] T016 Implement `_was_unavailable` flag and reconnection
   logic in custom_components/akuvox/coordinator.py — add
   `_was_unavailable: bool = False` to `__init__`, set True
