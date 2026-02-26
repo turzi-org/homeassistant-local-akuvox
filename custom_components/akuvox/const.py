@@ -29,6 +29,26 @@ AUTH_DIGEST: Final = "digest"
 # Defaults
 DEFAULT_SCAN_INTERVAL: Final = 30
 
+# Device config key prefix
+CONFIG_KEY_PREFIX: Final = "Config.DoorSetting"
+
+# Device config keys (full dot-separated paths)
+CONFIG_KEY_LOCATION: Final = f"{CONFIG_KEY_PREFIX}.DEVICENODE.Location"
+
+# Relay config key patterns — use with relay letter suffix (A, B, etc.)
+# Name/HoldDelay: PREFIX.RELAY.{Property}{Letter} (e.g., NameA, HoldDelayA)
+CONFIG_KEY_RELAY_NAME: Final = f"{CONFIG_KEY_PREFIX}.RELAY.Name"
+CONFIG_KEY_RELAY_HOLD_DELAY: Final = f"{CONFIG_KEY_PREFIX}.RELAY.HoldDelay"
+# Type/Mode: PREFIX.RELAY.Relay{Letter}{Property} (e.g., RelayAType, RelayAMode)
+CONFIG_KEY_RELAY_PREFIX: Final = f"{CONFIG_KEY_PREFIX}.RELAY.Relay"
+CONFIG_KEY_RELAY_TYPE_SUFFIX: Final = "Type"
+CONFIG_KEY_RELAY_MODE_SUFFIX: Final = "Mode"
+
+# Device config defaults
+DEFAULT_HOLD_DELAY_SECONDS: Final = 5
+DEFAULT_RELAY_TYPE: Final = 0
+DEFAULT_RELAY_MODE: Final = 0
+
 # Lazy import: AuthMethod lives in pylocal_akuvox and is imported at
 # runtime to avoid a top-level heavy dependency in const.py.  The map
 # is built once on first call and cached.
