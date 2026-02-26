@@ -44,11 +44,13 @@ async def test_coordinator_fetches_data(
     hass: HomeAssistant,
     mock_device_info: DeviceInfo,
     mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test coordinator fetches device info and relay status."""
     device = AsyncMock()
     device.get_info = AsyncMock(return_value=mock_device_info)
     device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
 
     coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
     data = await coordinator._async_update_data()
@@ -124,11 +126,13 @@ async def test_coordinator_caches_device_info(
     hass: HomeAssistant,
     mock_device_info: DeviceInfo,
     mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test coordinator caches device_info after first call."""
     device = AsyncMock()
     device.get_info = AsyncMock(return_value=mock_device_info)
     device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
 
     coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
 
@@ -156,6 +160,7 @@ async def test_state_reflects_relay_change_after_update(
     hass: HomeAssistant,
     mock_device_info: DeviceInfo,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test entity state changes when coordinator data changes.
 
@@ -166,6 +171,7 @@ async def test_state_reflects_relay_change_after_update(
     device.get_info = AsyncMock(return_value=mock_device_info)
     device.get_relay_status = AsyncMock(return_value={"RelayA": 0})
     device.trigger_relay = AsyncMock(return_value=None)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
     device.__aenter__ = AsyncMock(return_value=device)
     device.__aexit__ = AsyncMock(return_value=None)
 
@@ -205,6 +211,7 @@ async def test_entity_recovers_after_coordinator_failure(
     hass: HomeAssistant,
     mock_device_info: DeviceInfo,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test entity recovers to correct state after device comes back.
 
@@ -216,6 +223,7 @@ async def test_entity_recovers_after_coordinator_failure(
     device.get_info = AsyncMock(return_value=mock_device_info)
     device.get_relay_status = AsyncMock(return_value={"RelayA": 0})
     device.trigger_relay = AsyncMock(return_value=None)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
     device.__aenter__ = AsyncMock(return_value=device)
     device.__aexit__ = AsyncMock(return_value=None)
 
@@ -267,6 +275,7 @@ async def test_entity_recovers_after_coordinator_failure(
 async def test_coordinator_data_includes_multiple_relays(
     hass: HomeAssistant,
     mock_device_info: DeviceInfo,
+    mock_device_config: Any,
 ) -> None:
     """Test coordinator data includes status for all relays."""
     device = AsyncMock()
@@ -274,6 +283,7 @@ async def test_coordinator_data_includes_multiple_relays(
     device.get_relay_status = AsyncMock(
         return_value={"RelayA": 0, "RelayB": 1},
     )
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
 
     coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
     data = await coordinator._async_update_data()
@@ -288,6 +298,7 @@ async def test_coordinator_multi_relay_state_change(
     hass: HomeAssistant,
     mock_device_info: DeviceInfo,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test coordinator updates propagate to correct relay entities.
 
@@ -300,6 +311,7 @@ async def test_coordinator_multi_relay_state_change(
         return_value={"RelayA": 0, "RelayB": 0},
     )
     device.trigger_relay = AsyncMock(return_value=None)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
     device.__aenter__ = AsyncMock(return_value=device)
     device.__aexit__ = AsyncMock(return_value=None)
 
@@ -457,3 +469,200 @@ def test_build_relay_config_partial(
     config = _build_relay_config(partial, "A")
     assert config.name == "Lobby Door"
     assert config.hold_delay == DEFAULT_HOLD_DELAY_SECONDS
+
+
+# --- T010: Updated AkuvoxCoordinatorData tests ---
+
+
+async def test_coordinator_data_includes_device_name(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test coordinator data includes device_name field."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    data = await coordinator._async_update_data()
+
+    assert hasattr(data, "device_name")
+    assert isinstance(data.device_name, str)
+
+
+async def test_coordinator_data_includes_relay_configs(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_device_config: Any,
+) -> None:
+    """Test coordinator data includes relay_configs dict."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 0, "RelayB": 1},
+    )
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    data = await coordinator._async_update_data()
+
+    assert hasattr(data, "relay_configs")
+    assert isinstance(data.relay_configs, dict)
+    assert "A" in data.relay_configs
+    assert "B" in data.relay_configs
+    assert isinstance(data.relay_configs["A"], RelayConfig)
+
+
+# --- T011: DeviceConfig fetch on first poll ---
+
+
+async def test_coordinator_fetches_config_on_first_poll(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test get_device_config called on first successful poll."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    data = await coordinator._async_update_data()
+
+    device.get_device_config.assert_awaited_once()
+    assert data.device_name == "TestLab Intercom"
+    assert data.relay_configs["A"].name == "Front Gate"
+
+
+async def test_coordinator_caches_device_config(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test config NOT re-fetched on normal successive polls."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    await coordinator._async_update_data()
+    await coordinator._async_update_data()
+
+    assert device.get_device_config.await_count == 1
+
+
+# --- T012: Config fetch failure graceful degradation ---
+
+
+async def test_coordinator_config_failure_first_time_uses_defaults(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+) -> None:
+    """Test first config failure yields defaults."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(
+        side_effect=AkuvoxConnectionError("Config fetch failed"),
+    )
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    data = await coordinator._async_update_data()
+
+    assert data.device_name == f"Akuvox {mock_device_info.model}"
+    for letter in data.relay_configs:
+        assert data.relay_configs[letter].name == ""
+        assert data.relay_configs[letter].hold_delay == DEFAULT_HOLD_DELAY_SECONDS
+
+
+async def test_coordinator_config_failure_subsequent_keeps_cached(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test subsequent config failure preserves cached values."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+
+    # First poll succeeds
+    data1 = await coordinator._async_update_data()
+    assert data1.device_name == "TestLab Intercom"
+
+    # Force reconnection to re-fetch config
+    coordinator._was_unavailable = True
+    device.get_device_config.side_effect = AkuvoxConnectionError(
+        "Config fetch failed",
+    )
+
+    data2 = await coordinator._async_update_data()
+    # Should retain cached values
+    assert data2.device_name == "TestLab Intercom"
+    assert data2.relay_configs["A"].name == "Front Gate"
+
+
+# --- T013: _was_unavailable reconnection config refresh ---
+
+
+async def test_coordinator_refetches_config_after_unavailable(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_device_config: Any,
+) -> None:
+    """Test config re-fetched after device recovers from failure."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value={"RelayA": 0})
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+
+    # First successful poll
+    await coordinator._async_update_data()
+    assert device.get_device_config.await_count == 1
+
+    # Simulate failure (sets _was_unavailable)
+    device.get_relay_status.side_effect = AkuvoxConnectionError(
+        "Lost connection",
+    )
+    with pytest.raises(UpdateFailed):
+        await coordinator._async_update_data()
+
+    # Recovery — config should be re-fetched
+    device.get_relay_status.side_effect = None
+    device.get_relay_status.return_value = {"RelayA": 0}
+    await coordinator._async_update_data()
+    assert device.get_device_config.await_count == 2
+
+
+async def test_coordinator_no_refetch_on_normal_polls(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test config NOT re-fetched on successive normal polls."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+
+    await coordinator._async_update_data()
+    await coordinator._async_update_data()
+    await coordinator._async_update_data()
+
+    assert device.get_device_config.await_count == 1

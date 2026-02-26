@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
 
@@ -26,6 +26,7 @@ from pylocal_akuvox import (
 )
 
 from .const import (
+    CONFIG_KEY_LOCATION,
     CONFIG_KEY_RELAY_HOLD_DELAY,
     CONFIG_KEY_RELAY_MODE_SUFFIX,
     CONFIG_KEY_RELAY_NAME,
@@ -180,6 +181,8 @@ class AkuvoxCoordinatorData:
 
     device_info: DeviceInfo
     relay_status: dict[str, Any]
+    device_name: str = ""
+    relay_configs: dict[str, RelayConfig] = field(default_factory=dict)
 
 
 class AkuvoxDataUpdateCoordinator(
@@ -207,12 +210,79 @@ class AkuvoxDataUpdateCoordinator(
         )
         self.device = device
         self._cached_device_info: DeviceInfo | None = None
+        self._cached_device_name: str | None = None
+        self._cached_relay_configs: dict[str, RelayConfig] | None = None
+        self._was_unavailable: bool = False
+
+    def _should_fetch_config(self) -> bool:
+        """Determine whether device config should be fetched.
+
+        Returns:
+            True if config has never been fetched or device
+            recovered from unavailable state.
+
+        """
+        if self._cached_device_name is None:
+            return True
+        return bool(self._was_unavailable)
+
+    def _fetch_config_from_device_config(
+        self,
+        device_config: Any,
+        relay_status: dict[str, Any],
+    ) -> None:
+        """Parse device config and update cached values.
+
+        Args:
+            device_config: DeviceConfig from the device.
+            relay_status: Current relay status dict for
+                discovering relay letters.
+
+        """
+        self._cached_device_name = device_config.get(
+            CONFIG_KEY_LOCATION,
+            "",
+        )
+        relay_configs: dict[str, RelayConfig] = {}
+        for key in relay_status:
+            if key.startswith("Relay") and len(key) > 5:
+                letter = key[5:]
+                relay_configs[letter] = _build_relay_config(
+                    device_config,
+                    letter,
+                )
+        self._cached_relay_configs = relay_configs
+
+    def _apply_default_config(
+        self,
+        relay_status: dict[str, Any],
+        model: str,
+    ) -> None:
+        """Apply default config values when fetch fails.
+
+        Only overwrites cached values if none exist yet.
+
+        Args:
+            relay_status: Current relay status dict.
+            model: Device model for fallback name.
+
+        """
+        if self._cached_device_name is None:
+            self._cached_device_name = f"Akuvox {model}"
+        if self._cached_relay_configs is None:
+            relay_configs: dict[str, RelayConfig] = {}
+            for key in relay_status:
+                if key.startswith("Relay") and len(key) > 5:
+                    letter = key[5:]
+                    relay_configs[letter] = RelayConfig()
+            self._cached_relay_configs = relay_configs
 
     async def _async_update_data(self) -> AkuvoxCoordinatorData:
         """Fetch data from the Akuvox device.
 
         Returns:
-            AkuvoxCoordinatorData with device info and relay status.
+            AkuvoxCoordinatorData with device info, relay status,
+            device name, and relay configs.
 
         Raises:
             UpdateFailed: On connection, device, or parse errors.
@@ -222,18 +292,22 @@ class AkuvoxDataUpdateCoordinator(
         try:
             relay_status = await self.device.get_relay_status()
         except AkuvoxAuthenticationError as err:
+            self._was_unavailable = True
             raise ConfigEntryAuthFailed(
                 f"Authentication failed: {err}",
             ) from err
         except AkuvoxConnectionError as err:
+            self._was_unavailable = True
             raise UpdateFailed(
                 f"Connection error: {err}",
             ) from err
         except AkuvoxDeviceError as err:
+            self._was_unavailable = True
             raise UpdateFailed(
                 f"Device error: {err}",
             ) from err
         except AkuvoxParseError as err:
+            self._was_unavailable = True
             raise UpdateFailed(
                 f"Parse error: {err}",
             ) from err
@@ -254,7 +328,33 @@ class AkuvoxDataUpdateCoordinator(
                     f"Failed to get device info: {err}",
                 ) from err
 
+        if self._should_fetch_config():
+            try:
+                device_config = (
+                    await self.device.get_device_config()  # type: ignore[attr-defined]
+                )
+                self._fetch_config_from_device_config(
+                    device_config,
+                    relay_status,
+                )
+            except (
+                AkuvoxConnectionError,
+                AkuvoxDeviceError,
+                AkuvoxParseError,
+            ):
+                _LOGGER.warning(
+                    "Failed to fetch device config, using %s values",
+                    "cached" if self._cached_device_name is not None else "default",
+                )
+                self._apply_default_config(
+                    relay_status,
+                    self._cached_device_info.model,
+                )
+            self._was_unavailable = False
+
         return AkuvoxCoordinatorData(
             device_info=self._cached_device_info,
             relay_status=relay_status,
+            device_name=self._cached_device_name or "",
+            relay_configs=self._cached_relay_configs or {},
         )

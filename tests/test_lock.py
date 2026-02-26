@@ -99,6 +99,7 @@ async def test_entity_device_info(
 async def test_is_locked_true(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
     relay_state: str | int,
     expected_ha_state: str,
 ) -> None:
@@ -122,6 +123,9 @@ async def test_is_locked_true(
             return_value={"RelayA": relay_state},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -147,6 +151,7 @@ async def test_is_locked_true(
 async def test_is_locked_false(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
     relay_state: str | int,
     expected_ha_state: str,
 ) -> None:
@@ -170,6 +175,9 @@ async def test_is_locked_false(
             return_value={"RelayA": relay_state},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -192,6 +200,7 @@ async def test_is_locked_false(
 async def test_is_locked_unknown_for_unexpected_int(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
     relay_state: int,
 ) -> None:
     """Test is_locked returns None for unexpected integer states."""
@@ -214,6 +223,9 @@ async def test_is_locked_unknown_for_unexpected_int(
             return_value={"RelayA": relay_state},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -236,6 +248,7 @@ async def test_is_locked_unknown_for_unexpected_int(
 async def test_is_locked_unknown_for_unexpected_str(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
     relay_state: str,
 ) -> None:
     """Test is_locked returns None for unrecognized string states."""
@@ -258,6 +271,9 @@ async def test_is_locked_unknown_for_unexpected_str(
             return_value={"RelayA": relay_state},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -279,6 +295,7 @@ async def test_is_locked_unknown_for_unexpected_str(
 async def test_is_locked_none_for_missing_relay_key(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test is_locked returns None when relay key missing from status.
 
@@ -305,6 +322,9 @@ async def test_is_locked_none_for_missing_relay_key(
             return_value={"RelayA": 0},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -341,6 +361,7 @@ async def test_is_locked_none_for_missing_relay_key(
 async def test_is_locked_handles_dict_int_state(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
     relay_state: dict[str, int],
     expected_ha_state: str,
 ) -> None:
@@ -364,6 +385,9 @@ async def test_is_locked_handles_dict_int_state(
             return_value={"RelayA": relay_state},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -385,6 +409,7 @@ async def test_is_locked_handles_dict_int_state(
 async def test_entity_unavailable_when_coordinator_fails(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test entity becomes unavailable when coordinator fails."""
     from pylocal_akuvox import AkuvoxConnectionError, DeviceInfo
@@ -406,6 +431,9 @@ async def test_entity_unavailable_when_coordinator_fails(
             return_value={"RelayA": "closed"},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -440,6 +468,7 @@ async def test_entity_unavailable_when_coordinator_fails(
 async def test_multi_relay_entities_created(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test multiple relay entities are created with correct IDs."""
     with patch(
@@ -461,6 +490,9 @@ async def test_multi_relay_entities_created(
             return_value={"RelayA": "closed", "RelayB": "open"},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -496,6 +528,7 @@ async def test_multi_relay_entities_created(
 async def test_multi_relay_distinct_names(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test multi-relay entities have distinct friendly names."""
     with patch(
@@ -517,6 +550,9 @@ async def test_multi_relay_distinct_names(
             return_value={"RelayA": 0, "RelayB": 0},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -547,6 +583,7 @@ async def test_multi_relay_distinct_names(
 async def test_unlock_relay_a_does_not_change_relay_b(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test unlocking relay A only affects relay A entity.
 
@@ -571,6 +608,9 @@ async def test_unlock_relay_a_does_not_change_relay_b(
             return_value={"RelayA": 0, "RelayB": 0},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -621,6 +661,7 @@ async def test_unlock_relay_a_does_not_change_relay_b(
 async def test_is_locked_handles_dict_state_format(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test is_locked handles legacy dict state format defensively."""
     with patch(
@@ -642,6 +683,9 @@ async def test_is_locked_handles_dict_state_format(
             return_value={"RelayA": {"state": "closed"}},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -663,6 +707,7 @@ async def test_is_locked_handles_dict_state_format(
 async def test_unrecognized_relay_keys_skipped(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test that unrecognized relay keys are skipped."""
     with patch(
@@ -688,6 +733,9 @@ async def test_unrecognized_relay_keys_skipped(
             },
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
@@ -1052,6 +1100,7 @@ async def test_entity_removal_cancels_delayed_refresh(
 async def test_async_unlock_raises_on_device_error(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
     exception_cls: str,
 ) -> None:
     """Test async_unlock raises HomeAssistantError on device errors."""
@@ -1079,6 +1128,9 @@ async def test_async_unlock_raises_on_device_error(
         exc = getattr(pylocal_akuvox, exception_cls)
         device.trigger_relay = AsyncMock(
             side_effect=exc("trigger failed"),
+        )
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
         )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
@@ -1132,6 +1184,7 @@ async def test_async_lock_raises_error(
 async def test_async_unlock_completes_within_5s(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
 ) -> None:
     """Test async_unlock completes within 5 seconds (SC-002).
 
@@ -1157,6 +1210,9 @@ async def test_async_unlock_completes_within_5s(
             return_value={"RelayA": 0},
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
 
