@@ -1,0 +1,334 @@
+# SPDX-FileCopyrightText: 2026 Andrew Grimberg <tykeal@bardicgrove.org>
+# SPDX-License-Identifier: Apache-2.0
+
+list_schedules:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    page:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 1
+          mode: box
+
+list_users:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    page:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 1
+          mode: box
+
+add_schedule:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    schedule_type:
+      required: true
+      example: "0"
+      selector:
+        select:
+          options:
+            - "0"
+            - "1"
+            - "2"
+    name:
+      required: false
+      example: "Weekday Access"
+      selector:
+        text:
+          multiline: false
+    week:
+      required: false
+      example: "12345"
+      selector:
+        text:
+          multiline: false
+    daily:
+      required: false
+      example: "08:00-18:00"
+      selector:
+        text:
+          multiline: false
+    date_start:
+      required: false
+      example: "20260101"
+      selector:
+        text:
+          multiline: false
+    date_end:
+      required: false
+      example: "20261231"
+      selector:
+        text:
+          multiline: false
+    time_start:
+      required: false
+      example: "08:00"
+      selector:
+        text:
+          multiline: false
+    time_end:
+      required: false
+      example: "18:00"
+      selector:
+        text:
+          multiline: false
+
+modify_schedule:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    id:
+      required: true
+      example: "1"
+      selector:
+        text:
+          multiline: false
+    schedule_type:
+      required: false
+      example: "0"
+      selector:
+        select:
+          options:
+            - "0"
+            - "1"
+            - "2"
+    name:
+      required: false
+      example: "Updated Schedule"
+      selector:
+        text:
+          multiline: false
+    week:
+      required: false
+      example: "12345"
+      selector:
+        text:
+          multiline: false
+    daily:
+      required: false
+      example: "08:00-18:00"
+      selector:
+        text:
+          multiline: false
+    date_start:
+      required: false
+      example: "20260101"
+      selector:
+        text:
+          multiline: false
+    date_end:
+      required: false
+      example: "20261231"
+      selector:
+        text:
+          multiline: false
+    time_start:
+      required: false
+      example: "08:00"
+      selector:
+        text:
+          multiline: false
+    time_end:
+      required: false
+      example: "18:00"
+      selector:
+        text:
+          multiline: false
+
+delete_schedule:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    id:
+      required: true
+      example: "1"
+      selector:
+        text:
+          multiline: false
+
+add_user:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    name:
+      required: true
+      example: "John Doe"
+      selector:
+        text:
+          multiline: false
+    user_id:
+      required: true
+      example: "john.doe"
+      selector:
+        text:
+          multiline: false
+    schedule_relay:
+      required: true
+      example: "1-1;"
+      selector:
+        text:
+          multiline: false
+    lift_floor_num:
+      required: true
+      example: "3"
+      selector:
+        text:
+          multiline: false
+    web_relay:
+      required: false
+      example: ""
+      selector:
+        text:
+          multiline: false
+    private_pin:
+      required: false
+      example: "1234"
+      selector:
+        text:
+          multiline: false
+          type: password
+    card_code:
+      required: false
+      example: "ABC123"
+      selector:
+        text:
+          multiline: false
+
+modify_user:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    id:
+      required: true
+      example: "42"
+      selector:
+        text:
+          multiline: false
+    name:
+      required: false
+      example: "Jane Doe"
+      selector:
+        text:
+          multiline: false
+    user_id:
+      required: false
+      example: "jane.doe"
+      selector:
+        text:
+          multiline: false
+    schedule_relay:
+      required: false
+      example: "1-1;2-2;"
+      selector:
+        text:
+          multiline: false
+    lift_floor_num:
+      required: false
+      example: "5"
+      selector:
+        text:
+          multiline: false
+    web_relay:
+      required: false
+      example: ""
+      selector:
+        text:
+          multiline: false
+    private_pin:
+      required: false
+      example: "5678"
+      selector:
+        text:
+          multiline: false
+          type: password
+    card_code:
+      required: false
+      example: "DEF456"
+      selector:
+        text:
+          multiline: false
+
+delete_user:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    id:
+      required: true
+      example: "42"
+      selector:
+        text:
+          multiline: false
+
+add_user_schedule_relay:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    id:
+      required: true
+      example: "42"
+      selector:
+        text:
+          multiline: false
+    schedule_id:
+      required: true
+      example: "1"
+      selector:
+        text:
+          multiline: false
+    relay_id:
+      required: true
+      example: "1"
+      selector:
+        text:
+          multiline: false
+
+remove_user_schedule_relay:
+  target:
+    entity:
+      domain: lock
+      integration: akuvox
+  fields:
+    id:
+      required: true
+      example: "42"
+      selector:
+        text:
+          multiline: false
+    schedule_id:
+      required: true
+      example: "1"
+      selector:
+        text:
+          multiline: false
+    relay_id:
+      required: true
+      example: "1"
+      selector:
+        text:
+          multiline: false
