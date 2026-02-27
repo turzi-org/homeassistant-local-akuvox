@@ -11,7 +11,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from pylocal_akuvox import (
+    AccessSchedule,
     DeviceInfo,
+    User,
 )
 
 from custom_components.akuvox.const import (
@@ -204,4 +206,107 @@ def mock_akuvox_device(
         device.trigger_relay = AsyncMock(return_value=None)
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
+        # Schedule and user CRUD methods
+        device.list_schedules = AsyncMock(return_value=[])
+        device.add_schedule = AsyncMock(return_value=None)
+        device.modify_schedule = AsyncMock(return_value=None)
+        device.delete_schedule = AsyncMock(return_value=None)
+        device.list_users = AsyncMock(return_value=[])
+        device.add_user = AsyncMock(return_value=None)
+        device.modify_user = AsyncMock(return_value=None)
+        device.delete_user = AsyncMock(return_value=None)
         yield device
+
+
+@pytest.fixture
+def mock_schedule_list() -> list[AccessSchedule]:
+    """Return a mock list of AccessSchedule objects.
+
+    Includes one local and one cloud-provisioned schedule.
+    """
+    return [
+        AccessSchedule(
+            id="1",
+            schedule_type="0",
+            name="Weekday Access",
+            week="12345",
+            daily=None,
+            date_start=None,
+            date_end=None,
+            time_start="08:00",
+            time_end="18:00",
+            display_id="1",
+            source_type=None,
+            mode=None,
+            sun=None,
+            mon="1",
+            tue="1",
+            wed="1",
+            thur="1",
+            fri="1",
+            sat=None,
+        ),
+        AccessSchedule(
+            id="2",
+            schedule_type="1",
+            name="Cloud Schedule",
+            week=None,
+            daily="00:00-23:59",
+            date_start=None,
+            date_end=None,
+            time_start=None,
+            time_end=None,
+            display_id="2",
+            source_type="cloud",
+            mode=None,
+            sun=None,
+            mon=None,
+            tue=None,
+            wed=None,
+            thur=None,
+            fri=None,
+            sat=None,
+        ),
+    ]
+
+
+@pytest.fixture
+def mock_user_list() -> list[User]:
+    """Return a mock list of User objects.
+
+    Includes one local and one cloud-provisioned user.
+    """
+    return [
+        User(
+            id="42",
+            name="John Doe",
+            user_id="john.doe",
+            schedule_relay="1-1;",
+            web_relay=None,
+            private_pin="1234",
+            card_code="ABC123",
+            lift_floor_num="3",
+            user_type=None,
+            source=None,
+            source_type=None,
+        ),
+        User(
+            id="99",
+            name="Cloud User",
+            user_id="cloud.user",
+            schedule_relay="2-1;",
+            web_relay=None,
+            private_pin="5678",
+            card_code=None,
+            lift_floor_num="1",
+            user_type=None,
+            source=None,
+            source_type="cloud",
+        ),
+    ]
+
+
+@pytest.fixture
+def mock_empty_list() -> list[Any]:
+    """Return an empty list for schedule/user mocks."""
+    return []
