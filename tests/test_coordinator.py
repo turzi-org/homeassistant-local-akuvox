@@ -728,6 +728,8 @@ def test_build_relay_config_hold_delay_non_numeric(
     result = _build_relay_config(cfg, "A")
     assert result.hold_delay == DEFAULT_HOLD_DELAY_SECONDS
     assert "abc" in caplog.text
+    assert "HoldDelayA" in caplog.text
+    assert f"default {DEFAULT_HOLD_DELAY_SECONDS}" in caplog.text
 
 
 def test_build_relay_config_relay_type_out_of_range(
@@ -741,6 +743,8 @@ def test_build_relay_config_relay_type_out_of_range(
     result = _build_relay_config(cfg, "A")
     assert result.relay_type == DEFAULT_RELAY_TYPE
     assert "99" in caplog.text
+    assert "RelayAType" in caplog.text
+    assert f"default {DEFAULT_RELAY_TYPE}" in caplog.text
 
 
 def test_build_relay_config_relay_mode_negative(
@@ -754,3 +758,5 @@ def test_build_relay_config_relay_mode_negative(
     result = _build_relay_config(cfg, "A")
     assert result.relay_mode == DEFAULT_RELAY_MODE
     assert "-1" in caplog.text
+    assert "RelayAMode" in caplog.text
+    assert f"default {DEFAULT_RELAY_MODE}" in caplog.text

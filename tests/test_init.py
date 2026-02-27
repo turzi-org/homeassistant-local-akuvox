@@ -204,17 +204,17 @@ async def test_config_fetched_on_reload(
     assert entry.state is ConfigEntryState.LOADED
 
     # Record how many times config was fetched during initial setup
-    initial_config_calls = mock_akuvox_device.get_device_config.call_count
+    initial_config_calls = mock_akuvox_device.get_device_config.await_count
 
     # Unload
     await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
-    assert entry.state == ConfigEntryState.NOT_LOADED  # type: ignore[comparison-overlap]
+    assert entry.state is ConfigEntryState.NOT_LOADED  # type: ignore[comparison-overlap]
 
     # Reload
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.LOADED
 
-    # get_device_config should have been called again on reload
-    assert mock_akuvox_device.get_device_config.call_count > initial_config_calls
+    # get_device_config should have been awaited again on reload
+    assert mock_akuvox_device.get_device_config.await_count > initial_config_calls
