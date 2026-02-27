@@ -582,6 +582,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"add_schedule failed: {err}",
             ) from err
         event_data: dict[str, str] = {"action": "add"}
-        if self.coordinator.config_entry is not None:
-            event_data["config_entry_id"] = self.coordinator.config_entry.entry_id
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
         self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)
