@@ -44,13 +44,13 @@ The service is called on an `AkuvoxLockEntity` instance.
             "lift_floor_num": "3",
             "user_type": None,
             "source": None,
-            "source_type": None,       # None = local
+            "source_type": "1",        # "1" = local, "2" = cloud
         }
     ]
 }
 ```
 
-Cloud-provisioned users (non-empty `source_type`) appear in the
+Cloud-provisioned users (`source_type` of `"2"`) appear in the
 list but are clearly identifiable by the `source_type` field.
 
 **Logging**: When debug logging is enabled, `private_pin` and
@@ -135,7 +135,7 @@ list but are clearly identifiable by the `source_type` field.
 1. HA routes the call to the targeted `AkuvoxLockEntity` instance.
 2. Validate provided fields (same rules as add).
 3. **Cloud check**: Fetch current user list, find user by `id`,
-   check `source_type`. If cloud-provisioned, raise
+   check `source_type`. If `"2"` (cloud), raise
    `ServiceValidationError` with message "Cannot modify
    cloud-provisioned user".
 4. **Cloud schedule check** (if `schedule_relay` provided): Parse
@@ -170,7 +170,7 @@ Inherits from add_user, plus:
 
 1. HA routes the call to the targeted `AkuvoxLockEntity` instance.
 2. **Cloud check**: Fetch current user list, find user by `id`,
-   check `source_type`. If cloud-provisioned, raise
+   check `source_type`. If `"2"` (cloud), raise
    `ServiceValidationError`.
 3. Call `await device.delete_user(id=id)`.
 4. Fire event `akuvox_user_changed` with

@@ -43,7 +43,7 @@ The service is called on an `AkuvoxLockEntity` instance.
             "time_start": "08:00",
             "time_end": "18:00",
             "display_id": "1",
-            "source_type": None,   # None = local
+            "source_type": "1",    # "1" = local, "2" = cloud
             "mode": None,
             "sun": None,
             "mon": "1",
@@ -57,7 +57,7 @@ The service is called on an `AkuvoxLockEntity` instance.
 }
 ```
 
-Cloud-provisioned schedules (non-empty `source_type`) appear in
+Cloud-provisioned schedules (`source_type` of `"2"`) appear in
 the list but are clearly identifiable by the `source_type` field.
 
 ### Error Handling: list_schedules
@@ -131,7 +131,7 @@ the list but are clearly identifiable by the `source_type` field.
 1. HA routes the call to the targeted `AkuvoxLockEntity` instance.
 2. Validate provided fields (same rules as add).
 3. **Cloud check**: Fetch current schedule list, find schedule by
-   `id`, check `source_type`. If cloud-provisioned, raise
+   `id`, check `source_type`. If `"2"` (cloud), raise
    `ServiceValidationError` with message "Cannot modify
    cloud-provisioned schedule".
 4. Call `await device.modify_schedule(id=id, ...)`.
@@ -164,7 +164,7 @@ Inherits from add_schedule, plus:
 
 1. HA routes the call to the targeted `AkuvoxLockEntity` instance.
 2. **Cloud check**: Fetch current schedule list, find schedule by
-   `id`, check `source_type`. If cloud-provisioned, raise
+   `id`, check `source_type`. If `"2"` (cloud), raise
    `ServiceValidationError`.
 3. Call `await device.delete_schedule(id=id)`.
 4. Fire event `akuvox_schedule_changed` with
