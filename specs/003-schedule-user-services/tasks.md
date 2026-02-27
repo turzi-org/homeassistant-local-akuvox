@@ -206,7 +206,7 @@ params, then `list_schedules` to confirm creation.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T012 [US3] Write failing tests for `add_schedule` in
+- [x] T012 [US3] Write failing tests for `add_schedule` in
   tests/test_services.py: (a) success calls
   `device.add_schedule(...)` with correct params,
   (b) invalid `schedule_type` (not "0"/"1"/"2") raises
@@ -220,7 +220,7 @@ params, then `list_schedules` to confirm creation.
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Implement `async add_schedule(self, **kwargs)`
+- [x] T013 [US3] Implement `async add_schedule(self, **kwargs)`
   on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: validate
   `schedule_type` is in ("0","1","2"), validate
