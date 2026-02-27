@@ -266,7 +266,9 @@ then listing users to confirm the user is no longer present.
   number of pages? The system should return an empty list.
 - What happens when multiple Home Assistant users call write services
   (create, modify, delete) simultaneously targeting the same device? The
-  system should serialize requests to prevent race conditions on the device.
+  device API does not support optimistic concurrency. Callers should
+  serialize operations targeting the same device. The integration documents
+  this limitation but does not enforce serialization.
 - What happens when a schedule is deleted while users are still assigned to
   it? The system should allow the deletion (this is device-managed behavior)
   but log a warning about orphaned user-schedule assignments.
@@ -293,8 +295,8 @@ then listing users to confirm the user is no longer present.
   returning user details including name, user ID, schedule-relay assignments,
   and optional attributes (PIN, card code) with actual values in plain text.
 - **FR-006**: System MUST expose a service to create a new user on the
-  device, accepting name, user ID, schedule-relay assignment, and optional
-  PIN, card code, web relay, and lift floor parameters.
+  device, accepting name, user ID, schedule-relay assignment, lift floor
+  number (required), and optional PIN, card code, and web relay parameters.
 - **FR-007**: System MUST expose a service to modify an existing user on the
   device, identified by device-assigned user ID, allowing partial updates to
   any mutable user field.
@@ -313,6 +315,13 @@ then listing users to confirm the user is no longer present.
 - **FR-013**: System MUST fire an event after successful write operations
   (create, modify, delete) to enable automations that react to schedule or
   user changes.
+- **FR-014**: System MUST expose a convenience service to add a single
+  schedule-relay pair to an existing user's assignments, using a
+  fetch-then-modify pattern on the schedule_relay string. This is a
+  best-effort operation; concurrent calls may race.
+- **FR-015**: System MUST expose a convenience service to remove a single
+  schedule-relay pair from an existing user's assignments, preventing
+  removal of the last pair (at least one pair must remain).
 
 ### Key Entities
 
@@ -358,9 +367,10 @@ then listing users to confirm the user is no longer present.
 - **SC-003**: 100% of invalid inputs (malformed times, out-of-range values,
   invalid IDs) are rejected with a descriptive error message before any
   device communication occurs.
-- **SC-004**: All eight services (list/add/modify/delete for both schedules
-  and users) are individually callable from Home Assistant automations,
-  scripts, and the developer tools service panel.
+- **SC-004**: All ten services (list/add/modify/delete for both schedules
+  and users, plus add/remove schedule-relay pair) are individually callable
+  from Home Assistant automations, scripts, and the developer tools service
+  panel.
 - **SC-005**: Write operations (create, modify, delete) fire events that
   automations can trigger on, enabling reactive workflows such as
   notifications when access is granted or revoked.
