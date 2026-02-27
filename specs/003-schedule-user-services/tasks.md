@@ -379,8 +379,8 @@ changes, and event firing.
 - [ ] T020 [US7] Write failing tests for `modify_user` in
   tests/test_services.py: (a) success with partial
   update passes `id` and fields to
-  `device.modify_user()`, (b) cloud user (non-empty
-  source_type `"2"`) raises ServiceValidationError "Cannot
+  `device.modify_user()`, (b) cloud user (source_type
+  `"2"`) raises ServiceValidationError "Cannot
   modify cloud-provisioned user", (c) non-existent user
   raises HomeAssistantError, (d) `schedule_relay` update
   with cloud schedule reference raises

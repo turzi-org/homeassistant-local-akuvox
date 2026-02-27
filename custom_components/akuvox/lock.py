@@ -484,6 +484,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ServiceValidationError: If format is invalid.
 
         """
+        if len(value) != 8 or not value.isdigit():
+            raise ServiceValidationError(
+                f"Invalid date format for {field}: expected YYYYMMDD, got '{value}'",
+            )
         try:
             datetime.strptime(value, "%Y%m%d")  # noqa: DTZ007
         except ValueError:
