@@ -38,11 +38,12 @@ but are documented here for contract purposes.
 | fri | str \| None | Friday flag | No |
 | sat | str \| None | Saturday flag | No |
 
-**Cloud entity rule**: When `source_type` is non-empty, the schedule
+**Cloud entity rule**: When `source_type` is `"2"`, the schedule
 is cloud-provisioned and MUST be treated as read-only. Modify and
 delete operations MUST be rejected with a descriptive error.
 Cloud-provisioned schedules MUST NOT be usable in `schedule_relay`
-assignments when creating local users.
+assignments when creating local users. A `source_type` of `"1"`
+indicates a locally created schedule.
 
 ### User (read from device)
 
@@ -60,9 +61,10 @@ assignments when creating local users.
 | source | str \| None | Origin source | No |
 | source_type | str \| None | Origin indicator (cloud vs local) | No |
 
-**Cloud entity rule**: When `source_type` is non-empty, the user
+**Cloud entity rule**: When `source_type` is `"2"`, the user
 is cloud-provisioned and MUST be treated as read-only. Modify and
 delete operations MUST be rejected with a descriptive error.
+A `source_type` of `"1"` indicates a locally created user.
 
 **Sensitive data rule**: `private_pin` and `card_code` are returned
 in plain text in service responses. They MUST NOT appear in log
@@ -172,7 +174,7 @@ Service Call Received (HA routes to AkuvoxLockEntity)
   ├── Entity accesses device via self.coordinator.device
   │
   ├── [For write operations on existing entities]
-  │   └── Check source_type → ERROR if cloud-provisioned
+  │   └── Check source_type → ERROR if "2" (cloud)
   │
   ├── [For schedule_relay pair operations]
   │   ├── Fetch current user via device.list_users()

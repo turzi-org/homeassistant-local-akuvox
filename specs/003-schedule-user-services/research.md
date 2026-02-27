@@ -54,8 +54,8 @@ The library provides four async methods for user management:
 Both `AccessSchedule` and `User` models have a `source_type` field
 returned by the device:
 
-- **Locally created**: `source_type` is `None` or absent
-- **Cloud provisioned**: `source_type` has a non-empty value
+- **Locally created**: `source_type` is `"1"`
+- **Cloud provisioned**: `source_type` is `"2"`
 
 **Decision**: Cloud-provisioned entities MUST be returned in list
 operations as read-only data. The integration MUST NOT allow modify

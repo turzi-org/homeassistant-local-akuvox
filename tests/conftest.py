@@ -236,7 +236,7 @@ def mock_schedule_list() -> list[AccessSchedule]:
             time_start="08:00",
             time_end="18:00",
             display_id="1",
-            source_type=None,
+            source_type="1",
             mode=None,
             sun=None,
             mon="1",
@@ -257,7 +257,7 @@ def mock_schedule_list() -> list[AccessSchedule]:
             time_start=None,
             time_end=None,
             display_id="2",
-            source_type="cloud",
+            source_type="2",
             mode=None,
             sun=None,
             mon=None,
@@ -288,7 +288,7 @@ def mock_user_list() -> list[User]:
             lift_floor_num="3",
             user_type=None,
             source=None,
-            source_type=None,
+            source_type="1",
         ),
         User(
             id="99",
@@ -301,7 +301,7 @@ def mock_user_list() -> list[User]:
             lift_floor_num="1",
             user_type=None,
             source=None,
-            source_type="cloud",
+            source_type="2",
         ),
     ]
 

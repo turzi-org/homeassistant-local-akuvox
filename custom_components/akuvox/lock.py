@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import logging
+import re
+from datetime import datetime
 from typing import Any, cast
 
 from homeassistant.components.lock import LockEntity
@@ -24,6 +26,7 @@ from .const import (
     DEFAULT_RELAY_MODE,
     DEFAULT_RELAY_TYPE,
     DOMAIN,
+    EVENT_SCHEDULE_CHANGED,
     RELAY_KEY_RE,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
@@ -34,6 +37,13 @@ _LOGGER = logging.getLogger(__name__)
 # Extra seconds added to the unlock delay before polling the device,
 # giving the relay time to re-lock after the window expires.
 _RELAY_REFRESH_BUFFER_SECONDS = 1
+
+# Validation patterns for schedule fields
+_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+_WEEK_RE = re.compile(r"^[0-6]+$")
+_DAILY_RE = re.compile(
+    r"^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$",
+)
 
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
@@ -444,3 +454,135 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 masked.append(masked_copy)
             _LOGGER.debug("list_users result: %s", masked)
         return cast(ServiceResponse, {"users": user_dicts})
+
+    @staticmethod
+    def _validate_time(value: str, field: str) -> None:
+        """Validate HH:MM time format.
+
+        Args:
+            value: The time string to validate.
+            field: Field name for error messages.
+
+        Raises:
+            ServiceValidationError: If format is invalid.
+
+        """
+        if not _TIME_RE.fullmatch(value):
+            raise ServiceValidationError(
+                f"Invalid time format for {field}: expected HH:MM, got '{value}'",
+            )
+
+    @staticmethod
+    def _validate_date(value: str, field: str) -> None:
+        """Validate YYYYMMDD date format using datetime parsing.
+
+        Args:
+            value: The date string to validate.
+            field: Field name for error messages.
+
+        Raises:
+            ServiceValidationError: If format is invalid.
+
+        """
+        if len(value) != 8 or not value.isdigit():
+            raise ServiceValidationError(
+                f"Invalid date format for {field}: expected YYYYMMDD, got '{value}'",
+            )
+        try:
+            datetime.strptime(value, "%Y%m%d")  # noqa: DTZ007
+        except ValueError:
+            raise ServiceValidationError(
+                f"Invalid date format for {field}: expected YYYYMMDD, got '{value}'",
+            ) from None
+
+    @staticmethod
+    def _validate_week(value: str) -> None:
+        """Validate week day codes (digits 0-6).
+
+        Args:
+            value: The week string to validate.
+
+        Raises:
+            ServiceValidationError: If format is invalid.
+
+        """
+        if not _WEEK_RE.fullmatch(value):
+            raise ServiceValidationError(
+                f"Invalid week format: digits 0-6 only, got '{value}'",
+            )
+
+    @staticmethod
+    def _validate_daily(value: str) -> None:
+        """Validate HH:MM-HH:MM daily range format.
+
+        Args:
+            value: The daily range string to validate.
+
+        Raises:
+            ServiceValidationError: If format is invalid.
+
+        """
+        if not _DAILY_RE.fullmatch(value):
+            raise ServiceValidationError(
+                f"Invalid daily range format: expected HH:MM-HH:MM, got '{value}'",
+            )
+
+    def _validate_schedule_fields(self, **kwargs: Any) -> None:
+        """Validate optional schedule fields if present.
+
+        Args:
+            **kwargs: Schedule field values to validate.
+
+        Raises:
+            ServiceValidationError: On invalid field values.
+
+        """
+        for field in ("time_start", "time_end"):
+            val = kwargs.get(field)
+            if val is not None:
+                self._validate_time(val, field)
+        for field in ("date_start", "date_end"):
+            val = kwargs.get(field)
+            if val is not None:
+                self._validate_date(val, field)
+        if kwargs.get("week") is not None:
+            self._validate_week(kwargs["week"])
+        if kwargs.get("daily") is not None:
+            self._validate_daily(kwargs["daily"])
+
+    async def add_schedule(self, **kwargs: Any) -> None:
+        """Create a new access schedule on the device.
+
+        Args:
+            **kwargs: Service call data with schedule fields.
+
+        Raises:
+            ServiceValidationError: On input validation errors.
+            HomeAssistantError: On device communication errors.
+
+        """
+        self._validate_schedule_fields(**kwargs)
+        try:
+            await self.coordinator.device.add_schedule(
+                schedule_type=kwargs["schedule_type"],
+                name=kwargs.get("name"),
+                week=kwargs.get("week"),
+                daily=kwargs.get("daily"),
+                date_start=kwargs.get("date_start"),
+                date_end=kwargs.get("date_end"),
+                time_start=kwargs.get("time_start"),
+                time_end=kwargs.get("time_end"),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"add_schedule: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"add_schedule failed: {err}",
+            ) from err
+        event_data: dict[str, str] = {"action": "add"}
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)

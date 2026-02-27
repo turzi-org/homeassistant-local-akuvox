@@ -82,12 +82,14 @@ phase is complete.
   `mock_schedule_list` (list of AccessSchedule-like
   objects with id, schedule_type, name, week, daily,
   date_start, date_end, time_start, time_end, display_id,
-  source_type, mode, sun-sat fields; include one local and
-  one cloud-provisioned schedule),
+  source_type (`"1"` = local, `"2"` = cloud), mode, sun-sat
+  fields; include one local (source_type `"1"`) and
+  one cloud-provisioned (source_type `"2"`) schedule),
   `mock_user_list` (list of User-like objects with id,
   name, user_id, schedule_relay, web_relay, private_pin,
   card_code, lift_floor_num, user_type, source,
-  source_type; include one local and one cloud-provisioned
+  source_type (`"1"` = local, `"2"` = cloud); include one
+  local and one cloud-provisioned
   user), and `mock_empty_list` (empty list). Add all
   device method mocks to the existing
   `mock_akuvox_device` fixture: `list_schedules`,
@@ -110,7 +112,7 @@ services, test fixtures exist, user stories can begin.
 ## Phase 3: User Story 1 — List Schedules (P1) 🎯 MVP
 
 **Goal**: Retrieve all device access schedules including
-cloud-provisioned ones (identifiable by `source_type`).
+cloud-provisioned ones (identifiable by `source_type` `"2"`).
 
 **Independent Test**: Call `akuvox.list_schedules` via
 Developer Tools, verify returned schedule dicts match device.
@@ -129,8 +131,8 @@ Developer Tools, verify returned schedule dicts match device.
   (e) device offline raises HomeAssistantError,
   (f) auth failure raises HomeAssistantError,
   (g) parse error raises HomeAssistantError. Verify
-  cloud schedules appear in results with non-empty
-  `source_type`.
+  cloud schedules appear in results with `source_type`
+  of `"2"`.
 
 ### Implementation for User Story 1
 
@@ -173,7 +175,7 @@ response dict.
   HomeAssistantError, (f) verify `private_pin` and
   `card_code` are masked as `"****"` in debug log output
   (use caplog fixture). Verify cloud users appear with
-  non-empty `source_type`.
+  `source_type` of `"2"`.
 
 ### Implementation for User Story 2
 
@@ -204,7 +206,7 @@ params, then `list_schedules` to confirm creation.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T012 [US3] Write failing tests for `add_schedule` in
+- [x] T012 [US3] Write failing tests for `add_schedule` in
   tests/test_services.py: (a) success calls
   `device.add_schedule(...)` with correct params,
   (b) invalid `schedule_type` (not "0"/"1"/"2") raises
@@ -218,7 +220,7 @@ params, then `list_schedules` to confirm creation.
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Implement `async add_schedule(self, **kwargs)`
+- [x] T013 [US3] Implement `async add_schedule(self, **kwargs)`
   on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: validate
   `schedule_type` is in ("0","1","2"), validate
@@ -248,7 +250,7 @@ change persists.
 - [ ] T014 [US4] Write failing tests for `modify_schedule`
   in tests/test_services.py: (a) success passes `id`
   and updated fields to `device.modify_schedule()`,
-  (b) cloud-provisioned schedule (non-empty source_type)
+  (b) cloud-provisioned schedule (source_type `"2"`)
   raises ServiceValidationError "Cannot modify
   cloud-provisioned schedule", (c) non-existent schedule
   ID raises HomeAssistantError, (d) invalid field values
@@ -264,7 +266,7 @@ change persists.
   custom_components/akuvox/lock.py: extract `id` from
   kwargs, fetch schedule list via
   `device.list_schedules()`, find schedule by `id`,
-  check `source_type` — reject if cloud-provisioned,
+  check `source_type` — reject if `"2"` (cloud),
   validate provided fields, call
   `device.modify_schedule(id=id, ...)`, fire
   `akuvox_schedule_changed` event with action "modify".
@@ -377,8 +379,8 @@ changes, and event firing.
 - [ ] T020 [US7] Write failing tests for `modify_user` in
   tests/test_services.py: (a) success with partial
   update passes `id` and fields to
-  `device.modify_user()`, (b) cloud user (non-empty
-  source_type) raises ServiceValidationError "Cannot
+  `device.modify_user()`, (b) cloud user (source_type
+  `"2"`) raises ServiceValidationError "Cannot
   modify cloud-provisioned user", (c) non-existent user
   raises HomeAssistantError, (d) `schedule_relay` update
   with cloud schedule reference raises
@@ -391,8 +393,8 @@ changes, and event firing.
 - [ ] T021 [US7] Implement `async modify_user(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`, fetch
-  user list, find user, check `source_type` for cloud
-  protection, validate fields, if `schedule_relay`
+  user list, find user, check `source_type` for `"2"`
+  (cloud) protection, validate fields, if `schedule_relay`
   provided check referenced schedules against cloud,
   call `device.modify_user(id=id, ...)`, fire
   `akuvox_user_changed` with action "modify".
@@ -619,7 +621,7 @@ P1 (list ops) → P2 (schedule writes) → P3 (user writes)
   A story commit includes tests + implementation together.
 - Stop at any checkpoint to validate independently
 - Cloud checks: fetch list → find by ID → check
-  source_type → reject if non-empty
+  source_type → reject if `"2"` (cloud)
 - PIN/card: plain text in responses, masked in logs
 - Events: `akuvox_schedule_changed` /
   `akuvox_user_changed` after write operations
