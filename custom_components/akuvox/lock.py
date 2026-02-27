@@ -6,15 +6,18 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, ServiceResponse, callback
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_call_later
-from pylocal_akuvox import AkuvoxError
+from pylocal_akuvox import (
+    AkuvoxError,
+    AkuvoxValidationError,
+)
 
 from .const import (
     DEFAULT_HOLD_DELAY_SECONDS,
@@ -364,3 +367,80 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             self._delayed_refresh_cancel()
             self._delayed_refresh_cancel = None
         await super().async_will_remove_from_hass()
+
+    async def list_schedules(self, **kwargs: Any) -> ServiceResponse:
+        """Return all access schedules from the device.
+
+        Args:
+            **kwargs: Service call data (optional ``page`` key).
+
+        Returns:
+            Dict with ``schedules`` list of schedule dicts.
+
+        Raises:
+            HomeAssistantError: On device communication errors.
+            ServiceValidationError: On validation errors.
+
+        """
+        page = kwargs.get("page")
+        try:
+            schedules = await self.coordinator.device.list_schedules(
+                page=page,
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"list_schedules: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"list_schedules failed: {err}",
+            ) from err
+        return cast(
+            ServiceResponse,
+            {"schedules": [dict(vars(s)) for s in schedules]},
+        )
+
+    async def list_users(self, **kwargs: Any) -> ServiceResponse:
+        """Return all users from the device with plain-text credentials.
+
+        Sensitive fields (``private_pin``, ``card_code``) are returned
+        in plain text for automation consumption but masked in log
+        output.
+
+        Args:
+            **kwargs: Service call data (optional ``page`` key).
+
+        Returns:
+            Dict with ``users`` list of user dicts.
+
+        Raises:
+            HomeAssistantError: On device communication errors.
+            ServiceValidationError: On validation errors.
+
+        """
+        page = kwargs.get("page")
+        try:
+            users = await self.coordinator.device.list_users(
+                page=page,
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"list_users: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"list_users failed: {err}",
+            ) from err
+
+        user_dicts = [dict(vars(u)) for u in users]
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            masked = []
+            for ud in user_dicts:
+                masked_copy = dict(ud)
+                if masked_copy.get("private_pin"):
+                    masked_copy["private_pin"] = "****"
+                if masked_copy.get("card_code"):
+                    masked_copy["card_code"] = "****"
+                masked.append(masked_copy)
+            _LOGGER.debug("list_users result: %s", masked)
+        return cast(ServiceResponse, {"users": user_dicts})

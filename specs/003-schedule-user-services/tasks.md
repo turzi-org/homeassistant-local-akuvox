@@ -119,7 +119,7 @@ Developer Tools, verify returned schedule dicts match device.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T008 [US1] Write failing tests for `list_schedules`
+- [x] T008 [US1] Write failing tests for `list_schedules`
   in tests/test_services.py: (a) success returns
   `{"schedules": [...]}` with all AccessSchedule fields
   converted to dict, (b) empty schedule list returns
@@ -134,7 +134,7 @@ Developer Tools, verify returned schedule dicts match device.
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement `async list_schedules(self)` on
+- [x] T009 [US1] Implement `async list_schedules(self)` on
   `AkuvoxLockEntity` in custom_components/akuvox/lock.py:
   accept optional `page` kwarg, call
   `await self.coordinator.device.list_schedules(page=)`,
@@ -163,7 +163,7 @@ response dict.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T010 [US2] Write failing tests for `list_users` in
+- [x] T010 [US2] Write failing tests for `list_users` in
   tests/test_services.py: (a) success returns
   `{"users": [...]}` with all User fields including
   plain-text `private_pin` and `card_code`, (b) empty
@@ -177,7 +177,7 @@ response dict.
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Implement `async list_users(self)` on
+- [x] T011 [US2] Implement `async list_users(self)` on
   `AkuvoxLockEntity` in custom_components/akuvox/lock.py:
   accept optional `page` kwarg, call
   `await self.coordinator.device.list_users(page=)`,
