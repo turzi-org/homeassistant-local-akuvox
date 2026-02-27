@@ -397,7 +397,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ) from err
         return cast(
             ServiceResponse,
-            {"schedules": [vars(s) for s in schedules]},
+            {"schedules": [dict(vars(s)) for s in schedules]},
         )
 
     async def list_users(self, **kwargs: Any) -> ServiceResponse:
@@ -432,7 +432,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"list_users failed: {err}",
             ) from err
 
-        user_dicts = [vars(u) for u in users]
+        user_dicts = [dict(vars(u)) for u in users]
         if _LOGGER.isEnabledFor(logging.DEBUG):
             masked = []
             for ud in user_dicts:
