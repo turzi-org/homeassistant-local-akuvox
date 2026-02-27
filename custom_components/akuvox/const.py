@@ -14,6 +14,22 @@ if TYPE_CHECKING:
 DOMAIN: Final = "akuvox"
 PLATFORMS: Final = ["lock"]
 
+# Service names
+SERVICE_LIST_SCHEDULES: Final = "list_schedules"
+SERVICE_ADD_SCHEDULE: Final = "add_schedule"
+SERVICE_MODIFY_SCHEDULE: Final = "modify_schedule"
+SERVICE_DELETE_SCHEDULE: Final = "delete_schedule"
+SERVICE_LIST_USERS: Final = "list_users"
+SERVICE_ADD_USER: Final = "add_user"
+SERVICE_MODIFY_USER: Final = "modify_user"
+SERVICE_DELETE_USER: Final = "delete_user"
+SERVICE_ADD_USER_SCHEDULE_RELAY: Final = "add_user_schedule_relay"
+SERVICE_REMOVE_USER_SCHEDULE_RELAY: Final = "remove_user_schedule_relay"
+
+# Event names
+EVENT_SCHEDULE_CHANGED: Final = "akuvox_schedule_changed"
+EVENT_USER_CHANGED: Final = "akuvox_user_changed"
+
 # Config keys
 CONF_HOST: Final = "host"
 CONF_USE_SSL: Final = "use_ssl"

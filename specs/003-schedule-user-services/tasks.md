@@ -34,7 +34,7 @@ implementation and testing.
 **Purpose**: Add constants, service YAML definitions, and UI
 strings needed by all 10 services.
 
-- [ ] T001 Add service name constants (SERVICE_LIST_SCHEDULES,
+- [x] T001 Add service name constants (SERVICE_LIST_SCHEDULES,
   SERVICE_ADD_SCHEDULE, SERVICE_MODIFY_SCHEDULE,
   SERVICE_DELETE_SCHEDULE, SERVICE_LIST_USERS,
   SERVICE_ADD_USER, SERVICE_MODIFY_USER,
@@ -42,18 +42,18 @@ strings needed by all 10 services.
   SERVICE_REMOVE_USER_SCHEDULE_RELAY) and event name
   constants (EVENT_SCHEDULE_CHANGED, EVENT_USER_CHANGED)
   to custom_components/akuvox/const.py
-- [ ] T002 [P] Create custom_components/akuvox/services.yaml
+- [x] T002 [P] Create custom_components/akuvox/services.yaml
   (with SPDX header) with all 10 service definitions
   including entity target selectors (domain: lock,
   integration: akuvox), field schemas matching contracts,
   and `supports_response: only` for list services.
   Reference contracts/schedule-services.md and
   contracts/user-services.md for field definitions.
-- [ ] T003 [P] Add service name/description/field strings
+- [x] T003 [P] Add service name/description/field strings
   and exception strings to the `"services"` and
   `"exceptions"` sections of
   custom_components/akuvox/strings.json
-- [ ] T004 [P] Add matching service and exception translation
+- [x] T004 [P] Add matching service and exception translation
   strings to
   custom_components/akuvox/translations/en.json
 
@@ -67,7 +67,7 @@ scaffolding. MUST complete before any user story.
 **⚠️ CRITICAL**: No user story work can begin until this
 phase is complete.
 
-- [ ] T005 Add `async_setup(hass, config)` function to
+- [x] T005 Add `async_setup(hass, config)` function to
   `custom_components/akuvox/__init__.py` that registers
   all 10 services via
   `service.async_register_platform_entity_service()` from
@@ -78,7 +78,7 @@ phase is complete.
   `supports_response=SupportsResponse.ONLY`. Import
   voluptuous, cv, SupportsResponse, LOCK_DOMAIN. Function
   returns True. Follow Schlage pattern from research.md.
-- [ ] T006 [P] Add mock fixtures to tests/conftest.py:
+- [x] T006 [P] Add mock fixtures to tests/conftest.py:
   `mock_schedule_list` (list of AccessSchedule-like
   objects with id, schedule_type, name, week, daily,
   date_start, date_end, time_start, time_end, display_id,
@@ -94,7 +94,7 @@ phase is complete.
   `list_users`, `add_schedule`, `modify_schedule`,
   `delete_schedule`, `add_user`, `modify_user`, and
   `delete_user` as AsyncMock methods.
-- [ ] T007 [P] Create tests/test_services.py (with SPDX
+- [x] T007 [P] Create tests/test_services.py (with SPDX
   header) with base test infrastructure: imports for
   pytest, HomeAssistantError, ServiceValidationError,
   helper to set up a loaded config entry with lock entity

@@ -70,5 +70,291 @@
         "digest": "Digest"
       }
     }
+  },
+  "services": {
+    "list_schedules": {
+      "name": "List schedules",
+      "description": "Retrieve access schedules from the device.",
+      "fields": {
+        "page": {
+          "name": "Page",
+          "description": "Page number for pagination."
+        }
+      }
+    },
+    "add_schedule": {
+      "name": "Add schedule",
+      "description": "Create a new access schedule on the device.",
+      "fields": {
+        "schedule_type": {
+          "name": "Schedule type",
+          "description": "Schedule type: 0 (weekly), 1 (daily), or 2 (date range)."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Display name for the schedule."
+        },
+        "week": {
+          "name": "Week days",
+          "description": "Day codes as digits (e.g., 12345 for Mon-Fri)."
+        },
+        "daily": {
+          "name": "Daily range",
+          "description": "Time range in HH:MM-HH:MM format."
+        },
+        "date_start": {
+          "name": "Start date",
+          "description": "Start date in YYYYMMDD format."
+        },
+        "date_end": {
+          "name": "End date",
+          "description": "End date in YYYYMMDD format."
+        },
+        "time_start": {
+          "name": "Start time",
+          "description": "Start time in HH:MM format."
+        },
+        "time_end": {
+          "name": "End time",
+          "description": "End time in HH:MM format."
+        }
+      }
+    },
+    "modify_schedule": {
+      "name": "Modify schedule",
+      "description": "Update an existing access schedule on the device.",
+      "fields": {
+        "id": {
+          "name": "Schedule ID",
+          "description": "ID of the schedule to modify."
+        },
+        "schedule_type": {
+          "name": "Schedule type",
+          "description": "Updated schedule type."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Updated display name."
+        },
+        "week": {
+          "name": "Week days",
+          "description": "Updated day codes."
+        },
+        "daily": {
+          "name": "Daily range",
+          "description": "Updated daily time range."
+        },
+        "date_start": {
+          "name": "Start date",
+          "description": "Updated start date."
+        },
+        "date_end": {
+          "name": "End date",
+          "description": "Updated end date."
+        },
+        "time_start": {
+          "name": "Start time",
+          "description": "Updated start time."
+        },
+        "time_end": {
+          "name": "End time",
+          "description": "Updated end time."
+        }
+      }
+    },
+    "delete_schedule": {
+      "name": "Delete schedule",
+      "description": "Remove an access schedule from the device.",
+      "fields": {
+        "id": {
+          "name": "Schedule ID",
+          "description": "ID of the schedule to delete."
+        }
+      }
+    },
+    "list_users": {
+      "name": "List users",
+      "description": "Retrieve user codes from the device.",
+      "fields": {
+        "page": {
+          "name": "Page",
+          "description": "Page number for pagination."
+        }
+      }
+    },
+    "add_user": {
+      "name": "Add user",
+      "description": "Create a new user code on the device.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name for the user."
+        },
+        "user_id": {
+          "name": "User ID",
+          "description": "External user identifier."
+        },
+        "schedule_relay": {
+          "name": "Schedule-relay pairs",
+          "description": "Schedule-relay assignment pairs (e.g., 1-1;)."
+        },
+        "lift_floor_num": {
+          "name": "Lift floor number",
+          "description": "Elevator floor access number."
+        },
+        "web_relay": {
+          "name": "Web relay",
+          "description": "Web relay assignment."
+        },
+        "private_pin": {
+          "name": "PIN code",
+          "description": "4-8 digit PIN code for keypad access."
+        },
+        "card_code": {
+          "name": "Card code",
+          "description": "Card or badge code for NFC access."
+        }
+      }
+    },
+    "modify_user": {
+      "name": "Modify user",
+      "description": "Update an existing user code on the device.",
+      "fields": {
+        "id": {
+          "name": "User ID",
+          "description": "Device ID of the user to modify."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Updated display name."
+        },
+        "user_id": {
+          "name": "External ID",
+          "description": "Updated external user identifier."
+        },
+        "schedule_relay": {
+          "name": "Schedule-relay pairs",
+          "description": "Updated schedule-relay assignment pairs."
+        },
+        "lift_floor_num": {
+          "name": "Lift floor number",
+          "description": "Updated elevator floor access."
+        },
+        "web_relay": {
+          "name": "Web relay",
+          "description": "Updated web relay assignment."
+        },
+        "private_pin": {
+          "name": "PIN code",
+          "description": "Updated PIN code (4-8 digits)."
+        },
+        "card_code": {
+          "name": "Card code",
+          "description": "Updated card or badge code."
+        }
+      }
+    },
+    "delete_user": {
+      "name": "Delete user",
+      "description": "Remove a user code from the device.",
+      "fields": {
+        "id": {
+          "name": "User ID",
+          "description": "Device ID of the user to delete."
+        }
+      }
+    },
+    "add_user_schedule_relay": {
+      "name": "Add user schedule-relay pair",
+      "description": "Add a schedule-relay pair to an existing user.",
+      "fields": {
+        "id": {
+          "name": "User ID",
+          "description": "Device ID of the user to update."
+        },
+        "schedule_id": {
+          "name": "Schedule ID",
+          "description": "Schedule ID to assign."
+        },
+        "relay_id": {
+          "name": "Relay ID",
+          "description": "Relay ID to assign."
+        }
+      }
+    },
+    "remove_user_schedule_relay": {
+      "name": "Remove user schedule-relay pair",
+      "description": "Remove a schedule-relay pair from an existing user.",
+      "fields": {
+        "id": {
+          "name": "User ID",
+          "description": "Device ID of the user to update."
+        },
+        "schedule_id": {
+          "name": "Schedule ID",
+          "description": "Schedule ID to remove."
+        },
+        "relay_id": {
+          "name": "Relay ID",
+          "description": "Relay ID to remove."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "device_unavailable": {
+      "message": "Device is unavailable: {error}"
+    },
+    "auth_failed": {
+      "message": "Authentication failed: {error}"
+    },
+    "parse_error": {
+      "message": "Failed to parse device response."
+    },
+    "device_error": {
+      "message": "Device error: {error}"
+    },
+    "schedule_not_found": {
+      "message": "Schedule not found: {schedule_id}"
+    },
+    "user_not_found": {
+      "message": "User not found: {user_id}"
+    },
+    "cloud_schedule_modify": {
+      "message": "Cannot modify cloud-provisioned schedule."
+    },
+    "cloud_schedule_delete": {
+      "message": "Cannot delete cloud-provisioned schedule."
+    },
+    "cloud_schedule_assign": {
+      "message": "Cannot assign cloud-provisioned schedule."
+    },
+    "cloud_user_modify": {
+      "message": "Cannot modify cloud-provisioned user."
+    },
+    "cloud_user_delete": {
+      "message": "Cannot delete cloud-provisioned user."
+    },
+    "invalid_schedule_type": {
+      "message": "Invalid schedule type: {schedule_type}. Must be 0, 1, or 2."
+    },
+    "invalid_time_format": {
+      "message": "Invalid time format: {value}. Expected HH:MM."
+    },
+    "invalid_schedule_relay_format": {
+      "message": "Invalid schedule_relay format. Expected pairs like 1-1;2-2;"
+    },
+    "invalid_pin_format": {
+      "message": "PIN must be 4-8 digits."
+    },
+    "pair_already_assigned": {
+      "message": "Schedule-relay pair {schedule_id}-{relay_id} is already assigned."
+    },
+    "pair_not_assigned": {
+      "message": "Schedule-relay pair {schedule_id}-{relay_id} is not assigned."
+    },
+    "cannot_remove_last_pair": {
+      "message": "Cannot remove the last schedule-relay pair."
+    }
   }
 }

@@ -7,8 +7,13 @@ from __future__ import annotations
 
 import logging
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant, SupportsResponse
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import service
+from homeassistant.helpers.typing import ConfigType
 from pylocal_akuvox import AkuvoxDevice, AuthConfig, AuthMethod
 
 from .const import (
@@ -20,11 +25,179 @@ from .const import (
     CONF_VERIFY_SSL,
     DOMAIN,
     PLATFORMS,
+    SERVICE_ADD_SCHEDULE,
+    SERVICE_ADD_USER,
+    SERVICE_ADD_USER_SCHEDULE_RELAY,
+    SERVICE_DELETE_SCHEDULE,
+    SERVICE_DELETE_USER,
+    SERVICE_LIST_SCHEDULES,
+    SERVICE_LIST_USERS,
+    SERVICE_MODIFY_SCHEDULE,
+    SERVICE_MODIFY_USER,
+    SERVICE_REMOVE_USER_SCHEDULE_RELAY,
     get_auth_method_map,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register platform entity services for Akuvox.
+
+    Args:
+        hass: The Home Assistant instance.
+        config: The configuration.
+
+    Returns:
+        True after all services are registered.
+
+    """
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_LIST_SCHEDULES,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Optional("page"): cv.positive_int,
+        },
+        func=SERVICE_LIST_SCHEDULES,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_LIST_USERS,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Optional("page"): cv.positive_int,
+        },
+        func=SERVICE_LIST_USERS,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_ADD_SCHEDULE,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("schedule_type"): vol.In(["0", "1", "2"]),
+            vol.Optional("name"): cv.string,
+            vol.Optional("week"): cv.string,
+            vol.Optional("daily"): cv.string,
+            vol.Optional("date_start"): cv.string,
+            vol.Optional("date_end"): cv.string,
+            vol.Optional("time_start"): cv.string,
+            vol.Optional("time_end"): cv.string,
+        },
+        func=SERVICE_ADD_SCHEDULE,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_MODIFY_SCHEDULE,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): cv.string,
+            vol.Optional("schedule_type"): vol.In(["0", "1", "2"]),
+            vol.Optional("name"): cv.string,
+            vol.Optional("week"): cv.string,
+            vol.Optional("daily"): cv.string,
+            vol.Optional("date_start"): cv.string,
+            vol.Optional("date_end"): cv.string,
+            vol.Optional("time_start"): cv.string,
+            vol.Optional("time_end"): cv.string,
+        },
+        func=SERVICE_MODIFY_SCHEDULE,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_DELETE_SCHEDULE,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): cv.string,
+        },
+        func=SERVICE_DELETE_SCHEDULE,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_ADD_USER,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("name"): cv.string,
+            vol.Required("user_id"): cv.string,
+            vol.Required("schedule_relay"): cv.string,
+            vol.Required("lift_floor_num"): cv.string,
+            vol.Optional("web_relay"): cv.string,
+            vol.Optional("private_pin"): cv.string,
+            vol.Optional("card_code"): cv.string,
+        },
+        func=SERVICE_ADD_USER,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_MODIFY_USER,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): cv.string,
+            vol.Optional("name"): cv.string,
+            vol.Optional("user_id"): cv.string,
+            vol.Optional("schedule_relay"): cv.string,
+            vol.Optional("lift_floor_num"): cv.string,
+            vol.Optional("web_relay"): cv.string,
+            vol.Optional("private_pin"): cv.string,
+            vol.Optional("card_code"): cv.string,
+        },
+        func=SERVICE_MODIFY_USER,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_DELETE_USER,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): cv.string,
+        },
+        func=SERVICE_DELETE_USER,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_ADD_USER_SCHEDULE_RELAY,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): cv.string,
+            vol.Required("schedule_id"): cv.string,
+            vol.Required("relay_id"): cv.string,
+        },
+        func=SERVICE_ADD_USER_SCHEDULE_RELAY,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_REMOVE_USER_SCHEDULE_RELAY,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): cv.string,
+            vol.Required("schedule_id"): cv.string,
+            vol.Required("relay_id"): cv.string,
+        },
+        func=SERVICE_REMOVE_USER_SCHEDULE_RELAY,
+    )
+
+    return True
 
 
 def _get_config_value(entry: ConfigEntry, key: str, default: object = None) -> object:
