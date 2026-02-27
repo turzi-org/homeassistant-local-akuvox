@@ -27,14 +27,15 @@ from custom_components.akuvox.const import DOMAIN
 async def _setup_entry(
     hass: HomeAssistant,
     config_data: dict[str, Any],
-    mock_device: AsyncMock,
 ) -> MockConfigEntry:
     """Set up a loaded config entry with a lock entity for service testing.
+
+    The caller must ensure the AkuvoxDevice mock is already patched
+    (e.g. via the ``mock_akuvox_device`` fixture).
 
     Args:
         hass: The Home Assistant instance.
         config_data: Config entry data dict.
-        mock_device: The mocked AkuvoxDevice.
 
     Returns:
         The loaded MockConfigEntry.
@@ -64,7 +65,7 @@ LIBRARY_TO_HA_ERROR_MAP: list[tuple[type[Exception], type[Exception]]] = [
 ]
 
 
-def assert_library_error_maps_to_ha_error(
+def get_ha_error_for_library_error(
     library_exc: type[Exception],
 ) -> type[Exception]:
     """Return the expected HA exception for a given library exception.
@@ -92,7 +93,7 @@ async def test_services_registered_on_setup(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test that all 10 services are registered after async_setup."""
-    await _setup_entry(hass, mock_config_entry_data_none, mock_akuvox_device)
+    await _setup_entry(hass, mock_config_entry_data_none)
 
     expected_services = [
         "list_schedules",
