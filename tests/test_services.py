@@ -685,8 +685,8 @@ async def test_add_schedule_invalid_date_format(
 
 @pytest.mark.parametrize(
     "value",
-    [["xyz"], ["mon", "bad"]],
-    ids=["unknown_day", "one_bad_day"],
+    [["xyz"], ["mon", "bad"], [], ["mon", "mon"]],
+    ids=["unknown_day", "one_bad_day", "empty_list", "duplicate_day"],
 )
 async def test_add_schedule_invalid_week_values(
     hass: HomeAssistant,

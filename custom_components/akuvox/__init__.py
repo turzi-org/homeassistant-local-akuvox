@@ -41,6 +41,8 @@ from .coordinator import AkuvoxDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+_VALID_DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register platform entity services for Akuvox.
@@ -87,19 +89,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Required("name"): cv.string,
             vol.Optional("week"): vol.All(
                 cv.ensure_list,
-                [
-                    vol.In(
-                        [
-                            "sun",
-                            "mon",
-                            "tue",
-                            "wed",
-                            "thu",
-                            "fri",
-                            "sat",
-                        ],
-                    ),
-                ],
+                vol.Length(min=1),
+                [vol.In(_VALID_DAYS)],
+                vol.Unique(),
             ),
             vol.Optional("date_start"): cv.date,
             vol.Optional("date_end"): cv.date,
@@ -120,19 +112,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Optional("name"): cv.string,
             vol.Optional("week"): vol.All(
                 cv.ensure_list,
-                [
-                    vol.In(
-                        [
-                            "sun",
-                            "mon",
-                            "tue",
-                            "wed",
-                            "thu",
-                            "fri",
-                            "sat",
-                        ],
-                    ),
-                ],
+                vol.Length(min=1),
+                [vol.In(_VALID_DAYS)],
+                vol.Unique(),
             ),
             vol.Optional("date_start"): cv.date,
             vol.Optional("date_end"): cv.date,
