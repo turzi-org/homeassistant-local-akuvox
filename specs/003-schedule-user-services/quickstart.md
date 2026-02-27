@@ -19,14 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 
 ```text
 custom_components/akuvox/
-├── services.yaml        # Service definitions with entity targets (new)
-├── strings.json         # Updated with services + exceptions sections
-└── translations/
-    └── en.json          # Updated with services + exceptions sections
+├── services.yaml        # Service definitions with entity targets
 
 tests/
-├── test_services.py     # Service handler tests (new)
-└── conftest.py          # Updated with schedule/user fixtures
+├── test_services.py     # Service handler tests
 ```
 
 ## Modified Files
@@ -36,6 +32,9 @@ tests/
 - `const.py` — Add service name and event name constants
 - `lock.py` — Add entity service methods (list/add/modify/delete
   for schedules and users, plus add/remove schedule_relay pair)
+- `strings.json` — Add services + exceptions sections
+- `translations/en.json` — Add services + exceptions sections
+- `tests/conftest.py` — Add schedule/user fixtures
 
 ## No Changes Required
 
