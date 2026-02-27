@@ -10,7 +10,6 @@ Auto-generated from all feature plans. Last updated: 2026-02-25
 ## Active Technologies
 - Python ≥3.13.2 with homeassistant, pylocal-akuvox ≥0.2.0, voluptuous (002-device-config-discovery)
 - Python ≥3.13.2 + pylocal-akuvox ≥0.2.0 schedule/user services (003-schedule-user-services)
-- None; pass-through to device local API (003-schedule-user-services)
 
 - Python ≥3.13.2 with pylocal-akuvox (001-akuvox-lock-integration)
 - Home Assistant config entries (001-akuvox-lock-integration)
