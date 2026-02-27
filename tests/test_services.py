@@ -9,6 +9,7 @@ from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
+import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from pylocal_akuvox import (
@@ -22,9 +23,12 @@ from pylocal_akuvox import (
     AkuvoxValidationError,
     User,
 )
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_capture_events,
+)
 
-from custom_components.akuvox.const import DOMAIN
+from custom_components.akuvox.const import DOMAIN, EVENT_SCHEDULE_CHANGED
 
 ENTITY_ID = "lock.testlab_intercom_front_gate"
 
@@ -154,10 +158,10 @@ async def test_list_schedules_success(
     assert first["week"] == "12345"
     assert first["time_start"] == "08:00"
     assert first["time_end"] == "18:00"
-    # Cloud schedule has non-empty source_type
+    # Cloud schedule has source_type "2"
     cloud = schedules[1]
     assert isinstance(cloud, dict)
-    assert cloud["source_type"] == "cloud"
+    assert cloud["source_type"] == "2"
 
 
 async def test_list_schedules_empty(
@@ -335,10 +339,10 @@ async def test_list_users_success(
     assert first["user_id"] == "john.doe"
     assert first["private_pin"] == "1234"
     assert first["card_code"] == "ABC123"
-    # Cloud user has non-empty source_type
+    # Cloud user has source_type "2"
     cloud = users[1]
     assert isinstance(cloud, dict)
-    assert cloud["source_type"] == "cloud"
+    assert cloud["source_type"] == "2"
 
 
 async def test_list_users_empty(
@@ -503,3 +507,260 @@ async def test_list_users_log_masks_sensitive_data(
     assert "ABC123" not in log_text
     # Masked value should appear
     assert "****" in log_text
+
+
+# ── add_schedule tests ────────────────────────────────────────
+
+
+async def test_add_schedule_success(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test add_schedule calls device with correct params."""
+    entry = await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "add_schedule",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "schedule_type": "0",
+            "name": "Weekday",
+            "week": "12345",
+            "time_start": "08:00",
+            "time_end": "18:00",
+        },
+        blocking=True,
+    )
+
+    mock_akuvox_device.add_schedule.assert_called_once_with(
+        schedule_type="0",
+        name="Weekday",
+        week="12345",
+        daily=None,
+        date_start=None,
+        date_end=None,
+        time_start="08:00",
+        time_end="18:00",
+    )
+    assert entry.entry_id  # sanity
+
+
+async def test_add_schedule_fires_event(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test add_schedule fires akuvox_schedule_changed event."""
+    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    events = async_capture_events(hass, EVENT_SCHEDULE_CHANGED)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "add_schedule",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "schedule_type": "1",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert len(events) == 1
+    assert events[0].data["action"] == "add"
+    assert events[0].data["config_entry_id"] == entry.entry_id
+
+
+async def test_add_schedule_invalid_schedule_type(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test invalid schedule_type is rejected by schema."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "schedule_type": "9",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_schedule.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("time_start", "25:00"),
+        ("time_start", "8:00"),
+        ("time_start", "abc"),
+        ("time_end", "12:60"),
+        ("time_end", ""),
+    ],
+    ids=[
+        "time_start_25",
+        "time_start_no_pad",
+        "time_start_alpha",
+        "time_end_60",
+        "time_end_empty",
+    ],
+)
+async def test_add_schedule_invalid_time_format(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    field: str,
+    value: str,
+) -> None:
+    """Test malformed time values raise ServiceValidationError."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="time"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "schedule_type": "0",
+                field: value,
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_schedule.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("date_start", "2026-01-01"),
+        ("date_start", "abcdefgh"),
+        ("date_start", "202601"),
+        ("date_end", "20261301"),
+    ],
+    ids=[
+        "date_start_dashes",
+        "date_start_alpha",
+        "date_start_short",
+        "date_end_month13",
+    ],
+)
+async def test_add_schedule_invalid_date_format(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    field: str,
+    value: str,
+) -> None:
+    """Test malformed date values raise ServiceValidationError."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="date"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "schedule_type": "0",
+                field: value,
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_schedule.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["7", "abc", "12347"],
+    ids=["digit7", "alpha", "contains7"],
+)
+async def test_add_schedule_invalid_week_format(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    value: str,
+) -> None:
+    """Test malformed week values raise ServiceValidationError."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="week"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "schedule_type": "0",
+                "week": value,
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_schedule.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["08:00-", "25:00-18:00", "abc", "08:0018:00"],
+    ids=["trailing_dash", "bad_start", "alpha", "no_dash"],
+)
+async def test_add_schedule_invalid_daily_format(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    value: str,
+) -> None:
+    """Test malformed daily values raise ServiceValidationError."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="daily"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "schedule_type": "0",
+                "daily": value,
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_schedule.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("lib_exc", "ha_exc"),
+    [
+        (AkuvoxConnectionError, HomeAssistantError),
+        (AkuvoxDeviceError, HomeAssistantError),
+        (AkuvoxValidationError, ServiceValidationError),
+    ],
+    ids=["connection", "device", "validation"],
+)
+async def test_add_schedule_device_errors(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    lib_exc: type[Exception],
+    ha_exc: type[Exception],
+) -> None:
+    """Test device errors are mapped to HA exceptions."""
+    mock_akuvox_device.add_schedule.side_effect = lib_exc("fail")
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ha_exc):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "schedule_type": "0",
+            },
+            blocking=True,
+        )
