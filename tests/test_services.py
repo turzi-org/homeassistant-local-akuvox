@@ -715,6 +715,31 @@ async def test_add_schedule_invalid_week_values(
     mock_akuvox_device.add_schedule.assert_not_called()
 
 
+async def test_add_schedule_rejects_empty_name(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test that an empty name is rejected by schema."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "schedule_type": "2",
+                "name": "",
+                "time_start": "08:00",
+                "time_end": "18:00",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_schedule.assert_not_called()
+
+
 @pytest.mark.parametrize(
     ("stype", "missing"),
     [

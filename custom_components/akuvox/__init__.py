@@ -86,7 +86,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         entity_domain=Platform.LOCK,
         schema={
             vol.Required("schedule_type"): vol.In(["0", "1", "2"]),
-            vol.Required("name"): cv.string,
+            vol.Required("name"): vol.All(cv.string, vol.Length(min=1)),
             vol.Optional("week"): vol.All(
                 cv.ensure_list,
                 vol.Length(min=1),
@@ -109,7 +109,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         schema={
             vol.Required("id"): cv.string,
             vol.Optional("schedule_type"): vol.In(["0", "1", "2"]),
-            vol.Optional("name"): cv.string,
+            vol.Optional("name"): vol.All(cv.string, vol.Length(min=1)),
             vol.Optional("week"): vol.All(
                 cv.ensure_list,
                 vol.Length(min=1),
