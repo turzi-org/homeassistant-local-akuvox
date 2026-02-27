@@ -100,15 +100,35 @@ to concurrent updates.
 
 ### Schedule Input Validation (for add/modify)
 
-| Field | Rule | Error Message |
-| ----- | ---- | ------------- |
-| schedule_type | Must be "0", "1", "2" | "Invalid type: 0, 1, or 2" |
-| time_start | HH:MM format | "Invalid time format: expected HH:MM" |
-| time_end | HH:MM format | "Invalid time format: expected HH:MM" |
-| date_start | YYYYMMDD format | "Invalid date format: expected YYYYMMDD" |
-| date_end | YYYYMMDD format | "Invalid date format: expected YYYYMMDD" |
-| week | Digits 0-6 only | "Invalid week: digits 0-6 only" |
-| daily | HH:MM-HH:MM format | "Invalid daily range: expected HH:MM-HH:MM" |
+| Field | Rule | Error |
+| ----- | ---- | ----- |
+| schedule_type | "0", "1", "2" | vol.Invalid |
+| name | Required for add | vol.Invalid |
+| time_start | cv.time; required | vol.Invalid |
+| time_end | cv.time; required | vol.Invalid |
+| date_start | cv.date | vol.Invalid |
+| date_end | cv.date | vol.Invalid |
+| week | Day names (sun-sat) | vol.Invalid |
+
+**Type-specific required fields** (validated in entity):
+
+| Type | Label | Required Fields |
+| ---- | ----- | --------------- |
+| "0" | Date Range | week, date_start, date_end, time_start, time_end |
+| "1" | Weekly | week, time_start, time_end |
+| "2" | Daily | time_start, time_end |
+
+**UI selectors**: schedule_type shows labels ("Date Range",
+"Weekly", "Daily"); week is multi-select with day-of-week
+checkboxes; date fields use date picker; time fields use
+time picker.
+
+**Input conversion** (entity → device):
+
+- Day names → digit string: `["mon", "fri"]` → `"15"`
+  (0=Sun, 1=Mon, …, 6=Sat)
+- Date objects → YYYYMMDD: `2026-01-15` → `"20260115"`
+- Time objects → HH:MM: `08:00` → `"08:00"`
 
 ### User Input Validation (for add/modify)
 
