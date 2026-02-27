@@ -84,3 +84,29 @@ def assert_library_error_maps_to_ha_error(
             return ha_exc
     msg = f"No mapping for {library_exc.__name__}"
     raise ValueError(msg)
+
+
+async def test_services_registered_on_setup(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test that all 10 services are registered after async_setup."""
+    await _setup_entry(hass, mock_config_entry_data_none, mock_akuvox_device)
+
+    expected_services = [
+        "list_schedules",
+        "add_schedule",
+        "modify_schedule",
+        "delete_schedule",
+        "list_users",
+        "add_user",
+        "modify_user",
+        "delete_user",
+        "add_user_schedule_relay",
+        "remove_user_schedule_relay",
+    ]
+    for svc_name in expected_services:
+        assert hass.services.has_service(DOMAIN, svc_name), (
+            f"Service {DOMAIN}.{svc_name} not registered"
+        )
