@@ -10,11 +10,14 @@ from typing import Any
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, ServiceResponse, callback
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_call_later
-from pylocal_akuvox import AkuvoxError
+from pylocal_akuvox import (
+    AkuvoxError,
+    AkuvoxValidationError,
+)
 
 from .const import (
     DEFAULT_HOLD_DELAY_SECONDS,
@@ -364,3 +367,30 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             self._delayed_refresh_cancel()
             self._delayed_refresh_cancel = None
         await super().async_will_remove_from_hass()
+
+    async def list_schedules(self, **kwargs: Any) -> ServiceResponse:
+        """Return all access schedules from the device.
+
+        Args:
+            **kwargs: Service call data (optional ``page`` key).
+
+        Returns:
+            Dict with ``schedules`` list of schedule dicts.
+
+        Raises:
+            HomeAssistantError: On device communication errors.
+            ServiceValidationError: On validation errors.
+
+        """
+        page = kwargs.get("page")
+        try:
+            schedules = await self.coordinator.device.list_schedules(
+                page=page,
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(str(err)) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(str(err)) from err
+        return {
+            "schedules": [vars(s) for s in schedules],
+        }
