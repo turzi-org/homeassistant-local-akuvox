@@ -98,19 +98,25 @@ to concurrent updates.
 
 ## Validation Rules
 
-### Schedule Input Validation (for add/modify)
+### Schedule Input Validation
 
-| Field | Rule | Error |
-| ----- | ---- | ----- |
-| schedule_type | "0", "1", "2" | vol.Invalid |
-| name | Required for add | vol.Invalid |
-| time_start | cv.time; required | vol.Invalid |
-| time_end | cv.time; required | vol.Invalid |
-| date_start | cv.date | vol.Invalid |
-| date_end | cv.date | vol.Invalid |
-| week | Day names (sun-sat) | vol.Invalid |
+**add_schedule** schema-level (vol.Invalid on failure):
 
-**Type-specific required fields** (validated in entity):
+| Field | Rule |
+| ----- | ---- |
+| schedule_type | Required; "0", "1", "2" |
+| name | Required; non-empty string |
+| time_start | Required; cv.time (HH:MM) |
+| time_end | Required; cv.time (HH:MM) |
+| date_start | Optional; cv.date (YYYY-MM-DD) |
+| date_end | Optional; cv.date (YYYY-MM-DD) |
+| week | Optional; non-empty list of day names |
+
+**modify_schedule**: All fields optional except `id`
+(required). Same type validators apply when provided.
+
+**Type-specific required fields** (add only, validated
+in entity; raises ServiceValidationError):
 
 | Type | Label | Required Fields |
 | ---- | ----- | --------------- |
