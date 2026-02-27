@@ -94,7 +94,8 @@ the list but are clearly identifiable by the `source_type` field.
 3. Validate time/date/week/daily formats if provided.
 4. Call `await device.add_schedule(...)`.
 5. Fire event `akuvox_schedule_changed` with
-   `{"action": "add", "config_entry_id": entry_id}`.
+   `{"action": "add", "config_entry_id": entry_id}`
+   (schedule_id included if device returns it).
 
 ### Error Handling: add_schedule
 

@@ -145,9 +145,13 @@ AccessSchedule
   └── referenced by User.schedule_relay (ID linkage)
 
 Events (fired after write operations)
-  ├── akuvox_schedule_changed {action, schedule_id, config_entry_id}
-  └── akuvox_user_changed {action, user_id, config_entry_id}
+  ├── akuvox_schedule_changed {action, config_entry_id, schedule_id?}
+  └── akuvox_user_changed {action, config_entry_id, user_id?}
 ```
+
+**Note**: `schedule_id` and `user_id` are included when available.
+For add operations, the created entity ID is included if the
+device returns it in the response; otherwise it is omitted.
 
 ## State Transitions
 

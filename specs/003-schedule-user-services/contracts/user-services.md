@@ -94,7 +94,9 @@ list but are clearly identifiable by the `source_type` field.
    raise `ServiceValidationError`.
 6. Call `await device.add_user(...)`.
 7. Fire event `akuvox_user_changed` with
-   `{"action": "add", "config_entry_id": entry_id}`.
+   `{"action": "add", "config_entry_id": entry_id,
+   "user_id": user_id}` (user_id included if device
+   returns the created ID).
 
 ### Error Handling: add_user
 
@@ -212,7 +214,8 @@ Inherits from add_user, plus:
    schedule_relay=updated_string)`.
 10. Fire event `akuvox_user_changed` with
     `{"action": "add_schedule_relay", "user_id": id,
-    "schedule_id": schedule_id, "relay_id": relay_id}`.
+    "schedule_id": schedule_id, "relay_id": relay_id,
+    "config_entry_id": config_entry_id}`.
 
 ### Error Handling: add_user_schedule_relay
 
@@ -257,7 +260,8 @@ Inherits from add_user, plus:
     schedule_relay=updated_string)`.
 11. Fire event `akuvox_user_changed` with
     `{"action": "remove_schedule_relay", "user_id": id,
-    "schedule_id": schedule_id, "relay_id": relay_id}`.
+    "schedule_id": schedule_id, "relay_id": relay_id,
+    "config_entry_id": config_entry_id}`.
 
 ### Error Handling: remove_user_schedule_relay
 

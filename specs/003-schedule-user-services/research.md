@@ -109,6 +109,7 @@ manual config entry resolution in the handler.
 **Implementation pattern** (modeled on Schlage integration):
 
 ```python
+import voluptuous as vol
 from homeassistant.components.lock import DOMAIN as LOCK_DOMAIN
 from homeassistant.core import SupportsResponse
 from homeassistant.helpers import config_validation as cv, service
