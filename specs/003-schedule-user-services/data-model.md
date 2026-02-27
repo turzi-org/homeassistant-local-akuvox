@@ -84,14 +84,15 @@ pairs (e.g. `"1-1;2-3;5-2;"`).
 **Examples**: `"1-1;"`, `"1-1;2-3;"`, `"5-2;10-4;"`.
 
 The pylocal-akuvox library treats this as an opaque string. The
-integration provides two convenience services for atomic pair
-manipulation:
+integration provides two convenience services for pair
+manipulation of this string representation:
 
 - `add_user_schedule_relay` — appends a pair to existing string
 - `remove_user_schedule_relay` — removes a specific pair
 
 Both operate via fetch-then-modify on the full `schedule_relay`
-string using `modify_user()`.
+string using `modify_user()`, and are not atomic with respect
+to concurrent updates.
 
 ## Validation Rules
 

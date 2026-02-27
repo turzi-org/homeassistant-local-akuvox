@@ -95,8 +95,9 @@ list but are clearly identifiable by the `source_type` field.
 6. Call `await device.add_user(...)`.
 7. Fire event `akuvox_user_changed` with
    `{"action": "add", "config_entry_id": entry_id,
-   "user_id": user_id}` (user_id included if device
-   returns the created ID).
+   "device_user_id": id}` (`device_user_id` is the
+   device-assigned identifier, included only if the
+   device returns the created ID).
 
 ### Error Handling: add_user
 

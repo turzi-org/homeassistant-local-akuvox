@@ -14,8 +14,9 @@ SPDX-License-Identifier: Apache-2.0
 
 Add ten custom Home Assistant services to the Akuvox integration
 for CRUD operations on device schedules and users, plus two
-convenience services for atomically adding/removing individual
-schedule+relay pairs on existing users. Services are registered as
+convenience services for adding/removing individual
+schedule+relay pairs on existing users (best-effort updates;
+concurrent calls may race). Services are registered as
 platform entity services using
 `service.async_register_platform_entity_service()` in
 `async_setup()`, following the Schlage integration pattern
