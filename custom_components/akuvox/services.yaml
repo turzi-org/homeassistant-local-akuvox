@@ -43,51 +43,64 @@ add_schedule:
       selector:
         select:
           options:
-            - "0"
-            - "1"
-            - "2"
+            - value: "0"
+              label: "Date Range"
+            - value: "1"
+              label: "Weekly"
+            - value: "2"
+              label: "Daily"
     name:
-      required: false
+      required: true
       example: "Weekday Access"
       selector:
         text:
           multiline: false
     week:
       required: false
-      example: "12345"
+      example:
+        - "mon"
+        - "tue"
+        - "wed"
+        - "thu"
+        - "fri"
       selector:
-        text:
-          multiline: false
-    daily:
-      required: false
-      example: "08:00-18:00"
-      selector:
-        text:
-          multiline: false
+        select:
+          multiple: true
+          options:
+            - value: "sun"
+              label: "Sunday"
+            - value: "mon"
+              label: "Monday"
+            - value: "tue"
+              label: "Tuesday"
+            - value: "wed"
+              label: "Wednesday"
+            - value: "thu"
+              label: "Thursday"
+            - value: "fri"
+              label: "Friday"
+            - value: "sat"
+              label: "Saturday"
     date_start:
       required: false
-      example: "20260101"
+      example: "2026-01-01"
       selector:
-        text:
-          multiline: false
+        date:
     date_end:
       required: false
-      example: "20261231"
+      example: "2026-12-31"
       selector:
-        text:
-          multiline: false
+        date:
     time_start:
-      required: false
+      required: true
       example: "08:00"
       selector:
-        text:
-          multiline: false
+        time:
     time_end:
-      required: false
+      required: true
       example: "18:00"
       selector:
-        text:
-          multiline: false
+        time:
 
 modify_schedule:
   target:
@@ -107,9 +120,12 @@ modify_schedule:
       selector:
         select:
           options:
-            - "0"
-            - "1"
-            - "2"
+            - value: "0"
+              label: "Date Range"
+            - value: "1"
+              label: "Weekly"
+            - value: "2"
+              label: "Daily"
     name:
       required: false
       example: "Updated Schedule"
@@ -118,40 +134,50 @@ modify_schedule:
           multiline: false
     week:
       required: false
-      example: "12345"
+      example:
+        - "mon"
+        - "tue"
+        - "wed"
+        - "thu"
+        - "fri"
       selector:
-        text:
-          multiline: false
-    daily:
-      required: false
-      example: "08:00-18:00"
-      selector:
-        text:
-          multiline: false
+        select:
+          multiple: true
+          options:
+            - value: "sun"
+              label: "Sunday"
+            - value: "mon"
+              label: "Monday"
+            - value: "tue"
+              label: "Tuesday"
+            - value: "wed"
+              label: "Wednesday"
+            - value: "thu"
+              label: "Thursday"
+            - value: "fri"
+              label: "Friday"
+            - value: "sat"
+              label: "Saturday"
     date_start:
       required: false
-      example: "20260101"
+      example: "2026-01-01"
       selector:
-        text:
-          multiline: false
+        date:
     date_end:
       required: false
-      example: "20261231"
+      example: "2026-12-31"
       selector:
-        text:
-          multiline: false
+        date:
     time_start:
       required: false
       example: "08:00"
       selector:
-        text:
-          multiline: false
+        time:
     time_end:
       required: false
       example: "18:00"
       selector:
-        text:
-          multiline: false
+        time:
 
 delete_schedule:
   target:

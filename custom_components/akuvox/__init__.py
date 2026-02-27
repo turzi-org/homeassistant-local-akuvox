@@ -84,13 +84,27 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         entity_domain=Platform.LOCK,
         schema={
             vol.Required("schedule_type"): vol.In(["0", "1", "2"]),
-            vol.Optional("name"): cv.string,
-            vol.Optional("week"): cv.string,
-            vol.Optional("daily"): cv.string,
-            vol.Optional("date_start"): cv.string,
-            vol.Optional("date_end"): cv.string,
-            vol.Optional("time_start"): cv.string,
-            vol.Optional("time_end"): cv.string,
+            vol.Required("name"): cv.string,
+            vol.Optional("week"): vol.All(
+                cv.ensure_list,
+                [
+                    vol.In(
+                        [
+                            "sun",
+                            "mon",
+                            "tue",
+                            "wed",
+                            "thu",
+                            "fri",
+                            "sat",
+                        ],
+                    ),
+                ],
+            ),
+            vol.Optional("date_start"): cv.date,
+            vol.Optional("date_end"): cv.date,
+            vol.Required("time_start"): cv.time,
+            vol.Required("time_end"): cv.time,
         },
         func=SERVICE_ADD_SCHEDULE,
     )
@@ -104,12 +118,26 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Required("id"): cv.string,
             vol.Optional("schedule_type"): vol.In(["0", "1", "2"]),
             vol.Optional("name"): cv.string,
-            vol.Optional("week"): cv.string,
-            vol.Optional("daily"): cv.string,
-            vol.Optional("date_start"): cv.string,
-            vol.Optional("date_end"): cv.string,
-            vol.Optional("time_start"): cv.string,
-            vol.Optional("time_end"): cv.string,
+            vol.Optional("week"): vol.All(
+                cv.ensure_list,
+                [
+                    vol.In(
+                        [
+                            "sun",
+                            "mon",
+                            "tue",
+                            "wed",
+                            "thu",
+                            "fri",
+                            "sat",
+                        ],
+                    ),
+                ],
+            ),
+            vol.Optional("date_start"): cv.date,
+            vol.Optional("date_end"): cv.date,
+            vol.Optional("time_start"): cv.time,
+            vol.Optional("time_end"): cv.time,
         },
         func=SERVICE_MODIFY_SCHEDULE,
     )

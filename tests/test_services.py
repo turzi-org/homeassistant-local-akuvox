@@ -517,7 +517,7 @@ async def test_add_schedule_success(
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
 ) -> None:
-    """Test add_schedule calls device with correct params."""
+    """Test add_schedule calls device with converted params."""
     entry = await _setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
@@ -527,7 +527,9 @@ async def test_add_schedule_success(
             "entity_id": ENTITY_ID,
             "schedule_type": "0",
             "name": "Weekday",
-            "week": "12345",
+            "week": ["mon", "tue", "wed", "thu", "fri"],
+            "date_start": "2026-01-01",
+            "date_end": "2026-12-31",
             "time_start": "08:00",
             "time_end": "18:00",
         },
@@ -539,8 +541,8 @@ async def test_add_schedule_success(
         name="Weekday",
         week="12345",
         daily=None,
-        date_start=None,
-        date_end=None,
+        date_start="20260101",
+        date_end="20261231",
         time_start="08:00",
         time_end="18:00",
     )
@@ -561,7 +563,10 @@ async def test_add_schedule_fires_event(
         "add_schedule",
         service_data={
             "entity_id": ENTITY_ID,
-            "schedule_type": "1",
+            "schedule_type": "2",
+            "name": "Daily",
+            "time_start": "08:00",
+            "time_end": "18:00",
         },
         blocking=True,
     )
@@ -587,6 +592,9 @@ async def test_add_schedule_invalid_schedule_type(
             service_data={
                 "entity_id": ENTITY_ID,
                 "schedule_type": "9",
+                "name": "Bad",
+                "time_start": "08:00",
+                "time_end": "18:00",
             },
             blocking=True,
         )
@@ -598,17 +606,13 @@ async def test_add_schedule_invalid_schedule_type(
     ("field", "value"),
     [
         ("time_start", "25:00"),
-        ("time_start", "8:00"),
         ("time_start", "abc"),
         ("time_end", "12:60"),
-        ("time_end", ""),
     ],
     ids=[
         "time_start_25",
-        "time_start_no_pad",
         "time_start_alpha",
         "time_end_60",
-        "time_end_empty",
     ],
 )
 async def test_add_schedule_invalid_time_format(
@@ -618,17 +622,19 @@ async def test_add_schedule_invalid_time_format(
     field: str,
     value: str,
 ) -> None:
-    """Test malformed time values raise ServiceValidationError."""
+    """Test malformed time values are rejected by schema."""
     await _setup_entry(hass, mock_config_entry_data_none)
 
-    with pytest.raises(ServiceValidationError, match="time"):
+    with pytest.raises(vol.Invalid):
         await hass.services.async_call(
             DOMAIN,
             "add_schedule",
             service_data={
                 "entity_id": ENTITY_ID,
                 "schedule_type": "0",
+                "name": "Test",
                 field: value,
+                "time_start" if field != "time_start" else "time_end": "12:00",
             },
             blocking=True,
         )
@@ -639,15 +645,13 @@ async def test_add_schedule_invalid_time_format(
 @pytest.mark.parametrize(
     ("field", "value"),
     [
-        ("date_start", "2026-01-01"),
         ("date_start", "abcdefgh"),
-        ("date_start", "202601"),
-        ("date_end", "20261301"),
+        ("date_start", "20260115"),
+        ("date_end", "2026-13-01"),
     ],
     ids=[
-        "date_start_dashes",
         "date_start_alpha",
-        "date_start_short",
+        "date_start_no_dashes",
         "date_end_month13",
     ],
 )
@@ -658,17 +662,20 @@ async def test_add_schedule_invalid_date_format(
     field: str,
     value: str,
 ) -> None:
-    """Test malformed date values raise ServiceValidationError."""
+    """Test malformed date values are rejected by schema."""
     await _setup_entry(hass, mock_config_entry_data_none)
 
-    with pytest.raises(ServiceValidationError, match="date"):
+    with pytest.raises(vol.Invalid):
         await hass.services.async_call(
             DOMAIN,
             "add_schedule",
             service_data={
                 "entity_id": ENTITY_ID,
                 "schedule_type": "0",
+                "name": "Test",
                 field: value,
+                "time_start": "08:00",
+                "time_end": "18:00",
             },
             blocking=True,
         )
@@ -678,26 +685,29 @@ async def test_add_schedule_invalid_date_format(
 
 @pytest.mark.parametrize(
     "value",
-    ["7", "abc", "12347"],
-    ids=["digit7", "alpha", "contains7"],
+    [["xyz"], ["mon", "bad"]],
+    ids=["unknown_day", "one_bad_day"],
 )
-async def test_add_schedule_invalid_week_format(
+async def test_add_schedule_invalid_week_values(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
-    value: str,
+    value: list[str],
 ) -> None:
-    """Test malformed week values raise ServiceValidationError."""
+    """Test invalid week day names are rejected by schema."""
     await _setup_entry(hass, mock_config_entry_data_none)
 
-    with pytest.raises(ServiceValidationError, match="week"):
+    with pytest.raises(vol.Invalid):
         await hass.services.async_call(
             DOMAIN,
             "add_schedule",
             service_data={
                 "entity_id": ENTITY_ID,
-                "schedule_type": "0",
+                "schedule_type": "1",
+                "name": "Test",
                 "week": value,
+                "time_start": "08:00",
+                "time_end": "18:00",
             },
             blocking=True,
         )
@@ -706,32 +716,84 @@ async def test_add_schedule_invalid_week_format(
 
 
 @pytest.mark.parametrize(
-    "value",
-    ["08:00-", "25:00-18:00", "abc", "08:0018:00"],
-    ids=["trailing_dash", "bad_start", "alpha", "no_dash"],
+    ("stype", "missing"),
+    [
+        ("0", "week"),
+        ("0", "date_start"),
+        ("0", "date_end"),
+        ("1", "week"),
+    ],
+    ids=[
+        "daterange_no_week",
+        "daterange_no_date_start",
+        "daterange_no_date_end",
+        "weekly_no_week",
+    ],
 )
-async def test_add_schedule_invalid_daily_format(
+async def test_add_schedule_missing_required_field(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
-    value: str,
+    stype: str,
+    missing: str,
 ) -> None:
-    """Test malformed daily values raise ServiceValidationError."""
+    """Test type-specific required fields raise ServiceValidationError."""
     await _setup_entry(hass, mock_config_entry_data_none)
 
-    with pytest.raises(ServiceValidationError, match="daily"):
+    data: dict[str, Any] = {
+        "entity_id": ENTITY_ID,
+        "schedule_type": stype,
+        "name": "Test",
+        "week": ["mon", "tue"],
+        "date_start": "2026-01-01",
+        "date_end": "2026-12-31",
+        "time_start": "08:00",
+        "time_end": "18:00",
+    }
+    del data[missing]
+
+    with pytest.raises(ServiceValidationError, match=missing):
         await hass.services.async_call(
             DOMAIN,
             "add_schedule",
-            service_data={
-                "entity_id": ENTITY_ID,
-                "schedule_type": "0",
-                "daily": value,
-            },
+            service_data=data,
             blocking=True,
         )
 
     mock_akuvox_device.add_schedule.assert_not_called()
+
+
+async def test_add_schedule_daily_no_week_needed(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test type 2 (daily) succeeds without week or date fields."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "add_schedule",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "schedule_type": "2",
+            "name": "Daily",
+            "time_start": "09:00",
+            "time_end": "17:00",
+        },
+        blocking=True,
+    )
+
+    mock_akuvox_device.add_schedule.assert_called_once_with(
+        schedule_type="2",
+        name="Daily",
+        week=None,
+        daily=None,
+        date_start=None,
+        date_end=None,
+        time_start="09:00",
+        time_end="17:00",
+    )
 
 
 @pytest.mark.parametrize(
@@ -760,7 +822,10 @@ async def test_add_schedule_device_errors(
             "add_schedule",
             service_data={
                 "entity_id": ENTITY_ID,
-                "schedule_type": "0",
+                "schedule_type": "2",
+                "name": "Test",
+                "time_start": "08:00",
+                "time_end": "18:00",
             },
             blocking=True,
         )
