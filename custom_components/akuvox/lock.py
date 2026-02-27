@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime
 from typing import Any, cast
 
 from homeassistant.components.lock import LockEntity
@@ -39,7 +40,6 @@ _RELAY_REFRESH_BUFFER_SECONDS = 1
 
 # Validation patterns for schedule fields
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
-_DATE_RE = re.compile(r"^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])$")
 _WEEK_RE = re.compile(r"^[0-6]+$")
 _DAILY_RE = re.compile(
     r"^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$",
@@ -474,7 +474,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
     @staticmethod
     def _validate_date(value: str, field: str) -> None:
-        """Validate YYYYMMDD date format.
+        """Validate YYYYMMDD date format using datetime parsing.
 
         Args:
             value: The date string to validate.
@@ -484,10 +484,12 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ServiceValidationError: If format is invalid.
 
         """
-        if not _DATE_RE.fullmatch(value):
+        try:
+            datetime.strptime(value, "%Y%m%d")  # noqa: DTZ007
+        except ValueError:
             raise ServiceValidationError(
                 f"Invalid date format for {field}: expected YYYYMMDD, got '{value}'",
-            )
+            ) from None
 
     @staticmethod
     def _validate_week(value: str) -> None:
