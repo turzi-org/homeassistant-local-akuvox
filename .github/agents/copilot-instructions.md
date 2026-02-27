@@ -9,6 +9,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-25
 
 ## Active Technologies
 - Python ≥3.13.2 with homeassistant, pylocal-akuvox ≥0.2.0, voluptuous (002-device-config-discovery)
+- N/A (all config read from device, cached in coordinator) (002-phase6-polish)
 
 - Python ≥3.13.2 with pylocal-akuvox (001-akuvox-lock-integration)
 - Home Assistant config entries (001-akuvox-lock-integration)
@@ -34,6 +35,7 @@ uv run mypy custom_components/
 Python ≥3.13.2: Follow standard HA integration conventions
 
 ## Recent Changes
+- 002-phase6-polish: Added Python ≥3.13.2 (HA 2026.2.0 requirement) + homeassistant, pylocal-akuvox ≥0.2.0, voluptuous
 - 002-device-config-discovery: Added Python ≥3.13.2 (HA 2026.2.0 requirement) + homeassistant, pylocal-akuvox ≥0.2.0, voluptuous
 
 - 001-akuvox-lock-integration: Added Python ≥3.13.2 with
