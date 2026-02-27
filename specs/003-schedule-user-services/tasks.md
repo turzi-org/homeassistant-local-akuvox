@@ -293,9 +293,11 @@ removal.
   `akuvox_schedule_changed` fired with
   `{"action": "delete", "schedule_id": id, ...}`,
   (e) device error mapped to HomeAssistantError,
-  (f) deleting a schedule that is referenced in existing
-  user schedule_relay assignments logs a warning about
-  orphaned assignments (use caplog fixture).
+  (f) after successful deletion of a schedule referenced
+  in existing user schedule_relay assignments, a warning
+  about orphaned assignments is logged (use caplog
+  fixture); verify no warning is logged when deletion
+  fails.
 
 ### Implementation for User Story 5
 
@@ -303,10 +305,10 @@ removal.
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`, fetch
   schedule list for cloud check, reject if
-  cloud-provisioned, fetch user list and log a warning for
+  cloud-provisioned, call `device.delete_schedule(id=)`,
+  then on success fetch user list and log a warning for
   any users whose schedule_relay references the deleted
-  schedule ID (orphaned assignment check per EC-5), call
-  `device.delete_schedule(id=)`, fire
+  schedule ID (orphaned assignment check per EC-5), fire
   `akuvox_schedule_changed` with action "delete".
 
 **Checkpoint**: Complete schedule CRUD lifecycle (P2 done).
