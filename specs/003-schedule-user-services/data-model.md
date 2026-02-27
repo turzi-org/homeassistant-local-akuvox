@@ -118,6 +118,12 @@ to concurrent updates.
 | private_pin | 4-8 digits if provided | "PIN must be 4-8 digits" |
 | lift_floor_num | Required for add | "Lift floor number is required" |
 
+**Note on name/user_id length and charset**: The pylocal-akuvox
+library and device firmware enforce maximum lengths and allowed
+characters for `name` and `user_id`. The integration does not
+duplicate these checks; library-raised validation errors are
+mapped to `ServiceValidationError` and forwarded to the caller.
+
 ## Relationships
 
 ```text
