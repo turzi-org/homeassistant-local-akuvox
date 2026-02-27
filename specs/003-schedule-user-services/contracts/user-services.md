@@ -96,8 +96,9 @@ list but are clearly identifiable by the `source_type` field.
 7. Fire event `akuvox_user_changed` with
    `{"action": "add", "config_entry_id": entry_id,
    "device_user_id": id}` (`device_user_id` is the
-   device-assigned identifier, included only if the
-   device returns the created ID).
+   device-assigned identifier, distinct from the `User`
+   field `user_id` (external identifier), and is
+   included only if the device returns the created ID).
 
 ### Error Handling: add_user
 
@@ -141,7 +142,7 @@ list but are clearly identifiable by the `source_type` field.
    schedule IDs, verify none are cloud-provisioned.
 5. Call `await device.modify_user(id=id, ...)`.
 6. Fire event `akuvox_user_changed` with
-   `{"action": "modify", "user_id": id,
+   `{"action": "modify", "device_user_id": id,
    "config_entry_id": entry_id}`.
 
 ### Error Handling: modify_user
@@ -173,7 +174,7 @@ Inherits from add_user, plus:
    `ServiceValidationError`.
 3. Call `await device.delete_user(id=id)`.
 4. Fire event `akuvox_user_changed` with
-   `{"action": "delete", "user_id": id,
+   `{"action": "delete", "device_user_id": id,
    "config_entry_id": entry_id}`.
 
 ### Error Handling: delete_user
@@ -214,7 +215,7 @@ Inherits from add_user, plus:
 9. Call `await device.modify_user(id=id,
    schedule_relay=updated_string)`.
 10. Fire event `akuvox_user_changed` with
-    `{"action": "add_schedule_relay", "user_id": id,
+    `{"action": "add_schedule_relay", "device_user_id": id,
     "schedule_id": schedule_id, "relay_id": relay_id,
     "config_entry_id": config_entry_id}`.
 
@@ -260,7 +261,7 @@ Inherits from add_user, plus:
 10. Call `await device.modify_user(id=id,
     schedule_relay=updated_string)`.
 11. Fire event `akuvox_user_changed` with
-    `{"action": "remove_schedule_relay", "user_id": id,
+    `{"action": "remove_schedule_relay", "device_user_id": id,
     "schedule_id": schedule_id, "relay_id": relay_id,
     "config_entry_id": config_entry_id}`.
 
