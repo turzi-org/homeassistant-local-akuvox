@@ -6,6 +6,7 @@ list_schedules:
     entity:
       domain: lock
       integration: akuvox
+  supports_response: only
   fields:
     page:
       required: false
@@ -20,6 +21,7 @@ list_users:
     entity:
       domain: lock
       integration: akuvox
+  supports_response: only
   fields:
     page:
       required: false
