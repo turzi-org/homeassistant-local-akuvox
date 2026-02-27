@@ -35,11 +35,11 @@ The service is called on an `AkuvoxLockEntity` instance.
         {
             "id": "1",
             "schedule_type": "0",
-            "name": "Weekday Access",
+            "name": "Holiday Access",
             "week": "12345",
             "daily": None,
-            "date_start": None,
-            "date_end": None,
+            "date_start": "20260101",
+            "date_end": "20260115",
             "time_start": "08:00",
             "time_end": "18:00",
             "display_id": "1",
@@ -115,8 +115,9 @@ fields use time picker.
 | Condition | Exception | Message |
 | --------- | --------- | ------- |
 | Invalid schedule_type | vol.Invalid | Schema rejection |
-| Missing required field | ServiceValidationError | "Field 'X' is required..." |
-| Invalid time/date | vol.Invalid | Schema rejection |
+| Missing schema field | vol.Invalid | Schema rejection |
+| Invalid time/date/name | vol.Invalid | Schema rejection |
+| Missing type field | ServiceValidationError | "Field 'X' required..." |
 | Library validation | ServiceValidationError | Forwarded message |
 | Device error | HomeAssistantError | "Device error..." |
 
