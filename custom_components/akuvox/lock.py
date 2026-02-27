@@ -388,9 +388,13 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 page=page,
             )
         except AkuvoxValidationError as err:
-            raise ServiceValidationError(str(err)) from err
+            raise ServiceValidationError(
+                f"list_schedules: {err}",
+            ) from err
         except AkuvoxError as err:
-            raise HomeAssistantError(str(err)) from err
+            raise HomeAssistantError(
+                f"list_schedules failed: {err}",
+            ) from err
         return cast(
             ServiceResponse,
             {"schedules": [vars(s) for s in schedules]},
@@ -420,9 +424,13 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 page=page,
             )
         except AkuvoxValidationError as err:
-            raise ServiceValidationError(str(err)) from err
+            raise ServiceValidationError(
+                f"list_users: {err}",
+            ) from err
         except AkuvoxError as err:
-            raise HomeAssistantError(str(err)) from err
+            raise HomeAssistantError(
+                f"list_users failed: {err}",
+            ) from err
 
         user_dicts = [vars(u) for u in users]
         if _LOGGER.isEnabledFor(logging.DEBUG):

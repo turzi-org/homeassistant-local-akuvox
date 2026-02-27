@@ -227,8 +227,9 @@ async def test_list_schedules_no_page_default(
         (AkuvoxConnectionError, HomeAssistantError),
         (AkuvoxAuthenticationError, HomeAssistantError),
         (AkuvoxParseError, HomeAssistantError),
+        (AkuvoxValidationError, ServiceValidationError),
     ],
-    ids=["connection", "auth", "parse"],
+    ids=["connection", "auth", "parse", "validation"],
 )
 async def test_list_schedules_device_errors(
     hass: HomeAssistant,
@@ -407,8 +408,9 @@ async def test_list_users_no_page_default(
         (AkuvoxConnectionError, HomeAssistantError),
         (AkuvoxAuthenticationError, HomeAssistantError),
         (AkuvoxParseError, HomeAssistantError),
+        (AkuvoxValidationError, ServiceValidationError),
     ],
-    ids=["connection", "auth", "parse"],
+    ids=["connection", "auth", "parse", "validation"],
 )
 async def test_list_users_device_errors(
     hass: HomeAssistant,
