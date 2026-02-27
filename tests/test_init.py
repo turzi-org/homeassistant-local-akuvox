@@ -181,3 +181,40 @@ async def test_device_name_fallback_when_location_empty(
     device = dev_reg.async_get_device(identifiers={(DOMAIN, mac_clean)})
     assert device is not None
     assert device.name == "Akuvox E21V"
+
+
+# ── T038: Config fetch during integration reload ─────────────────
+
+
+async def test_config_fetched_on_reload(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test get_device_config is called after unload and reload."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+
+    # Record how many times config was fetched during initial setup
+    initial_config_calls = mock_akuvox_device.get_device_config.await_count
+
+    # Unload
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.NOT_LOADED  # type: ignore[comparison-overlap]
+
+    # Reload
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+
+    # get_device_config should have been awaited again on reload
+    assert mock_akuvox_device.get_device_config.await_count > initial_config_calls

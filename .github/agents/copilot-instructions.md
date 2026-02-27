@@ -34,7 +34,8 @@ uv run mypy custom_components/
 Python ≥3.13.2: Follow standard HA integration conventions
 
 ## Recent Changes
-- 002-device-config-discovery: Added Python ≥3.13.2 (HA 2026.2.0 requirement) + homeassistant, pylocal-akuvox ≥0.2.0, voluptuous
+- 002-device-config-discovery: Added device config fetch, relay naming,
+  hold delay, NO/NC type awareness, edge case tests, reload coverage
 
 - 001-akuvox-lock-integration: Added Python ≥3.13.2 with
   pylocal-akuvox for device communication

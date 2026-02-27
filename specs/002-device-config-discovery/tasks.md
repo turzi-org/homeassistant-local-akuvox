@@ -336,23 +336,23 @@ to NO when config missing.
 
 **Purpose**: Edge cases, cleanup, and documentation.
 
-- [ ] T036 [P] Add edge case tests for non-numeric and
+- [x] T036 [P] Add edge case tests for non-numeric and
   out-of-range config values in tests/test_coordinator.py
   — HoldDelay="abc", RelayType="99", RelayMode="-1";
   verify all fall back to defaults with warnings logged
-- [ ] T037 [P] Add tests for relay without matching config
+- [x] T037 [P] Add tests for relay without matching config
   entry in tests/test_lock.py — relay exists in
   relay_status but has no matching config key; verify
   default RelayConfig used for naming, delay, and state
-- [ ] T038 [P] Add tests for config fetch during integration
+- [x] T038 [P] Add tests for config fetch during integration
   reload in tests/test_init.py — unload and reload
   integration, verify get_device_config called on reload
-- [ ] T039 Update agent context with F002 implementation
+- [x] T039 Update agent context with F002 implementation
   details in .github/agents/copilot-instructions.md —
   run `.specify/scripts/bash/update-agent-context.sh
   copilot`
-- [ ] T040 Run full test suite and verify all tests pass
-- [ ] T041 Run quickstart.md validation scenarios end-to-end
+- [x] T040 Run full test suite and verify all tests pass
+- [x] T041 Run quickstart.md validation scenarios end-to-end
 
 ---
 

@@ -24,7 +24,11 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.akuvox.const import (
     CONFIG_KEY_LOCATION,
+    CONFIG_KEY_RELAY_HOLD_DELAY,
+    CONFIG_KEY_RELAY_MODE_SUFFIX,
     CONFIG_KEY_RELAY_NAME,
+    CONFIG_KEY_RELAY_PREFIX,
+    CONFIG_KEY_RELAY_TYPE_SUFFIX,
     DEFAULT_HOLD_DELAY_SECONDS,
     DEFAULT_RELAY_MODE,
     DEFAULT_RELAY_TYPE,
@@ -708,3 +712,51 @@ async def test_device_name_updates_on_reconnection(
 
     data = await coordinator._async_update_data()
     assert data.device_name == "Entrance"
+
+
+# ── T036: Edge case tests for non-numeric/out-of-range config ────
+
+
+def test_build_relay_config_hold_delay_non_numeric(
+    mock_device_config_factory: Any,
+    caplog: Any,
+) -> None:
+    """Test _build_relay_config falls back when HoldDelay is non-numeric."""
+    cfg = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_HOLD_DELAY}A": "abc"},
+    )
+    result = _build_relay_config(cfg, "A")
+    assert result.hold_delay == DEFAULT_HOLD_DELAY_SECONDS
+    assert "abc" in caplog.text
+    assert "HoldDelayA" in caplog.text
+    assert f"default {DEFAULT_HOLD_DELAY_SECONDS}" in caplog.text
+
+
+def test_build_relay_config_relay_type_out_of_range(
+    mock_device_config_factory: Any,
+    caplog: Any,
+) -> None:
+    """Test _build_relay_config falls back when RelayType is 99."""
+    cfg = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "99"},
+    )
+    result = _build_relay_config(cfg, "A")
+    assert result.relay_type == DEFAULT_RELAY_TYPE
+    assert "99" in caplog.text
+    assert "RelayAType" in caplog.text
+    assert f"default {DEFAULT_RELAY_TYPE}" in caplog.text
+
+
+def test_build_relay_config_relay_mode_negative(
+    mock_device_config_factory: Any,
+    caplog: Any,
+) -> None:
+    """Test _build_relay_config falls back when RelayMode is -1."""
+    cfg = mock_device_config_factory(
+        **{f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_MODE_SUFFIX}": "-1"},
+    )
+    result = _build_relay_config(cfg, "A")
+    assert result.relay_mode == DEFAULT_RELAY_MODE
+    assert "-1" in caplog.text
+    assert "RelayAMode" in caplog.text
+    assert f"default {DEFAULT_RELAY_MODE}" in caplog.text

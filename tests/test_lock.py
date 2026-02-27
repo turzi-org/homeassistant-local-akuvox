@@ -1954,3 +1954,65 @@ async def test_unlock_fallback_level_0_when_relay_not_in_configs(
         level=DEFAULT_RELAY_TYPE,
         mode=DEFAULT_RELAY_MODE,
     )
+
+
+# ── T037: Relay without matching config entry ────────────────────
+
+
+async def test_relay_defaults_when_no_config_entry(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test relay uses default delay/state/level when config missing.
+
+    When relay_configs has entries for other relays but NOT this one,
+    the entity should fall back to default hold delay, NO state
+    interpretation, and default level/mode in trigger_relay.
+    """
+    from custom_components.akuvox.coordinator import (
+        AkuvoxCoordinatorData,
+        RelayConfig,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Set relay_configs with only B (not A) to simulate missing entry
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    original = coordinator.data
+    coordinator.data = AkuvoxCoordinatorData(
+        device_info=original.device_info,
+        relay_status={"RelayA": 0},
+        device_name=original.device_name,
+        relay_configs={"B": RelayConfig(name="Side Gate")},
+    )
+    coordinator.async_set_updated_data(coordinator.data)
+    await hass.async_block_till_done()
+
+    # Entity should show locked (NO: 0=locked)
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "locked"
+
+    # Unlock should use default delay/level/mode
+    mock_akuvox_device.trigger_relay.reset_mock()
+    await hass.services.async_call(
+        "lock",
+        "unlock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+    mock_akuvox_device.trigger_relay.assert_called_once_with(
+        num=1,
+        delay=DEFAULT_HOLD_DELAY_SECONDS,
+        level=DEFAULT_RELAY_TYPE,
+        mode=DEFAULT_RELAY_MODE,
+    )
