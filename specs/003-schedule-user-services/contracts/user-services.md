@@ -107,12 +107,12 @@ numbers on the device are used.
 
 | Condition | Exception | Message |
 | --------- | --------- | ------- |
-| Empty schedules | ServiceValidationError | "At least one schedule required" |
-| Schedule not found | ServiceValidationError | "Schedule '{id}' not found" |
-| Invalid private_pin | ServiceValidationError | "PIN must be 4-8 digits" |
-| Cloud schedule ref | ServiceValidationError | "Cannot assign cloud schedule" |
-| Library validation | ServiceValidationError | Forwarded message |
-| Device error | HomeAssistantError | "Device error..." |
+| No schedules | ServiceValidationError | (schedule required) |
+| Not found | ServiceValidationError | (schedule not found) |
+| Bad PIN | ServiceValidationError | (4-8 digits) |
+| Cloud ref | ServiceValidationError | (cloud schedule) |
+| Lib error | ServiceValidationError | Forwarded message |
+| Device err | HomeAssistantError | "Device error..." |
 
 ---
 

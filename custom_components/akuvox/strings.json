@@ -184,15 +184,19 @@
         },
         "user_id": {
           "name": "User ID",
-          "description": "External user identifier."
+          "description": "Optional user identifier (auto-generated if omitted)."
         },
-        "schedule_relay": {
-          "name": "Schedule-relay pairs",
-          "description": "Schedule-relay assignment pairs (e.g., 1-1;)."
+        "schedules": {
+          "name": "Schedules",
+          "description": "Schedule display IDs to assign."
         },
         "lift_floor_num": {
           "name": "Lift floor number",
           "description": "Elevator floor access number."
+        },
+        "all_relays": {
+          "name": "All relays",
+          "description": "Apply schedules to all device relays."
         },
         "web_relay": {
           "name": "Web relay",

@@ -1342,6 +1342,7 @@ async def test_add_user_success(
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["name"] == "Jane Doe"
     assert call_kwargs["user_id"] == "jane.doe"
@@ -1374,6 +1375,7 @@ async def test_add_user_auto_user_id(
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["user_id"].isdigit()
     assert len(call_kwargs["user_id"]) >= 10
@@ -1425,6 +1427,7 @@ async def test_add_user_multiple_schedules(
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["schedule_relay"] == "10-1;30-1;"
 
@@ -1452,6 +1455,7 @@ async def test_add_user_all_relays(
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     # Mock has only RelayA (1), so result is same as single relay
     assert call_kwargs["schedule_relay"] == "10-1;"
@@ -1480,6 +1484,7 @@ async def test_add_user_with_optional_pin(
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["private_pin"] == "4321"
 
@@ -1507,6 +1512,7 @@ async def test_add_user_with_optional_card_code(
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["card_code"] == "XYZ789"
 
@@ -1534,6 +1540,7 @@ async def test_add_user_with_optional_web_relay(
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["web_relay"] == "1"
 

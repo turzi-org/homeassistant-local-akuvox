@@ -205,23 +205,31 @@ add_user:
         text:
           multiline: false
     user_id:
-      required: true
-      example: "john.doe"
+      required: false
+      example: "1709153400"
       selector:
         text:
           multiline: false
-    schedule_relay:
+    schedules:
       required: true
-      example: "1-1;"
+      example:
+        - "10"
+        - "20"
       selector:
-        text:
-          multiline: false
+        select:
+          multiple: true
     lift_floor_num:
       required: true
       example: "3"
       selector:
         text:
           multiline: false
+    all_relays:
+      required: false
+      example: false
+      default: false
+      selector:
+        boolean:
     web_relay:
       required: false
       example: ""
