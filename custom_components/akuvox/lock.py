@@ -811,6 +811,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             schedules = await self.coordinator.device.list_schedules(
                 page=None,
             )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"Failed to verify schedules: {err}",
+            ) from err
         except AkuvoxError as err:
             raise HomeAssistantError(
                 f"Failed to verify schedules: {err}",

@@ -1556,6 +1556,30 @@ async def test_add_user_nonexistent_schedule_rejected(
     mock_akuvox_device.add_user.assert_not_called()
 
 
+async def test_add_user_schedule_check_validation_error(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test AkuvoxValidationError from list_schedules maps correctly."""
+    mock_akuvox_device.list_schedules.side_effect = AkuvoxValidationError("bad")
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="verify schedules"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "name": "Jane Doe",
+                "user_id": "jane.doe",
+                "schedule_relay": "1-1;",
+                "lift_floor_num": "5",
+            },
+            blocking=True,
+        )
+
+
 async def test_add_user_fires_event(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
