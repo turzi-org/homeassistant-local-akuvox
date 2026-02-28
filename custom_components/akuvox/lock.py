@@ -617,6 +617,14 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 "Cannot modify cloud-provisioned schedule",
             )
 
+        # Validate type-specific fields when schedule_type changes
+        stype: str | None = kwargs.get("schedule_type")
+        if stype is not None:
+            self._check_required_schedule_fields(
+                stype,
+                **{k: v for k, v in kwargs.items() if k != "schedule_type"},
+            )
+
         # Convert optional fields
         week_list: list[str] | None = kwargs.get("week")
         week_str = self._convert_week(week_list) if week_list else None

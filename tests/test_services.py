@@ -971,6 +971,31 @@ async def test_modify_schedule_invalid_field_values(
     mock_akuvox_device.modify_schedule.assert_not_called()
 
 
+async def test_modify_schedule_type_requires_fields(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test schedule_type change validates required fields."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="required"):
+        await hass.services.async_call(
+            DOMAIN,
+            "modify_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "1",
+                "schedule_type": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_schedule.assert_not_called()
+
+
 async def test_modify_schedule_fires_event(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
