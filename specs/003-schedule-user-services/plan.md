@@ -33,7 +33,7 @@ but masked in logs.
 ## Technical Context
 
 **Language/Version**: Python ≥3.13.2
-**Primary Dependencies**: pylocal-akuvox ≥0.2.1 (schedule/user
+**Primary Dependencies**: pylocal-akuvox ≥0.2.2 (schedule/user
 APIs), homeassistant ≥2026.2.0 (service framework)
 **Storage**: None; integration is a pass-through to device local API
 **Testing**: pytest, pytest-homeassistant-custom-component,
