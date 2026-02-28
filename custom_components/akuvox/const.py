@@ -69,6 +69,18 @@ DEFAULT_HOLD_DELAY_SECONDS: Final = 5
 DEFAULT_RELAY_TYPE: Final = 0
 DEFAULT_RELAY_MODE: Final = 0
 
+# Day-of-week name → digit mapping (single source of truth)
+DAY_NAME_TO_DIGIT: Final[dict[str, str]] = {
+    "sun": "0",
+    "mon": "1",
+    "tue": "2",
+    "wed": "3",
+    "thu": "4",
+    "fri": "5",
+    "sat": "6",
+}
+VALID_DAYS: Final = list(DAY_NAME_TO_DIGIT.keys())
+
 # Lazy import: AuthMethod lives in pylocal_akuvox and is imported at
 # runtime to avoid a top-level heavy dependency in const.py.  The map
 # is built once on first call and cached.

@@ -35,11 +35,11 @@ The service is called on an `AkuvoxLockEntity` instance.
         {
             "id": "1",
             "schedule_type": "0",
-            "name": "Weekday Access",
+            "name": "Holiday Access",
             "week": "12345",
             "daily": None,
-            "date_start": None,
-            "date_end": None,
+            "date_start": "20260101",
+            "date_end": "20260115",
             "time_start": "08:00",
             "time_end": "18:00",
             "display_id": "1",
@@ -74,35 +74,50 @@ the list but are clearly identifiable by the `source_type` field.
 
 ### Input Schema: add_schedule
 
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| schedule_type | str | Yes | "0", "1", or "2" |
-| name | str | No | Schedule display name |
-| week | str | No | Day codes (digits 0-6) |
-| daily | str | No | Time range (HH:MM-HH:MM) |
-| date_start | str | No | Start date (YYYYMMDD) |
-| date_end | str | No | End date (YYYYMMDD) |
-| time_start | str | No | Start time (HH:MM) |
-| time_end | str | No | End time (HH:MM) |
+| Field | Type | Req | Description |
+| ----- | ---- | --- | ----------- |
+| schedule_type | str | Yes | "0"/"1"/"2" |
+| name | str | Yes | Display name |
+| week | list | Cond | Day names; types 0, 1 |
+| date_start | date | Cond | YYYY-MM-DD; type 0 |
+| date_end | date | Cond | YYYY-MM-DD; type 0 |
+| time_start | time | Yes | HH:MM; all types |
+| time_end | time | Yes | HH:MM; all types |
 
 **Entity targeting**: Uses HA standard entity/device/area targeting.
+
+**UI selectors**: schedule_type uses labeled select, week uses
+multi-select checkboxes, date fields use date picker, time
+fields use time picker.
+
+**Type-specific required fields**:
+
+- Type 0 (Date Range): week + date_start + date_end + times
+- Type 1 (Weekly): week + times
+- Type 2 (Daily): times only
 
 ### Behavior: add_schedule
 
 1. HA routes the call to the targeted `AkuvoxLockEntity` instance.
-2. Validate `schedule_type` is "0", "1", or "2".
-3. Validate time/date/week/daily formats if provided.
-4. Call `await device.add_schedule(...)`.
-5. Fire event `akuvox_schedule_changed` with
-   `{"action": "add", "config_entry_id": entry_id}`
-   (schedule_id included if device returns it).
+2. Schema validates `schedule_type` is "0", "1", or "2".
+3. Schema validates field types (cv.date, cv.time, day names).
+4. Entity validates type-specific required fields are present.
+5. Entity converts inputs to device format:
+   - Day names list → digit string (e.g. ["mon","fri"] → "15")
+   - Date objects → YYYYMMDD strings
+   - Time objects → HH:MM strings
+6. Call `await device.add_schedule(...)` with converted values.
+7. Fire event `akuvox_schedule_changed` with
+   `{"action": "add", "config_entry_id": entry_id}`.
 
 ### Error Handling: add_schedule
 
 | Condition | Exception | Message |
 | --------- | --------- | ------- |
-| Invalid schedule_type | ServiceValidationError | "Invalid schedule type..." |
-| Malformed time | ServiceValidationError | "Invalid time format..." |
+| Invalid schedule_type | vol.Invalid | Schema rejection |
+| Missing schema field | vol.Invalid | Schema rejection |
+| Invalid time/date/name | vol.Invalid | Schema rejection |
+| Missing type field | ServiceValidationError | "Field 'X' required..." |
 | Library validation | ServiceValidationError | Forwarded message |
 | Device error | HomeAssistantError | "Device error..." |
 
@@ -115,14 +130,13 @@ the list but are clearly identifiable by the `source_type` field.
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
 | id | str | Yes | Schedule ID to modify |
-| schedule_type | str | No | Updated type |
+| schedule_type | str | No | Updated type ("0"/"1"/"2") |
 | name | str | No | Updated name |
-| week | str | No | Updated day codes |
-| daily | str | No | Updated daily range |
-| date_start | str | No | Updated start date |
-| date_end | str | No | Updated end date |
-| time_start | str | No | Updated start time |
-| time_end | str | No | Updated end time |
+| week | list[str] | No | Updated day names (sun-sat) |
+| date_start | date | No | Updated start date (YYYY-MM-DD) |
+| date_end | date | No | Updated end date (YYYY-MM-DD) |
+| time_start | time | No | Updated start time (HH:MM) |
+| time_end | time | No | Updated end time (HH:MM) |
 
 **Entity targeting**: Uses HA standard entity/device/area targeting.
 

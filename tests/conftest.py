@@ -227,7 +227,7 @@ def mock_schedule_list() -> list[AccessSchedule]:
     return [
         AccessSchedule(
             id="1",
-            schedule_type="0",
+            schedule_type="1",
             name="Weekday Access",
             week="12345",
             daily=None,
@@ -248,14 +248,14 @@ def mock_schedule_list() -> list[AccessSchedule]:
         ),
         AccessSchedule(
             id="2",
-            schedule_type="1",
+            schedule_type="2",
             name="Cloud Schedule",
             week=None,
             daily="00:00-23:59",
             date_start=None,
             date_end=None,
-            time_start=None,
-            time_end=None,
+            time_start="00:00",
+            time_end="23:59",
             display_id="2",
             source_type="2",
             mode=None,

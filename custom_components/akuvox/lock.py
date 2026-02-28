@@ -5,9 +5,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
-import re
-from datetime import datetime
 from typing import Any, cast
 
 from homeassistant.components.lock import LockEntity
@@ -22,6 +21,7 @@ from pylocal_akuvox import (
 )
 
 from .const import (
+    DAY_NAME_TO_DIGIT,
     DEFAULT_HOLD_DELAY_SECONDS,
     DEFAULT_RELAY_MODE,
     DEFAULT_RELAY_TYPE,
@@ -38,12 +38,12 @@ _LOGGER = logging.getLogger(__name__)
 # giving the relay time to re-lock after the window expires.
 _RELAY_REFRESH_BUFFER_SECONDS = 1
 
-# Validation patterns for schedule fields
-_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
-_WEEK_RE = re.compile(r"^[0-6]+$")
-_DAILY_RE = re.compile(
-    r"^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$",
-)
+# Required fields per schedule_type (0=date-range, 1=weekly, 2=daily)
+_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
+    "0": ("week", "date_start", "date_end"),
+    "1": ("week",),
+    "2": (),
+}
 
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
@@ -456,102 +456,77 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         return cast(ServiceResponse, {"users": user_dicts})
 
     @staticmethod
-    def _validate_time(value: str, field: str) -> None:
-        """Validate HH:MM time format.
+    def _convert_week(days: list[str]) -> str:
+        """Convert day-name list to device digit string.
 
         Args:
-            value: The time string to validate.
-            field: Field name for error messages.
+            days: List of day abbreviations (e.g. ["mon", "fri"]).
 
-        Raises:
-            ServiceValidationError: If format is invalid.
+        Returns:
+            Sorted digit string for the device (e.g. "15").
 
         """
-        if not _TIME_RE.fullmatch(value):
-            raise ServiceValidationError(
-                f"Invalid time format for {field}: expected HH:MM, got '{value}'",
-            )
+        digits = sorted(DAY_NAME_TO_DIGIT[d] for d in days)
+        return "".join(digits)
 
     @staticmethod
-    def _validate_date(value: str, field: str) -> None:
-        """Validate YYYYMMDD date format using datetime parsing.
+    def _convert_date(value: dt.date) -> str:
+        """Convert a date object to YYYYMMDD string.
 
         Args:
-            value: The date string to validate.
-            field: Field name for error messages.
+            value: The date to convert.
 
-        Raises:
-            ServiceValidationError: If format is invalid.
+        Returns:
+            Date formatted as YYYYMMDD for the device.
 
         """
-        if len(value) != 8 or not value.isdigit():
-            raise ServiceValidationError(
-                f"Invalid date format for {field}: expected YYYYMMDD, got '{value}'",
-            )
-        try:
-            datetime.strptime(value, "%Y%m%d")  # noqa: DTZ007
-        except ValueError:
-            raise ServiceValidationError(
-                f"Invalid date format for {field}: expected YYYYMMDD, got '{value}'",
-            ) from None
+        return value.strftime("%Y%m%d")
 
     @staticmethod
-    def _validate_week(value: str) -> None:
-        """Validate week day codes (digits 0-6).
+    def _convert_time(value: dt.time) -> str:
+        """Convert a time object to HH:MM string.
 
         Args:
-            value: The week string to validate.
+            value: The time to convert.
 
-        Raises:
-            ServiceValidationError: If format is invalid.
+        Returns:
+            Time formatted as HH:MM for the device.
 
         """
-        if not _WEEK_RE.fullmatch(value):
-            raise ServiceValidationError(
-                f"Invalid week format: digits 0-6 only, got '{value}'",
-            )
+        return value.strftime("%H:%M")
 
-    @staticmethod
-    def _validate_daily(value: str) -> None:
-        """Validate HH:MM-HH:MM daily range format.
+    def _check_required_schedule_fields(
+        self,
+        schedule_type: str,
+        **kwargs: Any,
+    ) -> None:
+        """Validate required fields are present for the schedule type.
+
+        Type 0 (date range) requires week, date_start, date_end.
+        Type 1 (weekly) requires week.
+        Type 2 (daily) has no extra required fields.
+        time_start and time_end are enforced by the schema.
 
         Args:
-            value: The daily range string to validate.
+            schedule_type: The schedule type ("0", "1", "2").
+            **kwargs: Service call data.
 
         Raises:
-            ServiceValidationError: If format is invalid.
+            ServiceValidationError: If a required field is missing.
 
         """
-        if not _DAILY_RE.fullmatch(value):
-            raise ServiceValidationError(
-                f"Invalid daily range format: expected HH:MM-HH:MM, got '{value}'",
-            )
-
-    def _validate_schedule_fields(self, **kwargs: Any) -> None:
-        """Validate optional schedule fields if present.
-
-        Args:
-            **kwargs: Schedule field values to validate.
-
-        Raises:
-            ServiceValidationError: On invalid field values.
-
-        """
-        for field in ("time_start", "time_end"):
-            val = kwargs.get(field)
-            if val is not None:
-                self._validate_time(val, field)
-        for field in ("date_start", "date_end"):
-            val = kwargs.get(field)
-            if val is not None:
-                self._validate_date(val, field)
-        if kwargs.get("week") is not None:
-            self._validate_week(kwargs["week"])
-        if kwargs.get("daily") is not None:
-            self._validate_daily(kwargs["daily"])
+        for field in _REQUIRED_FIELDS.get(schedule_type, ()):
+            if kwargs.get(field) is None:
+                raise ServiceValidationError(
+                    f"Field '{field}' is required for schedule type {schedule_type}",
+                )
 
     async def add_schedule(self, **kwargs: Any) -> None:
         """Create a new access schedule on the device.
+
+        Converts user-friendly inputs (day names, date/time
+        objects) to the device's expected string formats before
+        forwarding the call.
 
         Args:
             **kwargs: Service call data with schedule fields.
@@ -561,17 +536,29 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: On device communication errors.
 
         """
-        self._validate_schedule_fields(**kwargs)
+        stype = kwargs["schedule_type"]
+        self._check_required_schedule_fields(
+            stype, **{k: v for k, v in kwargs.items() if k != "schedule_type"}
+        )
+
+        week_list: list[str] | None = kwargs.get("week")
+        week_str = self._convert_week(week_list) if week_list else None
+
+        date_start: dt.date | None = kwargs.get("date_start")
+        date_end: dt.date | None = kwargs.get("date_end")
+        time_start: dt.time = kwargs["time_start"]
+        time_end: dt.time = kwargs["time_end"]
+
         try:
             await self.coordinator.device.add_schedule(
-                schedule_type=kwargs["schedule_type"],
+                schedule_type=stype,
                 name=kwargs.get("name"),
-                week=kwargs.get("week"),
-                daily=kwargs.get("daily"),
-                date_start=kwargs.get("date_start"),
-                date_end=kwargs.get("date_end"),
-                time_start=kwargs.get("time_start"),
-                time_end=kwargs.get("time_end"),
+                week=week_str,
+                daily=None,
+                date_start=(self._convert_date(date_start) if date_start else None),
+                date_end=(self._convert_date(date_end) if date_end else None),
+                time_start=self._convert_time(time_start),
+                time_end=self._convert_time(time_end),
             )
         except AkuvoxValidationError as err:
             raise ServiceValidationError(

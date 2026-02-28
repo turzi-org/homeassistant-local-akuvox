@@ -88,7 +88,7 @@
       "fields": {
         "schedule_type": {
           "name": "Schedule type",
-          "description": "Schedule type: 0 (weekly), 1 (daily), or 2 (date range)."
+          "description": "Schedule mode: Date Range, Weekly, or Daily."
         },
         "name": {
           "name": "Name",
@@ -96,27 +96,23 @@
         },
         "week": {
           "name": "Week days",
-          "description": "Day codes as digits (e.g., 12345 for Mon-Fri)."
-        },
-        "daily": {
-          "name": "Daily range",
-          "description": "Time range in HH:MM-HH:MM format."
+          "description": "Days of the week the schedule is active."
         },
         "date_start": {
           "name": "Start date",
-          "description": "Start date in YYYYMMDD format."
+          "description": "Start date for date-range schedules."
         },
         "date_end": {
           "name": "End date",
-          "description": "End date in YYYYMMDD format."
+          "description": "End date for date-range schedules."
         },
         "time_start": {
           "name": "Start time",
-          "description": "Start time in HH:MM format."
+          "description": "Daily start time for the schedule."
         },
         "time_end": {
           "name": "End time",
-          "description": "End time in HH:MM format."
+          "description": "Daily end time for the schedule."
         }
       }
     },
@@ -130,7 +126,7 @@
         },
         "schedule_type": {
           "name": "Schedule type",
-          "description": "Updated schedule type."
+          "description": "Updated schedule mode."
         },
         "name": {
           "name": "Name",
@@ -138,11 +134,7 @@
         },
         "week": {
           "name": "Week days",
-          "description": "Updated day codes."
-        },
-        "daily": {
-          "name": "Daily range",
-          "description": "Updated daily time range."
+          "description": "Updated days of the week."
         },
         "date_start": {
           "name": "Start date",

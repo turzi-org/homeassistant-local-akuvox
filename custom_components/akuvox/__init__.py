@@ -35,6 +35,7 @@ from .const import (
     SERVICE_MODIFY_SCHEDULE,
     SERVICE_MODIFY_USER,
     SERVICE_REMOVE_USER_SCHEDULE_RELAY,
+    VALID_DAYS,
     get_auth_method_map,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
@@ -84,13 +85,17 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         entity_domain=Platform.LOCK,
         schema={
             vol.Required("schedule_type"): vol.In(["0", "1", "2"]),
-            vol.Optional("name"): cv.string,
-            vol.Optional("week"): cv.string,
-            vol.Optional("daily"): cv.string,
-            vol.Optional("date_start"): cv.string,
-            vol.Optional("date_end"): cv.string,
-            vol.Optional("time_start"): cv.string,
-            vol.Optional("time_end"): cv.string,
+            vol.Required("name"): vol.All(cv.string, vol.Length(min=1)),
+            vol.Optional("week"): vol.All(
+                cv.ensure_list,
+                vol.Length(min=1),
+                [vol.In(VALID_DAYS)],
+                vol.Unique(),
+            ),
+            vol.Optional("date_start"): cv.date,
+            vol.Optional("date_end"): cv.date,
+            vol.Required("time_start"): cv.time,
+            vol.Required("time_end"): cv.time,
         },
         func=SERVICE_ADD_SCHEDULE,
     )
@@ -103,13 +108,17 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         schema={
             vol.Required("id"): cv.string,
             vol.Optional("schedule_type"): vol.In(["0", "1", "2"]),
-            vol.Optional("name"): cv.string,
-            vol.Optional("week"): cv.string,
-            vol.Optional("daily"): cv.string,
-            vol.Optional("date_start"): cv.string,
-            vol.Optional("date_end"): cv.string,
-            vol.Optional("time_start"): cv.string,
-            vol.Optional("time_end"): cv.string,
+            vol.Optional("name"): vol.All(cv.string, vol.Length(min=1)),
+            vol.Optional("week"): vol.All(
+                cv.ensure_list,
+                vol.Length(min=1),
+                [vol.In(VALID_DAYS)],
+                vol.Unique(),
+            ),
+            vol.Optional("date_start"): cv.date,
+            vol.Optional("date_end"): cv.date,
+            vol.Optional("time_start"): cv.time,
+            vol.Optional("time_end"): cv.time,
         },
         func=SERVICE_MODIFY_SCHEDULE,
     )
