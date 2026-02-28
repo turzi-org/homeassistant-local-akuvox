@@ -16,6 +16,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 from pylocal_akuvox import (
+    AccessSchedule,
     AkuvoxError,
     AkuvoxValidationError,
 )
@@ -574,28 +575,31 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             event_data["config_entry_id"] = config_entry.entry_id
         self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)
 
-    async def modify_schedule(self, **kwargs: Any) -> None:
-        """Modify an existing access schedule on the device.
-
-        Fetches the current schedule list to verify the schedule
-        exists and is not cloud-provisioned before forwarding the
-        update.
+    async def _fetch_local_schedule(
+        self,
+        schedule_id: str,
+    ) -> AccessSchedule:
+        """Fetch a schedule by ID and verify it is locally managed.
 
         Args:
-            **kwargs: Service call data (``id`` required, other
-                schedule fields optional).
+            schedule_id: The ID of the schedule to look up.
+
+        Returns:
+            The matching AccessSchedule.
 
         Raises:
-            ServiceValidationError: If schedule is cloud-provisioned
-                or input validation fails.
-            HomeAssistantError: If schedule not found or device error.
+            ServiceValidationError: If schedule is cloud-provisioned.
+            HomeAssistantError: If schedule not found or fetch fails.
 
         """
-        schedule_id: str = kwargs["id"]
-
-        # Fetch schedules and verify the target exists
         try:
-            schedules = await self.coordinator.device.list_schedules()
+            schedules = await self.coordinator.device.list_schedules(
+                page=None,
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"modify_schedule: {err}",
+            ) from err
         except AkuvoxError as err:
             raise HomeAssistantError(
                 f"modify_schedule: failed to fetch schedules: {err}",
@@ -616,6 +620,28 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             raise ServiceValidationError(
                 "Cannot modify cloud-provisioned schedule",
             )
+
+        return target
+
+    async def modify_schedule(self, **kwargs: Any) -> None:
+        """Modify an existing access schedule on the device.
+
+        Fetches the current schedule list to verify the schedule
+        exists and is not cloud-provisioned before forwarding the
+        update.
+
+        Args:
+            **kwargs: Service call data (``id`` required, other
+                schedule fields optional).
+
+        Raises:
+            ServiceValidationError: If schedule is cloud-provisioned
+                or input validation fails.
+            HomeAssistantError: If schedule not found or device error.
+
+        """
+        schedule_id: str = kwargs["id"]
+        await self._fetch_local_schedule(schedule_id)
 
         # Validate type-specific fields when schedule_type changes
         stype: str | None = kwargs.get("schedule_type")
