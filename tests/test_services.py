@@ -153,7 +153,7 @@ async def test_list_schedules_success(
     first = schedules[0]
     assert isinstance(first, dict)
     assert first["id"] == "1"
-    assert first["schedule_type"] == "0"
+    assert first["schedule_type"] == "1"
     assert first["name"] == "Weekday Access"
     assert first["week"] == "12345"
     assert first["time_start"] == "08:00"
