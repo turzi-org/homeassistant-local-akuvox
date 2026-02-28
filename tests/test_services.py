@@ -1449,7 +1449,7 @@ async def test_add_user_invalid_pin(
     mock_schedule_list: list[AccessSchedule],
     bad_pin: str,
 ) -> None:
-    """Test PIN shorter than 4 or longer than 8 raises error."""
+    """Test invalid PIN (not 4-8 digits) raises error."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     await _setup_entry(hass, mock_config_entry_data_none)
 

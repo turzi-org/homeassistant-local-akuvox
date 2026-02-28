@@ -49,7 +49,7 @@ _REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 # Pattern for schedule_relay: one or more "<number>-<number>;" pairs
-_SCHEDULE_RELAY_RE: re.Pattern[str] = re.compile(r"^([0-9]+-[0-9]+;)+$")
+_SCHEDULE_RELAY_RE: re.Pattern[str] = re.compile(r"^([0-9]+-[0-9]+;)+\Z")
 
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
@@ -781,7 +781,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             pin: The PIN string to validate, or None.
 
         Raises:
-            ServiceValidationError: If PIN length is invalid.
+            ServiceValidationError: If PIN is not 4-8 decimal digits.
 
         """
         if pin is not None and (len(pin) < 4 or len(pin) > 8 or not pin.isdigit()):
@@ -800,7 +800,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         Raises:
             ServiceValidationError: If any referenced schedule is
-                cloud-provisioned.
+                cloud-provisioned or does not exist on the device.
             HomeAssistantError: If schedule list fetch fails.
 
         """
@@ -820,6 +820,9 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         for sid in schedule_ids:
             sched = schedule_map.get(sid)
             if sched is None:
+                # ServiceValidationError (not HomeAssistantError) because
+                # the caller supplied an invalid schedule_relay reference —
+                # this is an input-validation failure, not a device error.
                 raise ServiceValidationError(
                     f"Schedule '{sid}' not found on device",
                 )
