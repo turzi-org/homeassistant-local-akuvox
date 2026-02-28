@@ -21,7 +21,7 @@ dict-like object with all relevant keys.
 ## Technical Context
 
 **Language/Version**: Python ≥3.13.2 (HA 2026.2.0 requirement)
-**Primary Dependencies**: homeassistant, pylocal-akuvox ≥0.2.0, voluptuous
+**Primary Dependencies**: homeassistant, pylocal-akuvox ≥0.2.1, voluptuous
 **Storage**: N/A (all config read from device, cached in coordinator)
 **Testing**: pytest with homeassistant test helpers, AsyncMock
 **Target Platform**: Home Assistant custom integration (HACS)
