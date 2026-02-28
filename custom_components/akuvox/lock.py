@@ -8,6 +8,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
+import time
 from typing import Any, cast
 
 from homeassistant.components.lock import LockEntity
@@ -714,7 +715,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         """
         schedule_id: str = kwargs["id"]
-        await self._fetch_local_schedule(schedule_id, action="delete")
+        schedule = await self._fetch_local_schedule(schedule_id, action="delete")
+        display_id = schedule.display_id or schedule_id
 
         try:
             await self.coordinator.device.delete_schedule(id=schedule_id)
@@ -733,14 +735,14 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             for user in users:
                 relay = getattr(user, "schedule_relay", "") or ""
                 for pair in relay.split(";"):
-                    if pair and pair.split("-")[0] == schedule_id:
+                    if pair and pair.split("-")[0] == display_id:
                         _LOGGER.warning(
                             "Orphaned schedule-relay assignment: "
                             "user '%s' (id=%s) still references "
                             "deleted schedule %s",
                             user.name,
                             user.id,
-                            schedule_id,
+                            display_id,
                         )
                         break
         except AkuvoxError:
@@ -791,12 +793,14 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
     async def _check_cloud_schedules(
         self,
-        schedule_relay: str,
+        display_ids: list[str],
     ) -> None:
         """Verify no referenced schedules are cloud-provisioned.
 
+        Looks up schedules by ``display_id`` (not internal ``id``).
+
         Args:
-            schedule_relay: The schedule-relay string to check.
+            display_ids: Schedule display_ids to validate.
 
         Raises:
             ServiceValidationError: If any referenced schedule is
@@ -804,9 +808,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: If schedule list fetch fails.
 
         """
-        schedule_ids = {
-            pair.split("-")[0] for pair in schedule_relay.rstrip(";").split(";") if pair
-        }
         try:
             schedules = await self.coordinator.device.list_schedules(
                 page=None,
@@ -820,26 +821,61 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"Failed to verify schedules: {err}",
             ) from err
 
-        schedule_map = {s.id: s for s in schedules}
-        for sid in schedule_ids:
-            sched = schedule_map.get(sid)
+        display_map = {s.display_id: s for s in schedules if s.display_id is not None}
+        for did in display_ids:
+            sched = display_map.get(did)
             if sched is None:
-                # ServiceValidationError (not HomeAssistantError) because
-                # the caller supplied an invalid schedule_relay reference —
-                # this is an input-validation failure, not a device error.
+                # ServiceValidationError because the caller supplied
+                # an invalid schedule reference (input-validation).
                 raise ServiceValidationError(
-                    f"Schedule '{sid}' not found on device",
+                    f"Schedule '{did}' not found on device",
                 )
             if sched.source_type == "2":
                 raise ServiceValidationError(
                     "Cannot assign cloud-provisioned schedule",
                 )
 
+    def _build_schedule_relay(
+        self,
+        display_ids: list[str],
+        all_relays: bool,
+    ) -> str:
+        """Build a schedule_relay string from display_ids.
+
+        Pairs each display_id with the entity's relay number,
+        or with every relay on the device when *all_relays* is
+        true.
+
+        Args:
+            display_ids: Schedule display_ids to assign.
+            all_relays: Pair with all device relays if True.
+
+        Returns:
+            Formatted schedule_relay string (e.g. ``"10-1;10-2;"``).
+
+        """
+        if all_relays:
+            relay_nums = sorted(
+                n
+                for k in self.coordinator.data.relay_status
+                if (n := _relay_key_to_number(k)) is not None
+            )
+        else:
+            relay_nums = [self._relay_number]
+
+        parts: list[str] = []
+        for did in display_ids:
+            for rnum in relay_nums:
+                parts.append(f"{did}-{rnum};")
+        return "".join(parts)
+
     async def add_user(self, **kwargs: Any) -> None:
         """Create a new user on the device.
 
         Validates input fields, checks that referenced schedules
-        are not cloud-provisioned, then forwards the call.
+        are not cloud-provisioned, builds the schedule_relay
+        string from display_ids and relay numbers, then forwards
+        the call.
 
         Args:
             **kwargs: Service call data with user fields.
@@ -849,15 +885,21 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: On device communication errors.
 
         """
-        schedule_relay: str = kwargs["schedule_relay"]
-        self._validate_schedule_relay(schedule_relay)
+        schedules: list[str] = kwargs["schedules"]
+        if not schedules:
+            raise ServiceValidationError(
+                "At least one schedule is required",
+            )
         self._validate_pin(kwargs.get("private_pin"))
-        await self._check_cloud_schedules(schedule_relay)
+        await self._check_cloud_schedules(schedules)
+
+        all_relays: bool = kwargs.get("all_relays", False)
+        schedule_relay = self._build_schedule_relay(schedules, all_relays)
 
         try:
             await self.coordinator.device.add_user(
                 name=kwargs["name"],
-                user_id=kwargs["user_id"],
+                user_id=kwargs.get("user_id") or str(int(time.time())),
                 schedule_relay=schedule_relay,
                 lift_floor_num=kwargs["lift_floor_num"],
                 web_relay=kwargs.get("web_relay"),

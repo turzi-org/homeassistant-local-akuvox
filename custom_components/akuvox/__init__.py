@@ -141,9 +141,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         entity_domain=Platform.LOCK,
         schema={
             vol.Required("name"): cv.string,
-            vol.Required("user_id"): cv.string,
-            vol.Required("schedule_relay"): cv.string,
+            vol.Required("schedules"): vol.All(cv.ensure_list, [cv.string]),
             vol.Required("lift_floor_num"): cv.string,
+            vol.Optional("user_id"): cv.string,
+            vol.Optional("all_relays"): cv.boolean,
             vol.Optional("web_relay"): cv.string,
             vol.Optional("private_pin"): cv.string,
             vol.Optional("card_code"): cv.string,
