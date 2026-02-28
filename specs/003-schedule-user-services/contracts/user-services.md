@@ -107,7 +107,7 @@ numbers on the device are used.
 
 | Condition | Exception | Message |
 | --------- | --------- | ------- |
-| No schedules | ServiceValidationError | (schedule required) |
+| No schedules | vol.Invalid (schema) | Length min 1 |
 | Not found | ServiceValidationError | (schedule not found) |
 | Bad PIN | ServiceValidationError | (4-8 digits) |
 | Cloud ref | ServiceValidationError | (cloud schedule) |
