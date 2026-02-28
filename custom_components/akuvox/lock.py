@@ -573,3 +573,85 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if config_entry is not None and hasattr(config_entry, "entry_id"):
             event_data["config_entry_id"] = config_entry.entry_id
         self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)
+
+    async def modify_schedule(self, **kwargs: Any) -> None:
+        """Modify an existing access schedule on the device.
+
+        Fetches the current schedule list to verify the schedule
+        exists and is not cloud-provisioned before forwarding the
+        update.
+
+        Args:
+            **kwargs: Service call data (``id`` required, other
+                schedule fields optional).
+
+        Raises:
+            ServiceValidationError: If schedule is cloud-provisioned
+                or input validation fails.
+            HomeAssistantError: If schedule not found or device error.
+
+        """
+        schedule_id: str = kwargs["id"]
+
+        # Fetch schedules and verify the target exists
+        try:
+            schedules = await self.coordinator.device.list_schedules()
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"modify_schedule: failed to fetch schedules: {err}",
+            ) from err
+
+        target = None
+        for s in schedules:
+            if s.id == schedule_id:
+                target = s
+                break
+
+        if target is None:
+            raise HomeAssistantError(
+                f"Schedule '{schedule_id}' not found",
+            )
+
+        if target.source_type == "2":
+            raise ServiceValidationError(
+                "Cannot modify cloud-provisioned schedule",
+            )
+
+        # Convert optional fields
+        week_list: list[str] | None = kwargs.get("week")
+        week_str = self._convert_week(week_list) if week_list else None
+
+        date_start: dt.date | None = kwargs.get("date_start")
+        date_end: dt.date | None = kwargs.get("date_end")
+        time_start: dt.time | None = kwargs.get("time_start")
+        time_end: dt.time | None = kwargs.get("time_end")
+
+        try:
+            await self.coordinator.device.modify_schedule(
+                id=schedule_id,
+                schedule_type=kwargs.get("schedule_type"),
+                name=kwargs.get("name"),
+                week=week_str,
+                daily=None,
+                date_start=(self._convert_date(date_start) if date_start else None),
+                date_end=(self._convert_date(date_end) if date_end else None),
+                time_start=(self._convert_time(time_start) if time_start else None),
+                time_end=(self._convert_time(time_end) if time_end else None),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"modify_schedule: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"modify_schedule failed: {err}",
+            ) from err
+
+        event_data: dict[str, str] = {
+            "action": "modify",
+            "schedule_id": schedule_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)

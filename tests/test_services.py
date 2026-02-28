@@ -28,7 +28,10 @@ from pytest_homeassistant_custom_component.common import (
     async_capture_events,
 )
 
-from custom_components.akuvox.const import DOMAIN, EVENT_SCHEDULE_CHANGED
+from custom_components.akuvox.const import (
+    DOMAIN,
+    EVENT_SCHEDULE_CHANGED,
+)
 
 ENTITY_ID = "lock.testlab_intercom_front_gate"
 
@@ -854,3 +857,233 @@ async def test_add_schedule_device_errors(
             },
             blocking=True,
         )
+
+
+# ── modify_schedule tests ─────────────────────────────────────
+
+
+async def test_modify_schedule_success(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test modify_schedule passes id and updated fields to device."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "modify_schedule",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "1",
+            "name": "Updated Name",
+            "time_start": "09:00",
+            "time_end": "17:00",
+        },
+        blocking=True,
+    )
+
+    mock_akuvox_device.modify_schedule.assert_called_once_with(
+        id="1",
+        schedule_type=None,
+        name="Updated Name",
+        week=None,
+        daily=None,
+        date_start=None,
+        date_end=None,
+        time_start="09:00",
+        time_end="17:00",
+    )
+
+
+async def test_modify_schedule_cloud_rejected(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test cloud-provisioned schedule raises ServiceValidationError."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Cc]loud"):
+        await hass.services.async_call(
+            DOMAIN,
+            "modify_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "2",
+                "name": "Attempt Modify Cloud",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_schedule.assert_not_called()
+
+
+async def test_modify_schedule_not_found(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test non-existent schedule ID raises HomeAssistantError."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(HomeAssistantError, match="not found"):
+        await hass.services.async_call(
+            DOMAIN,
+            "modify_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "999",
+                "name": "Does Not Exist",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_schedule.assert_not_called()
+
+
+async def test_modify_schedule_invalid_field_values(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test invalid field values are rejected by schema."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "modify_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "1",
+                "schedule_type": "9",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_schedule.assert_not_called()
+
+
+async def test_modify_schedule_fires_event(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test modify_schedule fires akuvox_schedule_changed event."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    events = async_capture_events(hass, EVENT_SCHEDULE_CHANGED)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "modify_schedule",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "1",
+            "name": "New Name",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert len(events) == 1
+    assert events[0].data["action"] == "modify"
+    assert events[0].data["schedule_id"] == "1"
+    assert events[0].data["config_entry_id"] == entry.entry_id
+
+
+@pytest.mark.parametrize(
+    ("lib_exc", "ha_exc"),
+    [
+        (AkuvoxConnectionError, HomeAssistantError),
+        (AkuvoxDeviceError, HomeAssistantError),
+        (AkuvoxValidationError, ServiceValidationError),
+    ],
+    ids=["connection", "device", "validation"],
+)
+async def test_modify_schedule_device_errors(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+    lib_exc: type[Exception],
+    ha_exc: type[Exception],
+) -> None:
+    """Test device errors are mapped to HA exceptions."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    mock_akuvox_device.modify_schedule.side_effect = lib_exc("fail")
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ha_exc):
+        await hass.services.async_call(
+            DOMAIN,
+            "modify_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "1",
+                "name": "Test",
+            },
+            blocking=True,
+        )
+
+
+async def test_modify_schedule_with_week_conversion(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test week day names are converted to digit string."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "modify_schedule",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "1",
+            "week": ["mon", "wed", "fri"],
+        },
+        blocking=True,
+    )
+
+    mock_akuvox_device.modify_schedule.assert_called_once()
+    call_kwargs = mock_akuvox_device.modify_schedule.call_args[1]
+    assert call_kwargs["week"] == "135"
+
+
+async def test_modify_schedule_with_date_conversion(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test date objects are converted to YYYYMMDD strings."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "modify_schedule",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "1",
+            "date_start": "2026-03-01",
+            "date_end": "2026-06-30",
+        },
+        blocking=True,
+    )
+
+    mock_akuvox_device.modify_schedule.assert_called_once()
+    call_kwargs = mock_akuvox_device.modify_schedule.call_args[1]
+    assert call_kwargs["date_start"] == "20260301"
+    assert call_kwargs["date_end"] == "20260630"
