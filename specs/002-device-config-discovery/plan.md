@@ -14,7 +14,7 @@ Update the Akuvox integration to read device configuration from the device on
 every connection event (onboarding, reload, reconnect) and use those values to:
 (1) name the device and relay entities from device-configured labels, (2) use
 per-relay hold-delay instead of a hardcoded 5s constant, and (3) interpret
-relay state correctly for NO/NC wiring types. The `pylocal-akuvox` v0.2.0
+relay state correctly for NO/NC wiring types. The `pylocal-akuvox` v0.2.1
 library already provides `get_device_config()` returning a `DeviceConfig`
 dict-like object with all relevant keys.
 
