@@ -1346,7 +1346,7 @@ async def test_add_user_success(
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["name"] == "Jane Doe"
     assert call_kwargs["user_id"] == "jane.doe"
-    assert call_kwargs["schedule_relay"] == "10-1;"
+    assert call_kwargs["schedule_relay"] == "10-1"
     assert call_kwargs["lift_floor_num"] == "5"
     assert call_kwargs["web_relay"] is None
     assert call_kwargs["private_pin"] is None
@@ -1430,7 +1430,7 @@ async def test_add_user_multiple_schedules(
 
     mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
-    assert call_kwargs["schedule_relay"] == "10-1;30-1;"
+    assert call_kwargs["schedule_relay"] == "10-1,30-1"
 
 
 async def test_add_user_csv_schedules(
@@ -1481,7 +1481,7 @@ async def test_add_user_csv_schedules(
 
     mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
-    assert call_kwargs["schedule_relay"] == "10-1;30-1;"
+    assert call_kwargs["schedule_relay"] == "10-1,30-1"
 
 
 async def test_add_user_with_optional_pin(

@@ -334,7 +334,7 @@
       "message": "Invalid time format: {value}. Expected HH:MM."
     },
     "invalid_schedule_relay_format": {
-      "message": "Invalid schedule_relay format. Expected pairs like 1-1;2-2;"
+      "message": "Invalid schedule_relay format. Expected pairs like 1-1,2-2"
     },
     "invalid_pin_format": {
       "message": "PIN must be 4-8 digits."

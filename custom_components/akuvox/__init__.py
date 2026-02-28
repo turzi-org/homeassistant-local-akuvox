@@ -48,7 +48,7 @@ def _csv_to_list(value: Any) -> list[str]:
     """Split a comma-separated string into a list of trimmed strings.
 
     Also flattens lists that contain comma-separated items.
-    Passes through non-string iterables unchanged.
+    Coerces other iterables via ``cv.ensure_list``.
 
     """
     if isinstance(value, str):
@@ -168,7 +168,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Required("schedules"): vol.All(
                 _csv_to_list,
                 vol.Length(min=1),
-                [vol.All(cv.string, vol.Length(min=1))],
+                [vol.All(cv.string, vol.Length(min=1), vol.Match(r"^\d+$"))],
                 vol.Unique(),
             ),
             vol.Required("lift_floor_num"): cv.string,

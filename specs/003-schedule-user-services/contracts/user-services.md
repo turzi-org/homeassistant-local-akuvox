@@ -37,7 +37,7 @@ The service is called on an `AkuvoxLockEntity` instance.
             "id": "42",
             "name": "John Doe",
             "user_id": "john.doe",
-            "schedule_relay": "1-1;",
+            "schedule_relay": "1-1",
             "web_relay": None,
             "private_pin": "1234",     # Plain text
             "card_code": "ABC123",     # Plain text
@@ -73,7 +73,7 @@ list but are clearly identifiable by the `source_type` field.
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
 | name | str | Yes | User display name |
-| schedules | str | Yes | Schedule display_ids (CSV) |
+| schedules | list[str] | Yes | Schedule display_ids (CSV also accepted) |
 | lift_floor_num | str | Yes | Elevator floor access |
 | user_id | str | No | User ID (auto-timestamp) |
 | web_relay | str | No | Web relay assignment |

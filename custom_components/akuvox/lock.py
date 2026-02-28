@@ -49,8 +49,8 @@ _REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
     "2": (),
 }
 
-# Pattern for schedule_relay: one or more "<number>-<number>;" pairs
-_SCHEDULE_RELAY_RE: re.Pattern[str] = re.compile(r"^([0-9]+-[0-9]+;)+\Z")
+# Pattern for schedule_relay: comma-separated "<number>-<number>" pairs
+_SCHEDULE_RELAY_RE: re.Pattern[str] = re.compile(r"^[0-9]+-[0-9]+(,[0-9]+-[0-9]+)*\Z")
 
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
@@ -841,19 +841,20 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
     ) -> str:
         """Build a schedule_relay string from display_ids.
 
-        Pairs each display_id with the entity's relay number.
+        Pairs each display_id with the entity's relay number
+        using comma separation (device firmware requirement).
 
         Args:
             display_ids: Schedule display_ids to assign.
 
         Returns:
-            Formatted schedule_relay string (e.g. ``"10-1;"``).
+            Formatted schedule_relay string (e.g. ``"10-1,20-1"``).
 
         """
         parts: list[str] = []
         for did in display_ids:
-            parts.append(f"{did}-{self._relay_number};")
-        return "".join(parts)
+            parts.append(f"{did}-{self._relay_number}")
+        return ",".join(parts)
 
     async def add_user(self, **kwargs: Any) -> None:
         """Create a new user on the device.
