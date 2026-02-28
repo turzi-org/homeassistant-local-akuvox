@@ -216,8 +216,8 @@ add_user:
         - "10"
         - "20"
       selector:
-        select:
-          multiple: true
+        text:
+          multiline: false
     lift_floor_num:
       required: true
       example: "3"
