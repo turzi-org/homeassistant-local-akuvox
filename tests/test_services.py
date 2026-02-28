@@ -1112,3 +1112,204 @@ async def test_modify_schedule_with_date_conversion(
     call_kwargs = mock_akuvox_device.modify_schedule.call_args[1]
     assert call_kwargs["date_start"] == "20260301"
     assert call_kwargs["date_end"] == "20260630"
+
+
+# ── delete_schedule tests ─────────────────────────────────────
+
+
+async def test_delete_schedule_success(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test delete_schedule calls device.delete_schedule with id."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    mock_akuvox_device.list_users.return_value = []
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "delete_schedule",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "1",
+        },
+        blocking=True,
+    )
+
+    mock_akuvox_device.delete_schedule.assert_called_once_with(id="1")
+
+
+async def test_delete_schedule_cloud_rejected(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test cloud-provisioned schedule raises ServiceValidationError."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Cc]loud"):
+        await hass.services.async_call(
+            DOMAIN,
+            "delete_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "2",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.delete_schedule.assert_not_called()
+
+
+async def test_delete_schedule_not_found(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test non-existent schedule raises HomeAssistantError."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(HomeAssistantError, match="not found"):
+        await hass.services.async_call(
+            DOMAIN,
+            "delete_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "999",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.delete_schedule.assert_not_called()
+
+
+async def test_delete_schedule_fires_event(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test delete_schedule fires akuvox_schedule_changed event."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    mock_akuvox_device.list_users.return_value = []
+    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    events = async_capture_events(hass, EVENT_SCHEDULE_CHANGED)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "delete_schedule",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "1",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert len(events) == 1
+    assert events[0].data["action"] == "delete"
+    assert events[0].data["schedule_id"] == "1"
+    assert events[0].data["config_entry_id"] == entry.entry_id
+
+
+@pytest.mark.parametrize(
+    ("lib_exc", "ha_exc"),
+    [
+        (AkuvoxConnectionError, HomeAssistantError),
+        (AkuvoxDeviceError, HomeAssistantError),
+        (AkuvoxValidationError, ServiceValidationError),
+    ],
+    ids=["connection", "device", "validation"],
+)
+async def test_delete_schedule_device_errors(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+    lib_exc: type[Exception],
+    ha_exc: type[Exception],
+) -> None:
+    """Test device errors are mapped to HA exceptions."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    mock_akuvox_device.delete_schedule.side_effect = lib_exc("fail")
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ha_exc):
+        await hass.services.async_call(
+            DOMAIN,
+            "delete_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "1",
+            },
+            blocking=True,
+        )
+
+
+async def test_delete_schedule_orphaned_warning(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+    mock_user_list: list[User],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test warning logged when deleted schedule is referenced by users."""
+    import logging
+
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with caplog.at_level(logging.WARNING, logger="custom_components.akuvox"):
+        await hass.services.async_call(
+            DOMAIN,
+            "delete_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "1",
+            },
+            blocking=True,
+        )
+
+    assert "orphan" in caplog.text.lower()
+    assert "John Doe" in caplog.text
+
+
+async def test_delete_schedule_no_orphan_warning_on_failure(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+    mock_user_list: list[User],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test no orphan warning when deletion fails."""
+    import logging
+
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    mock_akuvox_device.delete_schedule.side_effect = AkuvoxDeviceError("fail")
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with (
+        caplog.at_level(logging.WARNING, logger="custom_components.akuvox"),
+        pytest.raises(HomeAssistantError),
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            "delete_schedule",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "1",
+            },
+            blocking=True,
+        )
+
+    assert "orphan" not in caplog.text.lower()

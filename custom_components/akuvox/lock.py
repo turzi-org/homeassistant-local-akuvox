@@ -578,11 +578,14 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
     async def _fetch_local_schedule(
         self,
         schedule_id: str,
+        *,
+        action: str = "modify",
     ) -> AccessSchedule:
         """Fetch a schedule by ID and verify it is locally managed.
 
         Args:
             schedule_id: The ID of the schedule to look up.
+            action: Action label for error messages.
 
         Returns:
             The matching AccessSchedule.
@@ -598,11 +601,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             )
         except AkuvoxValidationError as err:
             raise ServiceValidationError(
-                f"modify_schedule: {err}",
+                f"{action}_schedule: {err}",
             ) from err
         except AkuvoxError as err:
             raise HomeAssistantError(
-                f"modify_schedule: failed to fetch schedules: {err}",
+                f"{action}_schedule: failed to fetch schedules: {err}",
             ) from err
 
         target = None
@@ -618,7 +621,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         if target.source_type == "2":
             raise ServiceValidationError(
-                "Cannot modify cloud-provisioned schedule",
+                f"Cannot {action} cloud-provisioned schedule",
             )
 
         return target
@@ -683,6 +686,66 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         event_data: dict[str, str] = {
             "action": "modify",
+            "schedule_id": schedule_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)
+
+    async def delete_schedule(self, **kwargs: Any) -> None:
+        """Delete an access schedule from the device.
+
+        Fetches the schedule list to verify the target exists and
+        is not cloud-provisioned, deletes it, then checks for
+        orphaned user-schedule assignments.
+
+        Args:
+            **kwargs: Service call data (``id`` required).
+
+        Raises:
+            ServiceValidationError: If schedule is cloud-provisioned.
+            HomeAssistantError: If schedule not found or device error.
+
+        """
+        schedule_id: str = kwargs["id"]
+        await self._fetch_local_schedule(schedule_id, action="delete")
+
+        try:
+            await self.coordinator.device.delete_schedule(id=schedule_id)
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"delete_schedule: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"delete_schedule failed: {err}",
+            ) from err
+
+        # Check for orphaned user-schedule assignments
+        try:
+            users = await self.coordinator.device.list_users(page=None)
+            for user in users:
+                relay = getattr(user, "schedule_relay", "") or ""
+                for pair in relay.split(";"):
+                    if pair and pair.split("-")[0] == schedule_id:
+                        _LOGGER.warning(
+                            "Orphaned schedule-relay assignment: "
+                            "user '%s' (id=%s) still references "
+                            "deleted schedule %s",
+                            user.name,
+                            user.id,
+                            schedule_id,
+                        )
+                        break
+        except AkuvoxError:
+            _LOGGER.debug(
+                "Could not check for orphaned assignments after deleting schedule %s",
+                schedule_id,
+            )
+
+        event_data: dict[str, str] = {
+            "action": "delete",
             "schedule_id": schedule_id,
         }
         config_entry = self.coordinator.config_entry

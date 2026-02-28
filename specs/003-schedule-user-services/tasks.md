@@ -287,7 +287,7 @@ removal.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T016 [US5] Write failing tests for `delete_schedule`
+- [x] T016 [US5] Write failing tests for `delete_schedule`
   in tests/test_services.py: (a) success calls
   `device.delete_schedule(id=)`, (b) cloud schedule
   raises ServiceValidationError, (c) non-existent
@@ -303,7 +303,7 @@ removal.
 
 ### Implementation for User Story 5
 
-- [ ] T017 [US5] Implement `async delete_schedule(self,
+- [x] T017 [US5] Implement `async delete_schedule(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`, fetch
   schedule list for cloud check, reject if
