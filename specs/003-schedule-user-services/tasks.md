@@ -330,7 +330,7 @@ user_id, schedule_relay, lift_floor_num; list to confirm.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T018 [US6] Write failing tests for `add_user` in
+- [x] T018 [US6] Write failing tests for `add_user` in
   tests/test_services.py: (a) success with required
   fields (name, user_id, schedule_relay, lift_floor_num)
   calls `device.add_user(...)`, (b) optional
@@ -347,7 +347,7 @@ user_id, schedule_relay, lift_floor_num; list to confirm.
 
 ### Implementation for User Story 6
 
-- [ ] T019 [US6] Implement `async add_user(self, **kwargs)`
+- [x] T019 [US6] Implement `async add_user(self, **kwargs)`
   on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: validate required
   fields (name, user_id, schedule_relay, lift_floor_num)
