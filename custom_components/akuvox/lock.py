@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import re
 from typing import Any, cast
 
 from homeassistant.components.lock import LockEntity
@@ -28,6 +29,7 @@ from .const import (
     DEFAULT_RELAY_TYPE,
     DOMAIN,
     EVENT_SCHEDULE_CHANGED,
+    EVENT_USER_CHANGED,
     RELAY_KEY_RE,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
@@ -45,6 +47,9 @@ _REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
     "1": ("week",),
     "2": (),
 }
+
+# Pattern for schedule_relay: one or more "<number>-<number>;" pairs
+_SCHEDULE_RELAY_RE: re.Pattern[str] = re.compile(r"^([0-9]+-[0-9]+;)+\Z")
 
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
@@ -752,3 +757,124 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if config_entry is not None and hasattr(config_entry, "entry_id"):
             event_data["config_entry_id"] = config_entry.entry_id
         self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)
+
+    def _validate_schedule_relay(self, schedule_relay: str) -> None:
+        """Validate schedule_relay format matches ``<N>-<N>;`` pairs.
+
+        Args:
+            schedule_relay: The schedule-relay string to validate.
+
+        Raises:
+            ServiceValidationError: If format is invalid.
+
+        """
+        if not _SCHEDULE_RELAY_RE.match(schedule_relay):
+            raise ServiceValidationError(
+                "Invalid schedule_relay format; "
+                "expected '<schedule_id>-<relay_id>;' pairs",
+            )
+
+    def _validate_pin(self, pin: str | None) -> None:
+        """Validate private_pin is 4-8 digits if provided.
+
+        Args:
+            pin: The PIN string to validate, or None.
+
+        Raises:
+            ServiceValidationError: If PIN is not 4-8 decimal digits.
+
+        """
+        if pin is not None and (len(pin) < 4 or len(pin) > 8 or not pin.isdigit()):
+            raise ServiceValidationError(
+                "PIN must be 4-8 digits",
+            )
+
+    async def _check_cloud_schedules(
+        self,
+        schedule_relay: str,
+    ) -> None:
+        """Verify no referenced schedules are cloud-provisioned.
+
+        Args:
+            schedule_relay: The schedule-relay string to check.
+
+        Raises:
+            ServiceValidationError: If any referenced schedule is
+                cloud-provisioned or does not exist on the device.
+            HomeAssistantError: If schedule list fetch fails.
+
+        """
+        schedule_ids = {
+            pair.split("-")[0] for pair in schedule_relay.rstrip(";").split(";") if pair
+        }
+        try:
+            schedules = await self.coordinator.device.list_schedules(
+                page=None,
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"Failed to verify schedules: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"Failed to verify schedules: {err}",
+            ) from err
+
+        schedule_map = {s.id: s for s in schedules}
+        for sid in schedule_ids:
+            sched = schedule_map.get(sid)
+            if sched is None:
+                # ServiceValidationError (not HomeAssistantError) because
+                # the caller supplied an invalid schedule_relay reference —
+                # this is an input-validation failure, not a device error.
+                raise ServiceValidationError(
+                    f"Schedule '{sid}' not found on device",
+                )
+            if sched.source_type == "2":
+                raise ServiceValidationError(
+                    "Cannot assign cloud-provisioned schedule",
+                )
+
+    async def add_user(self, **kwargs: Any) -> None:
+        """Create a new user on the device.
+
+        Validates input fields, checks that referenced schedules
+        are not cloud-provisioned, then forwards the call.
+
+        Args:
+            **kwargs: Service call data with user fields.
+
+        Raises:
+            ServiceValidationError: On input validation errors.
+            HomeAssistantError: On device communication errors.
+
+        """
+        schedule_relay: str = kwargs["schedule_relay"]
+        self._validate_schedule_relay(schedule_relay)
+        self._validate_pin(kwargs.get("private_pin"))
+        await self._check_cloud_schedules(schedule_relay)
+
+        try:
+            await self.coordinator.device.add_user(
+                name=kwargs["name"],
+                user_id=kwargs["user_id"],
+                schedule_relay=schedule_relay,
+                lift_floor_num=kwargs["lift_floor_num"],
+                web_relay=kwargs.get("web_relay"),
+                private_pin=kwargs.get("private_pin"),
+                card_code=kwargs.get("card_code"),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"add_user: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"add_user failed: {err}",
+            ) from err
+
+        event_data: dict[str, str] = {"action": "add"}
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data)
