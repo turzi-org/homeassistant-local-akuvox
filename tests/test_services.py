@@ -1433,14 +1433,38 @@ async def test_add_user_multiple_schedules(
     assert call_kwargs["schedule_relay"] == "10-1;30-1;"
 
 
-async def test_add_user_all_relays(
+async def test_add_user_csv_schedules(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
     mock_schedule_list: list[AccessSchedule],
 ) -> None:
-    """Test all_relays builds pairs for every relay on the device."""
-    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    """Test comma-separated schedule string is split correctly."""
+    local2 = AccessSchedule(
+        id="3",
+        schedule_type="1",
+        name="Extra",
+        display_id="30",
+        source_type="1",
+        week="12345",
+        daily=None,
+        date_start=None,
+        date_end=None,
+        time_start="09:00",
+        time_end="17:00",
+        mode=None,
+        sun=None,
+        mon=None,
+        tue=None,
+        wed=None,
+        thur=None,
+        fri=None,
+        sat=None,
+    )
+    mock_akuvox_device.list_schedules.return_value = [
+        *mock_schedule_list,
+        local2,
+    ]
     await _setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
@@ -1449,17 +1473,15 @@ async def test_add_user_all_relays(
         service_data={
             "entity_id": ENTITY_ID,
             "name": "Jane Doe",
-            "schedules": ["10"],
+            "schedules": "10, 30",
             "lift_floor_num": "5",
-            "all_relays": True,
         },
         blocking=True,
     )
 
     mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
-    # Mock has only RelayA (1), so result is same as single relay
-    assert call_kwargs["schedule_relay"] == "10-1;"
+    assert call_kwargs["schedule_relay"] == "10-1;30-1;"
 
 
 async def test_add_user_with_optional_pin(

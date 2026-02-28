@@ -73,18 +73,16 @@ list but are clearly identifiable by the `source_type` field.
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
 | name | str | Yes | User display name |
-| schedules | list[str] | Yes | Schedule display_ids to assign |
+| schedules | str | Yes | Schedule display_ids (CSV) |
 | lift_floor_num | str | Yes | Elevator floor access |
-| user_id | str | No | External user ID (auto-timestamp) |
-| all_relays | bool | No | Apply to all relays (default: no) |
+| user_id | str | No | User ID (auto-timestamp) |
 | web_relay | str | No | Web relay assignment |
 | private_pin | str | No | 4-8 digit PIN |
 | card_code | str | No | Card/badge code |
 
 **Entity targeting**: Uses HA standard entity/device/area targeting.
 The entity's relay number is used to auto-build the
-`schedule_relay` string. If `all_relays` is true, all relay
-numbers on the device are used.
+`schedule_relay` string.
 
 ### Behavior: add_user
 
@@ -95,8 +93,7 @@ numbers on the device are used.
    schedule by `display_id` (not internal `id`). Verify each
    exists and is not cloud-provisioned (`source_type` != `"2"`).
 5. **Build schedule_relay**: For each schedule `display_id`,
-   pair it with the entity's relay number. If `all_relays` is
-   true, pair with every relay number on the device. Format:
+   pair it with the entity's relay number. Format:
    `<display_id>-<relay_num>;` concatenated.
 6. Call `await device.add_user(...)` with built `schedule_relay`
    and `user_id` (numeric timestamp if not provided).

@@ -838,35 +838,21 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
     def _build_schedule_relay(
         self,
         display_ids: list[str],
-        all_relays: bool,
     ) -> str:
         """Build a schedule_relay string from display_ids.
 
-        Pairs each display_id with the entity's relay number,
-        or with every relay on the device when *all_relays* is
-        true.
+        Pairs each display_id with the entity's relay number.
 
         Args:
             display_ids: Schedule display_ids to assign.
-            all_relays: Pair with all device relays if True.
 
         Returns:
-            Formatted schedule_relay string (e.g. ``"10-1;10-2;"``).
+            Formatted schedule_relay string (e.g. ``"10-1;"``).
 
         """
-        if all_relays:
-            relay_nums = sorted(
-                n
-                for k in self.coordinator.data.relay_status
-                if (n := _relay_key_to_number(k)) is not None
-            )
-        else:
-            relay_nums = [self._relay_number]
-
         parts: list[str] = []
         for did in display_ids:
-            for rnum in relay_nums:
-                parts.append(f"{did}-{rnum};")
+            parts.append(f"{did}-{self._relay_number};")
         return "".join(parts)
 
     async def add_user(self, **kwargs: Any) -> None:
@@ -886,15 +872,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         """
         schedules: list[str] = kwargs["schedules"]
-        if not schedules:
-            raise ServiceValidationError(
-                "At least one schedule is required",
-            )
         self._validate_pin(kwargs.get("private_pin"))
         await self._check_cloud_schedules(schedules)
 
-        all_relays: bool = kwargs.get("all_relays", False)
-        schedule_relay = self._build_schedule_relay(schedules, all_relays)
+        schedule_relay = self._build_schedule_relay(schedules)
 
         try:
             await self.coordinator.device.add_user(

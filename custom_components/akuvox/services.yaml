@@ -212,9 +212,7 @@ add_user:
           multiline: false
     schedules:
       required: true
-      example:
-        - "10"
-        - "20"
+      example: "10, 20"
       selector:
         text:
           multiline: false
@@ -224,12 +222,6 @@ add_user:
       selector:
         text:
           multiline: false
-    all_relays:
-      required: false
-      example: false
-      default: false
-      selector:
-        boolean:
     web_relay:
       required: false
       example: ""
