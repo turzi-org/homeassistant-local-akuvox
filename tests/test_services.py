@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import voluptuous as vol
@@ -1363,22 +1363,23 @@ async def test_add_user_auto_user_id(
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     await _setup_entry(hass, mock_config_entry_data_none)
 
-    await hass.services.async_call(
-        DOMAIN,
-        "add_user",
-        service_data={
-            "entity_id": ENTITY_ID,
-            "name": "Jane Doe",
-            "schedules": ["10"],
-            "lift_floor_num": "5",
-        },
-        blocking=True,
-    )
+    with patch("custom_components.akuvox.lock.time") as mock_time:
+        mock_time.time.return_value = 1709153400.0
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "name": "Jane Doe",
+                "schedules": ["10"],
+                "lift_floor_num": "5",
+            },
+            blocking=True,
+        )
 
     mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
-    assert call_kwargs["user_id"].isdigit()
-    assert len(call_kwargs["user_id"]) >= 10
+    assert call_kwargs["user_id"] == "1709153400"
 
 
 async def test_add_user_multiple_schedules(
@@ -1553,7 +1554,7 @@ async def test_add_user_empty_schedules_rejected(
     """Test empty schedules list raises error."""
     await _setup_entry(hass, mock_config_entry_data_none)
 
-    with pytest.raises(ServiceValidationError, match="schedule"):
+    with pytest.raises(vol.Invalid):
         await hass.services.async_call(
             DOMAIN,
             "add_user",
