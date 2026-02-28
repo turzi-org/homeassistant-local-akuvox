@@ -21,6 +21,7 @@ from pylocal_akuvox import (
 )
 
 from .const import (
+    DAY_NAME_TO_DIGIT,
     DEFAULT_HOLD_DELAY_SECONDS,
     DEFAULT_RELAY_MODE,
     DEFAULT_RELAY_TYPE,
@@ -36,17 +37,6 @@ _LOGGER = logging.getLogger(__name__)
 # Extra seconds added to the unlock delay before polling the device,
 # giving the relay time to re-lock after the window expires.
 _RELAY_REFRESH_BUFFER_SECONDS = 1
-
-# Day-name to device digit mapping (0=Sun … 6=Sat)
-_DAY_NAME_TO_DIGIT: dict[str, str] = {
-    "sun": "0",
-    "mon": "1",
-    "tue": "2",
-    "wed": "3",
-    "thu": "4",
-    "fri": "5",
-    "sat": "6",
-}
 
 # Required fields per schedule_type (0=date-range, 1=weekly, 2=daily)
 _REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
@@ -476,7 +466,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             Sorted digit string for the device (e.g. "15").
 
         """
-        digits = sorted(_DAY_NAME_TO_DIGIT[d] for d in days)
+        digits = sorted(DAY_NAME_TO_DIGIT[d] for d in days)
         return "".join(digits)
 
     @staticmethod

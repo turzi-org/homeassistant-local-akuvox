@@ -35,13 +35,12 @@ from .const import (
     SERVICE_MODIFY_SCHEDULE,
     SERVICE_MODIFY_USER,
     SERVICE_REMOVE_USER_SCHEDULE_RELAY,
+    VALID_DAYS,
     get_auth_method_map,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-_VALID_DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -90,7 +89,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Optional("week"): vol.All(
                 cv.ensure_list,
                 vol.Length(min=1),
-                [vol.In(_VALID_DAYS)],
+                [vol.In(VALID_DAYS)],
                 vol.Unique(),
             ),
             vol.Optional("date_start"): cv.date,
@@ -113,7 +112,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Optional("week"): vol.All(
                 cv.ensure_list,
                 vol.Length(min=1),
-                [vol.In(_VALID_DAYS)],
+                [vol.In(VALID_DAYS)],
                 vol.Unique(),
             ),
             vol.Optional("date_start"): cv.date,
