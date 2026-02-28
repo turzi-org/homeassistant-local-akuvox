@@ -247,7 +247,7 @@ change persists.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T014 [US4] Write failing tests for `modify_schedule`
+- [x] T014 [US4] Write failing tests for `modify_schedule`
   in tests/test_services.py: (a) success passes `id`
   and updated fields to `device.modify_schedule()`,
   (b) cloud-provisioned schedule (source_type `"2"`)
@@ -261,7 +261,7 @@ change persists.
 
 ### Implementation for User Story 4
 
-- [ ] T015 [US4] Implement `async modify_schedule(self,
+- [x] T015 [US4] Implement `async modify_schedule(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id` from
   kwargs, fetch schedule list via
