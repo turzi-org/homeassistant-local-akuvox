@@ -211,7 +211,8 @@ Inherits from add_user, plus:
 6. Parse current `schedule_relay` into list of pairs.
 7. Check if `schedule_id-relay_id` pair already exists.
    If duplicate, raise `ServiceValidationError`.
-8. Append `"<schedule_id>-<relay_id>"` to the string.
+8. Append `"<schedule_id>-<relay_id>"` to the pair list and rebuild
+   the comma-separated `schedule_relay` string from all pairs.
 9. Call `await device.modify_user(id=id,
    schedule_relay=updated_string)`.
 10. Fire event `akuvox_user_changed` with

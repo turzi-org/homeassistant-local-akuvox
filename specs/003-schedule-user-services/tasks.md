@@ -448,7 +448,10 @@ Best-effort; concurrent calls may race.
 
 - [ ] T024 [P] Write failing tests for
   `add_user_schedule_relay` in tests/test_services.py:
-  (a) success appends `"<sid>-<rid>"` to user's
+  (a) success adds the `"<sid>-<rid>"` pair to the user's
+  comma-separated `schedule_relay` string (appending
+  `",<sid>-<rid>"` when there is at least one existing pair)
+  and calls `device.modify_user()`,
   schedule_relay and calls `device.modify_user()`,
   (b) duplicate pair raises ServiceValidationError
   "Pair already assigned", (c) cloud user raises
@@ -476,7 +479,8 @@ Best-effort; concurrent calls may race.
   `device.list_users()`; check cloud user; fetch
   schedule list to check cloud schedule; parse current
   `schedule_relay` string; check for duplicate pair;
-  append `"<schedule_id>-<relay_id>"` to string; call
+  append `"<schedule_id>-<relay_id>"` to pair list and
+  rebuild comma-separated string; call
   `device.modify_user(id=id, schedule_relay=updated)`;
   fire `akuvox_user_changed` with action
   "add_schedule_relay" including schedule_id and

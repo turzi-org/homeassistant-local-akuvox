@@ -52,7 +52,7 @@ indicates a locally created schedule.
 | id | str | Device-assigned user ID | No |
 | name | str | User display name | Yes |
 | user_id | str | External user identifier | Yes |
-| schedule_relay | str | Schedule-relay pairs (`<ID>-<Relay>,`) | Yes |
+| schedule_relay | str | Comma-separated `<ID>-<Relay>` pairs | Yes |
 | web_relay | str \| None | Web relay assignment | Yes |
 | private_pin | str \| None | 4-8 digit PIN (plain text) | Yes |
 | card_code | str \| None | Card/badge code (plain text) | Yes |
@@ -142,7 +142,7 @@ time picker.
 | ----- | ---- | ------------- |
 | name | Non-empty string | "Name is required" |
 | user_id | Non-empty string | "User ID is required" |
-| schedule_relay | `<int>-<int>,` pairs | "Expected `<ID>-<Relay>,` pairs" |
+| schedule_relay | Comma-separated pairs | "Expected `<ID>-<Relay>` pairs" |
 | private_pin | 4-8 digits if provided | "PIN must be 4-8 digits" |
 | lift_floor_num | Required for add | "Lift floor number is required" |
 

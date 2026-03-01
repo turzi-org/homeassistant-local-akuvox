@@ -46,7 +46,7 @@ The library provides four async methods for user management:
 **User Validation** (library-enforced):
 
 - `private_pin`: 4-8 digits only (regex `^[0-9]{4,8}$`)
-- `schedule_relay`: Pattern `<int>-<int>,` (comma-separated pairs)
+- `schedule_relay`: Comma-separated `<int>-<int>` pairs (for example, `1-1,2-3`)
 - Empty strings are normalized to `None` before sending
 
 ### Cloud vs Local Entities
