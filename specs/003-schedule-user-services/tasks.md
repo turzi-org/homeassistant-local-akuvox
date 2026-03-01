@@ -352,7 +352,7 @@ user_id, schedule_relay, lift_floor_num; list to confirm.
   custom_components/akuvox/lock.py: validate required
   fields (name, user_id, schedule_relay, lift_floor_num)
   are non-empty, validate `schedule_relay` matches regex
-  `^([0-9]+-[0-9]+;)+$`, validate `private_pin` is 4-8
+  `^[0-9]+-[0-9]+(,[0-9]+-[0-9]+)*$`, validate `private_pin` is 4-8
   digits if provided, parse schedule IDs from
   `schedule_relay` and fetch schedule list to verify
   none are cloud-provisioned, call
@@ -448,8 +448,10 @@ Best-effort; concurrent calls may race.
 
 - [ ] T024 [P] Write failing tests for
   `add_user_schedule_relay` in tests/test_services.py:
-  (a) success appends `"<sid>-<rid>;"` to user's
-  schedule_relay and calls `device.modify_user()`,
+  (a) success adds the `"<sid>-<rid>"` pair to the user's
+  comma-separated `schedule_relay` string (appending
+  `",<sid>-<rid>"` when there is at least one existing pair)
+  and calls `device.modify_user()`,
   (b) duplicate pair raises ServiceValidationError
   "Pair already assigned", (c) cloud user raises
   ServiceValidationError, (d) cloud schedule reference
@@ -476,7 +478,8 @@ Best-effort; concurrent calls may race.
   `device.list_users()`; check cloud user; fetch
   schedule list to check cloud schedule; parse current
   `schedule_relay` string; check for duplicate pair;
-  append `"<schedule_id>-<relay_id>;"` to string; call
+  append `"<schedule_id>-<relay_id>"` to pair list and
+  rebuild comma-separated string; call
   `device.modify_user(id=id, schedule_relay=updated)`;
   fire `akuvox_user_changed` with action
   "add_schedule_relay" including schedule_id and
@@ -486,7 +489,7 @@ Best-effort; concurrent calls may race.
   custom_components/akuvox/lock.py: extract `id`,
   `schedule_id`, `relay_id`; fetch user; check cloud
   user; parse `schedule_relay` string into pairs; find
-  and remove `"<schedule_id>-<relay_id>;"` (error if
+  and remove `"<schedule_id>-<relay_id>"` (error if
   not found); error if removal leaves zero pairs; rebuild
   string; call `device.modify_user(id=id,
   schedule_relay=updated)`; fire event with action
