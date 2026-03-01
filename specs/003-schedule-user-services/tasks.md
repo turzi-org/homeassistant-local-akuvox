@@ -503,15 +503,15 @@ Best-effort; concurrent calls may race.
 
 **Purpose**: Final validation and documentation updates.
 
-- [ ] T028 [P] Update .github/agents/copilot-instructions.md
+- [x] T028 [P] Update .github/agents/copilot-instructions.md
   with implementation completion status for feature 003
-- [ ] T029 Run full test suite (`uv run pytest tests/ -x -q`)
+- [x] T029 Run full test suite (`uv run pytest tests/ -x -q`)
   and linters (`uv run ruff check`, `uv run mypy`) to
   verify all checks pass. Note: SC-001 (5s response time)
   and SC-006 (10s error timeout) are deferred to
   integration testing with real hardware; unit tests
   verify error propagation but not timing constraints.
-- [ ] T030 Validate quickstart.md service call examples
+- [x] T030 Validate quickstart.md service call examples
   against implemented services for accuracy
 
 ---
