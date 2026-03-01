@@ -49,9 +49,6 @@ _REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
     "2": (),
 }
 
-# Pattern for schedule_relay: comma-separated "<number>-<number>" pairs
-_SCHEDULE_RELAY_RE: re.Pattern[str] = re.compile(r"^[0-9]+-[0-9]+(,[0-9]+-[0-9]+)*\Z")
-
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
 
@@ -760,24 +757,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if config_entry is not None and hasattr(config_entry, "entry_id"):
             event_data["config_entry_id"] = config_entry.entry_id
         self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)
-
-    def _validate_schedule_relay(self, schedule_relay: str) -> None:
-        """Validate schedule_relay format matches ``<N>-<N>`` pairs.
-
-        Pairs are comma-separated (e.g. ``"10-1,20-1"``).
-
-        Args:
-            schedule_relay: The schedule-relay string to validate.
-
-        Raises:
-            ServiceValidationError: If format is invalid.
-
-        """
-        if not _SCHEDULE_RELAY_RE.match(schedule_relay):
-            raise ServiceValidationError(
-                "Invalid schedule_relay format; "
-                "expected comma-separated '<id>-<relay>' pairs",
-            )
 
     def _validate_pin(self, pin: str | None) -> None:
         """Validate private_pin is 4-8 digits if provided.
