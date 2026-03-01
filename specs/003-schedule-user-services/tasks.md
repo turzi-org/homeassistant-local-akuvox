@@ -446,7 +446,7 @@ Best-effort; concurrent calls may race.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T024 [P] Write failing tests for
+- [x] T024 [P] Write failing tests for
   `add_user_schedule_relay` in tests/test_services.py:
   (a) success adds the `"<sid>-<rid>"` pair to the user's
   comma-separated `schedule_relay` string (appending
@@ -458,7 +458,7 @@ Best-effort; concurrent calls may race.
   raises ServiceValidationError, (e) user not found
   raises HomeAssistantError, (f) event fired with
   action "add_schedule_relay".
-- [ ] T025 [P] Write failing tests for
+- [x] T025 [P] Write failing tests for
   `remove_user_schedule_relay` in tests/test_services.py:
   (a) success removes pair from schedule_relay string
   and calls `device.modify_user()`, (b) pair not found
@@ -471,7 +471,7 @@ Best-effort; concurrent calls may race.
 
 ### Implementation for Convenience Services
 
-- [ ] T026 Implement `async add_user_schedule_relay(self,
+- [x] T026 Implement `async add_user_schedule_relay(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`,
   `schedule_id`, `relay_id`; fetch user by `id` via
@@ -484,7 +484,7 @@ Best-effort; concurrent calls may race.
   fire `akuvox_user_changed` with action
   "add_schedule_relay" including schedule_id and
   relay_id in event data.
-- [ ] T027 Implement `async remove_user_schedule_relay(self,
+- [x] T027 Implement `async remove_user_schedule_relay(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`,
   `schedule_id`, `relay_id`; fetch user; check cloud
