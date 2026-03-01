@@ -962,9 +962,17 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         schedule_relay: str | None = kwargs.get("schedule_relay")
         if schedule_relay is not None:
-            sched_ids = [
-                pair.split("-")[0] for pair in schedule_relay.split(",") if pair
-            ]
+            sched_ids: list[str] = []
+            for raw_pair in re.split(r"[;,]", schedule_relay):
+                pair = raw_pair.strip()
+                if not pair:
+                    continue
+                if not re.fullmatch(r"\d+-\d+", pair):
+                    raise ServiceValidationError(
+                        f"Invalid schedule_relay entry '{pair}'. "
+                        "Expected format '<schedule_id>-<relay_id>'.",
+                    )
+                sched_ids.append(pair.split("-", 1)[0])
             await self._check_cloud_schedules(sched_ids)
 
         try:
