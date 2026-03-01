@@ -21,6 +21,7 @@ from pylocal_akuvox import (
     AccessSchedule,
     AkuvoxError,
     AkuvoxValidationError,
+    User,
 )
 
 from .const import (
@@ -773,6 +774,57 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 "PIN must be 4-8 digits",
             )
 
+    async def _fetch_local_user(
+        self,
+        user_id: str,
+        *,
+        action: str = "modify",
+    ) -> User:
+        """Fetch a user by ID and verify it is locally managed.
+
+        Args:
+            user_id: The device-internal ID of the user.
+            action: Action label for error messages.
+
+        Returns:
+            The matching User.
+
+        Raises:
+            ServiceValidationError: If user is cloud-provisioned.
+            HomeAssistantError: If user not found or fetch fails.
+
+        """
+        try:
+            users = await self.coordinator.device.list_users(
+                page=None,
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"{action}_user: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"{action}_user: failed to fetch users: {err}",
+            ) from err
+
+        target = None
+        for u in users:
+            if u.id == user_id:
+                target = u
+                break
+
+        if target is None:
+            raise HomeAssistantError(
+                f"User '{user_id}' not found",
+            )
+
+        if target.source_type == "2":
+            raise ServiceValidationError(
+                f"Cannot {action} cloud-provisioned user",
+            )
+
+        return target
+
     async def _check_cloud_schedules(
         self,
         display_ids: list[str],
@@ -880,6 +932,65 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ) from err
 
         event_data: dict[str, str] = {"action": "add"}
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data)
+
+    async def modify_user(self, **kwargs: Any) -> None:
+        """Modify an existing user on the device.
+
+        Fetches the current user list to verify the user exists and
+        is not cloud-provisioned, validates fields, checks cloud
+        schedules if schedule_relay is updated, then forwards the
+        update.
+
+        Args:
+            **kwargs: Service call data (``id`` required, other
+                user fields optional).
+
+        Raises:
+            ServiceValidationError: If user is cloud-provisioned,
+                input validation fails, or cloud schedule referenced.
+            HomeAssistantError: If user not found or device error.
+
+        """
+        user_id: str = kwargs["id"]
+        await self._fetch_local_user(user_id)
+
+        self._validate_pin(kwargs.get("private_pin"))
+
+        schedule_relay: str | None = kwargs.get("schedule_relay")
+        if schedule_relay is not None:
+            sched_ids = [
+                pair.split("-")[0] for pair in schedule_relay.split(",") if pair
+            ]
+            await self._check_cloud_schedules(sched_ids)
+
+        try:
+            await self.coordinator.device.modify_user(
+                id=user_id,
+                name=kwargs.get("name"),
+                user_id=kwargs.get("user_id"),
+                schedule_relay=schedule_relay,
+                lift_floor_num=kwargs.get("lift_floor_num"),
+                web_relay=kwargs.get("web_relay"),
+                private_pin=kwargs.get("private_pin"),
+                card_code=kwargs.get("card_code"),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"modify_user: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"modify_user failed: {err}",
+            ) from err
+
+        event_data: dict[str, str] = {
+            "action": "modify",
+            "device_user_id": user_id,
+        }
         config_entry = self.coordinator.config_entry
         if config_entry is not None and hasattr(config_entry, "entry_id"):
             event_data["config_entry_id"] = config_entry.entry_id
