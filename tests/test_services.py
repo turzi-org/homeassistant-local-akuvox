@@ -2203,3 +2203,350 @@ async def test_delete_user_device_errors(
             },
             blocking=True,
         )
+
+
+# ── add_user_schedule_relay (Convenience) ─────────────────────
+
+
+async def test_add_user_schedule_relay_success(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test add_user_schedule_relay appends pair and calls modify_user."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "add_user_schedule_relay",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "42",
+            "schedule_id": "10",
+            "relay_id": "2",
+        },
+        blocking=True,
+    )
+
+    call_kwargs = mock_akuvox_device.modify_user.call_args[1]
+    assert call_kwargs["id"] == "42"
+    assert call_kwargs["schedule_relay"] == "10-1,10-2"
+
+
+async def test_add_user_schedule_relay_duplicate(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test duplicate pair raises ServiceValidationError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Aa]lready assigned"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_id": "10",
+                "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+async def test_add_user_schedule_relay_cloud_user(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+) -> None:
+    """Test cloud user raises ServiceValidationError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Cc]loud"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "99",
+                "schedule_id": "10",
+                "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+async def test_add_user_schedule_relay_cloud_schedule(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test cloud schedule reference raises ServiceValidationError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Cc]loud"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_id": "20",
+                "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+async def test_add_user_schedule_relay_user_not_found(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+) -> None:
+    """Test user not found raises HomeAssistantError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(HomeAssistantError, match="not found"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "999",
+                "schedule_id": "10",
+                "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+async def test_add_user_schedule_relay_event_fired(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test add_user_schedule_relay fires event."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    events = async_capture_events(hass, EVENT_USER_CHANGED)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "add_user_schedule_relay",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "42",
+            "schedule_id": "10",
+            "relay_id": "2",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert len(events) == 1
+    assert events[0].data["action"] == "add_schedule_relay"
+    assert events[0].data["device_user_id"] == "42"
+    assert events[0].data["schedule_id"] == "10"
+    assert events[0].data["relay_id"] == "2"
+    assert events[0].data["config_entry_id"] == entry.entry_id
+
+
+# ── remove_user_schedule_relay (Convenience) ──────────────────
+
+
+async def test_remove_user_schedule_relay_success(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+) -> None:
+    """Test remove_user_schedule_relay removes pair and calls modify_user."""
+    # Give user two pairs so removal leaves one
+    from dataclasses import replace
+
+    mock_user_list[0] = replace(mock_user_list[0], schedule_relay="10-1,10-2")
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "remove_user_schedule_relay",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "42",
+            "schedule_id": "10",
+            "relay_id": "2",
+        },
+        blocking=True,
+    )
+
+    call_kwargs = mock_akuvox_device.modify_user.call_args[1]
+    assert call_kwargs["id"] == "42"
+    assert call_kwargs["schedule_relay"] == "10-1"
+
+
+async def test_remove_user_schedule_relay_not_assigned(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+) -> None:
+    """Test pair not found raises ServiceValidationError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="not assigned"):
+        await hass.services.async_call(
+            DOMAIN,
+            "remove_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_id": "99",
+                "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+async def test_remove_user_schedule_relay_last_pair(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+) -> None:
+    """Test removing last pair raises ServiceValidationError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Ll]ast pair"):
+        await hass.services.async_call(
+            DOMAIN,
+            "remove_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_id": "10",
+                "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+async def test_remove_user_schedule_relay_cloud_user(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+) -> None:
+    """Test cloud user raises ServiceValidationError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Cc]loud"):
+        await hass.services.async_call(
+            DOMAIN,
+            "remove_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "99",
+                "schedule_id": "20",
+                "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+async def test_remove_user_schedule_relay_user_not_found(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+) -> None:
+    """Test user not found raises HomeAssistantError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(HomeAssistantError, match="not found"):
+        await hass.services.async_call(
+            DOMAIN,
+            "remove_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "999",
+                "schedule_id": "10",
+                "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+async def test_remove_user_schedule_relay_event_fired(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+) -> None:
+    """Test remove_user_schedule_relay fires event."""
+    from dataclasses import replace
+
+    mock_user_list[0] = replace(mock_user_list[0], schedule_relay="10-1,10-2")
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    events = async_capture_events(hass, EVENT_USER_CHANGED)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "remove_user_schedule_relay",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "42",
+            "schedule_id": "10",
+            "relay_id": "2",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert len(events) == 1
+    assert events[0].data["action"] == "remove_schedule_relay"
+    assert events[0].data["device_user_id"] == "42"
+    assert events[0].data["schedule_id"] == "10"
+    assert events[0].data["relay_id"] == "2"
+    assert events[0].data["config_entry_id"] == entry.entry_id

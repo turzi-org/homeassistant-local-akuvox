@@ -1035,9 +1035,130 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"delete_user failed: {err}",
             ) from err
 
-        event_data: dict[str, str] = {
+        event_data_del: dict[str, str] = {
             "action": "delete",
             "device_user_id": user_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data_del["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data_del)
+
+    async def add_user_schedule_relay(self, **kwargs: Any) -> None:
+        """Add a schedule-relay pair to an existing user.
+
+        Fetches the user, verifies not cloud-provisioned, checks the
+        schedule is not cloud-provisioned, appends the pair, and
+        calls ``modify_user`` on the device.
+
+        Args:
+            **kwargs: Service call data (``id``, ``schedule_id``,
+                ``relay_id`` required).
+
+        Raises:
+            ServiceValidationError: If user/schedule is cloud,
+                pair is duplicate.
+            HomeAssistantError: If user not found or device error.
+
+        """
+        user_id: str = kwargs["id"]
+        schedule_id: str = kwargs["schedule_id"]
+        relay_id: str = kwargs["relay_id"]
+
+        user = await self._fetch_local_user(user_id)
+        await self._check_cloud_schedules([schedule_id])
+
+        current_relay = getattr(user, "schedule_relay", "") or ""
+        pairs = [p.strip() for p in re.split(r"[;,]", current_relay) if p.strip()]
+
+        new_pair = f"{schedule_id}-{relay_id}"
+        if new_pair in pairs:
+            raise ServiceValidationError(
+                f"Pair already assigned: {new_pair}",
+            )
+        pairs.append(new_pair)
+
+        try:
+            await self.coordinator.device.modify_user(
+                id=user_id,
+                schedule_relay=",".join(pairs),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"add_user_schedule_relay: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"add_user_schedule_relay failed: {err}",
+            ) from err
+
+        event_data: dict[str, str] = {
+            "action": "add_schedule_relay",
+            "device_user_id": user_id,
+            "schedule_id": schedule_id,
+            "relay_id": relay_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data)
+
+    async def remove_user_schedule_relay(self, **kwargs: Any) -> None:
+        """Remove a schedule-relay pair from an existing user.
+
+        Fetches the user, verifies not cloud-provisioned, removes
+        the pair from the schedule_relay string, and calls
+        ``modify_user`` on the device.
+
+        Args:
+            **kwargs: Service call data (``id``, ``schedule_id``,
+                ``relay_id`` required).
+
+        Raises:
+            ServiceValidationError: If user is cloud, pair not found,
+                or removal would leave zero pairs.
+            HomeAssistantError: If user not found or device error.
+
+        """
+        user_id: str = kwargs["id"]
+        schedule_id: str = kwargs["schedule_id"]
+        relay_id: str = kwargs["relay_id"]
+
+        user = await self._fetch_local_user(user_id)
+
+        current_relay = getattr(user, "schedule_relay", "") or ""
+        pairs = [p.strip() for p in re.split(r"[;,]", current_relay) if p.strip()]
+
+        target_pair = f"{schedule_id}-{relay_id}"
+        if target_pair not in pairs:
+            raise ServiceValidationError(
+                f"Pair not assigned: {target_pair}",
+            )
+        if len(pairs) == 1:
+            raise ServiceValidationError(
+                "Cannot remove last pair",
+            )
+        pairs.remove(target_pair)
+
+        try:
+            await self.coordinator.device.modify_user(
+                id=user_id,
+                schedule_relay=",".join(pairs),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"remove_user_schedule_relay: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"remove_user_schedule_relay failed: {err}",
+            ) from err
+
+        event_data: dict[str, str] = {
+            "action": "remove_schedule_relay",
+            "device_user_id": user_id,
+            "schedule_id": schedule_id,
+            "relay_id": relay_id,
         }
         config_entry = self.coordinator.config_entry
         if config_entry is not None and hasattr(config_entry, "entry_id"):
