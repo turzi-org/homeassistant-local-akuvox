@@ -414,7 +414,7 @@ event firing, regardless of schedule-relay pair count.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T022 [US8] Write failing tests for `delete_user` in
+- [x] T022 [US8] Write failing tests for `delete_user` in
   tests/test_services.py: (a) success calls
   `device.delete_user(id=)`, (b) cloud user raises
   ServiceValidationError, (c) non-existent user raises
@@ -425,7 +425,7 @@ event firing, regardless of schedule-relay pair count.
 
 ### Implementation for User Story 8
 
-- [ ] T023 [US8] Implement `async delete_user(self,
+- [x] T023 [US8] Implement `async delete_user(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`, fetch
   user list for cloud check, reject if cloud, call
