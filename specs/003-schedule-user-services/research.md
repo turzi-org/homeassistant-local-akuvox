@@ -46,7 +46,7 @@ The library provides four async methods for user management:
 **User Validation** (library-enforced):
 
 - `private_pin`: 4-8 digits only (regex `^[0-9]{4,8}$`)
-- `schedule_relay`: Pattern `<int>-<int>;` (one or more pairs)
+- `schedule_relay`: Pattern `<int>-<int>,` (comma-separated pairs)
 - Empty strings are normalized to `None` before sending
 
 ### Cloud vs Local Entities
@@ -217,7 +217,7 @@ entity attributes.
 
 4. **Schedule-relay pair operations**: A single user can have
    multiple schedule+relay pairs in their `schedule_relay` field
-   (e.g. `"1-1;2-3;"`). The pylocal-akuvox library provides no
+   (e.g. `"1-1,2-3"`). The pylocal-akuvox library provides no
    atomic add/remove for individual pairs. Two convenience
    services (`add_user_schedule_relay`, `remove_user_schedule_relay`)
    will be implemented at the entity level by:
@@ -244,8 +244,8 @@ entity attributes.
 ### Analysis
 
 The `schedule_relay` field on `User` is a single string with
-format `"<ScheduleID>-<RelayID>;..."` (e.g., `"1-1;2-3;"`).
-Validation regex: `^([0-9]+-[0-9]+;)+$`.
+format `"<ScheduleID>-<RelayID>,..."` (e.g., `"1-1,2-3"`).
+Validation regex: `^[0-9]+-[0-9]+(,[0-9]+-[0-9]+)*$`.
 
 The pylocal-akuvox library provides **no atomic operations** for
 individual pairs. `modify_user()` accepts an optional

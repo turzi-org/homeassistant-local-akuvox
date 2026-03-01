@@ -52,7 +52,7 @@ indicates a locally created schedule.
 | id | str | Device-assigned user ID | No |
 | name | str | User display name | Yes |
 | user_id | str | External user identifier | Yes |
-| schedule_relay | str | Schedule-relay pairs (`<ID>-<Relay>;`) | Yes |
+| schedule_relay | str | Schedule-relay pairs (`<ID>-<Relay>,`) | Yes |
 | web_relay | str \| None | Web relay assignment | Yes |
 | private_pin | str \| None | 4-8 digit PIN (plain text) | Yes |
 | card_code | str \| None | Card/badge code (plain text) | Yes |
@@ -72,18 +72,18 @@ output; log entries MUST mask or omit these values.
 
 ### ScheduleRelayPair (logical sub-structure of User.schedule_relay)
 
-The `schedule_relay` field is a semicolon-delimited string of
+The `schedule_relay` field is a comma-delimited string of
 `<ScheduleID>-<RelayID>` pairs. A single user can have multiple
-pairs (e.g. `"1-1;2-3;5-2;"`).
+pairs (e.g. `"1-1,2-3,5-2"`).
 
 | Component | Type | Description |
 | --------- | ---- | ----------- |
 | schedule_id | str (int) | Reference to an AccessSchedule.id |
 | relay_id | str (int) | Reference to a device relay number |
 
-**Format**: `"<schedule_id>-<relay_id>;"` per pair, concatenated.
-**Regex**: `^([0-9]+-[0-9]+;)+$` (at least one pair required).
-**Examples**: `"1-1;"`, `"1-1;2-3;"`, `"5-2;10-4;"`.
+**Format**: `"<schedule_id>-<relay_id>"` per pair, comma-separated.
+**Regex**: `^[0-9]+-[0-9]+(,[0-9]+-[0-9]+)*$` (at least one pair required).
+**Examples**: `"1-1"`, `"1-1,2-3"`, `"5-2,10-4"`.
 
 The pylocal-akuvox library treats this as an opaque string. The
 integration provides two convenience services for pair
@@ -142,7 +142,7 @@ time picker.
 | ----- | ---- | ------------- |
 | name | Non-empty string | "Name is required" |
 | user_id | Non-empty string | "User ID is required" |
-| schedule_relay | `<int>-<int>;` pairs | "Expected `<ID>-<Relay>;` pairs" |
+| schedule_relay | `<int>-<int>,` pairs | "Expected `<ID>-<Relay>,` pairs" |
 | private_pin | 4-8 digits if provided | "PIN must be 4-8 digits" |
 | lift_floor_num | Required for add | "Lift floor number is required" |
 

@@ -33,7 +33,7 @@ but masked in logs.
 ## Technical Context
 
 **Language/Version**: Python ≥3.13.2
-**Primary Dependencies**: pylocal-akuvox ≥0.2.2 (schedule/user
+**Primary Dependencies**: pylocal-akuvox ≥0.2.3 (schedule/user
 APIs), homeassistant ≥2026.2.0 (service framework)
 **Storage**: None; integration is a pass-through to device local API
 **Testing**: pytest, pytest-homeassistant-custom-component,
@@ -126,7 +126,7 @@ for its `add_code`, `delete_code`, and `get_codes` services.
 
 **Schedule-Relay Pair Services**: The pylocal-akuvox library has
 no atomic add/remove for individual schedule+relay pairs — the
-`schedule_relay` field is a single string (e.g. `"1-1;2-3;"`).
+`schedule_relay` field is a single string (e.g. `"1-1,2-3"`).
 Two convenience services (`add_user_schedule_relay` and
 `remove_user_schedule_relay`) are implemented at the entity level
 by fetching the current user, parsing the string, performing the

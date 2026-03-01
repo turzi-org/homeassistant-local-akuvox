@@ -209,9 +209,9 @@ Inherits from add_user, plus:
 5. **Cloud schedule check**: Fetch schedule list, verify the
    referenced `schedule_id` is not cloud-provisioned.
 6. Parse current `schedule_relay` into list of pairs.
-7. Check if `schedule_id-relay_id;` pair already exists.
+7. Check if `schedule_id-relay_id` pair already exists.
    If duplicate, raise `ServiceValidationError`.
-8. Append `"<schedule_id>-<relay_id>;"` to the string.
+8. Append `"<schedule_id>-<relay_id>"` to the string.
 9. Call `await device.modify_user(id=id,
    schedule_relay=updated_string)`.
 10. Fire event `akuvox_user_changed` with
@@ -251,7 +251,7 @@ Inherits from add_user, plus:
 4. **Cloud check**: If user is cloud-provisioned, raise
    `ServiceValidationError`.
 5. Parse current `schedule_relay` into list of pairs.
-6. Find `"<schedule_id>-<relay_id>;"` in the pair list.
+6. Find `"<schedule_id>-<relay_id>"` in the pair list.
    If not found, raise `ServiceValidationError`.
 7. Remove the pair from the list.
 8. If removal would leave zero pairs, raise
