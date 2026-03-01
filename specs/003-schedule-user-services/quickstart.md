@@ -108,8 +108,8 @@ target:
   entity_id: lock.akuvox_front_door
 data:
   name: "John Doe"
-  user_id: "john.doe"
-  schedule_relay: "1-1;"
+  schedules:
+    - "10"
   lift_floor_num: "3"
   private_pin: "1234"
 ```

@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import voluptuous as vol
@@ -1336,21 +1336,152 @@ async def test_add_user_success(
             "entity_id": ENTITY_ID,
             "name": "Jane Doe",
             "user_id": "jane.doe",
-            "schedule_relay": "1-1;",
+            "schedules": ["10"],
             "lift_floor_num": "5",
         },
         blocking=True,
     )
 
-    mock_akuvox_device.add_user.assert_called_once_with(
-        name="Jane Doe",
-        user_id="jane.doe",
-        schedule_relay="1-1;",
-        lift_floor_num="5",
-        web_relay=None,
-        private_pin=None,
-        card_code=None,
+    mock_akuvox_device.add_user.assert_called_once()
+    call_kwargs = mock_akuvox_device.add_user.call_args[1]
+    assert call_kwargs["name"] == "Jane Doe"
+    assert call_kwargs["user_id"] == "jane.doe"
+    assert call_kwargs["schedule_relay"] == "10-1"
+    assert call_kwargs["lift_floor_num"] == "5"
+    assert call_kwargs["web_relay"] is None
+    assert call_kwargs["private_pin"] is None
+    assert call_kwargs["card_code"] is None
+
+
+async def test_add_user_auto_user_id(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test user_id is auto-generated as numeric timestamp when omitted."""
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with patch("custom_components.akuvox.lock.time") as mock_time:
+        mock_time.time.return_value = 1709153400.0
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "name": "Jane Doe",
+                "schedules": ["10"],
+                "lift_floor_num": "5",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_user.assert_called_once()
+    call_kwargs = mock_akuvox_device.add_user.call_args[1]
+    assert call_kwargs["user_id"] == "1709153400"
+
+
+async def test_add_user_multiple_schedules(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test multiple schedules build correct schedule_relay."""
+    local2 = AccessSchedule(
+        id="3",
+        schedule_type="1",
+        name="Extra",
+        display_id="30",
+        source_type="1",
+        week="12345",
+        daily=None,
+        date_start=None,
+        date_end=None,
+        time_start="09:00",
+        time_end="17:00",
+        mode=None,
+        sun=None,
+        mon=None,
+        tue=None,
+        wed=None,
+        thur=None,
+        fri=None,
+        sat=None,
     )
+    mock_akuvox_device.list_schedules.return_value = [
+        *mock_schedule_list,
+        local2,
+    ]
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "add_user",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "name": "Jane Doe",
+            "schedules": ["10", "30"],
+            "lift_floor_num": "5",
+        },
+        blocking=True,
+    )
+
+    mock_akuvox_device.add_user.assert_called_once()
+    call_kwargs = mock_akuvox_device.add_user.call_args[1]
+    assert call_kwargs["schedule_relay"] == "10-1,30-1"
+
+
+async def test_add_user_csv_schedules(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test comma-separated schedule string is split correctly."""
+    local2 = AccessSchedule(
+        id="3",
+        schedule_type="1",
+        name="Extra",
+        display_id="30",
+        source_type="1",
+        week="12345",
+        daily=None,
+        date_start=None,
+        date_end=None,
+        time_start="09:00",
+        time_end="17:00",
+        mode=None,
+        sun=None,
+        mon=None,
+        tue=None,
+        wed=None,
+        thur=None,
+        fri=None,
+        sat=None,
+    )
+    mock_akuvox_device.list_schedules.return_value = [
+        *mock_schedule_list,
+        local2,
+    ]
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "add_user",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "name": "Jane Doe",
+            "schedules": "10, 30",
+            "lift_floor_num": "5",
+        },
+        blocking=True,
+    )
+
+    mock_akuvox_device.add_user.assert_called_once()
+    call_kwargs = mock_akuvox_device.add_user.call_args[1]
+    assert call_kwargs["schedule_relay"] == "10-1,30-1"
 
 
 async def test_add_user_with_optional_pin(
@@ -1369,14 +1500,14 @@ async def test_add_user_with_optional_pin(
         service_data={
             "entity_id": ENTITY_ID,
             "name": "Jane Doe",
-            "user_id": "jane.doe",
-            "schedule_relay": "1-1;",
+            "schedules": ["10"],
             "lift_floor_num": "5",
             "private_pin": "4321",
         },
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["private_pin"] == "4321"
 
@@ -1397,14 +1528,14 @@ async def test_add_user_with_optional_card_code(
         service_data={
             "entity_id": ENTITY_ID,
             "name": "Jane Doe",
-            "user_id": "jane.doe",
-            "schedule_relay": "1-1;",
+            "schedules": ["10"],
             "lift_floor_num": "5",
             "card_code": "XYZ789",
         },
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["card_code"] == "XYZ789"
 
@@ -1425,16 +1556,88 @@ async def test_add_user_with_optional_web_relay(
         service_data={
             "entity_id": ENTITY_ID,
             "name": "Jane Doe",
-            "user_id": "jane.doe",
-            "schedule_relay": "1-1;",
+            "schedules": ["10"],
             "lift_floor_num": "5",
             "web_relay": "1",
         },
         blocking=True,
     )
 
+    mock_akuvox_device.add_user.assert_called_once()
     call_kwargs = mock_akuvox_device.add_user.call_args[1]
     assert call_kwargs["web_relay"] == "1"
+
+
+async def test_add_user_empty_schedules_rejected(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test empty schedules list raises error."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "name": "Jane Doe",
+                "schedules": [],
+                "lift_floor_num": "5",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_user.assert_not_called()
+
+
+async def test_add_user_non_digit_schedule_rejected(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test non-digit schedule display_id raises schema error."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "name": "Jane Doe",
+                "schedules": ["abc"],
+                "lift_floor_num": "5",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_user.assert_not_called()
+
+
+async def test_add_user_duplicate_schedules_rejected(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test duplicate schedule display_ids raises schema error."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "name": "Jane Doe",
+                "schedules": ["10", "10"],
+                "lift_floor_num": "5",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_user.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -1460,41 +1663,9 @@ async def test_add_user_invalid_pin(
             service_data={
                 "entity_id": ENTITY_ID,
                 "name": "Jane Doe",
-                "user_id": "jane.doe",
-                "schedule_relay": "1-1;",
+                "schedules": ["10"],
                 "lift_floor_num": "5",
                 "private_pin": bad_pin,
-            },
-            blocking=True,
-        )
-
-    mock_akuvox_device.add_user.assert_not_called()
-
-
-@pytest.mark.parametrize(
-    "bad_relay",
-    ["invalid", "1-1", "1-;", "-1;"],
-    ids=["no-format", "no-semicolon", "no-relay", "no-schedule"],
-)
-async def test_add_user_invalid_schedule_relay(
-    hass: HomeAssistant,
-    mock_config_entry_data_none: dict[str, Any],
-    mock_akuvox_device: AsyncMock,
-    bad_relay: str,
-) -> None:
-    """Test invalid schedule_relay format raises error."""
-    await _setup_entry(hass, mock_config_entry_data_none)
-
-    with pytest.raises(ServiceValidationError, match="schedule_relay"):
-        await hass.services.async_call(
-            DOMAIN,
-            "add_user",
-            service_data={
-                "entity_id": ENTITY_ID,
-                "name": "Jane Doe",
-                "user_id": "jane.doe",
-                "schedule_relay": bad_relay,
-                "lift_floor_num": "5",
             },
             blocking=True,
         )
@@ -1519,8 +1690,7 @@ async def test_add_user_cloud_schedule_rejected(
             service_data={
                 "entity_id": ENTITY_ID,
                 "name": "Jane Doe",
-                "user_id": "jane.doe",
-                "schedule_relay": "2-1;",
+                "schedules": ["20"],
                 "lift_floor_num": "5",
             },
             blocking=True,
@@ -1546,8 +1716,7 @@ async def test_add_user_nonexistent_schedule_rejected(
             service_data={
                 "entity_id": ENTITY_ID,
                 "name": "Jane Doe",
-                "user_id": "jane.doe",
-                "schedule_relay": "999-1;",
+                "schedules": ["999"],
                 "lift_floor_num": "5",
             },
             blocking=True,
@@ -1572,8 +1741,7 @@ async def test_add_user_schedule_check_validation_error(
             service_data={
                 "entity_id": ENTITY_ID,
                 "name": "Jane Doe",
-                "user_id": "jane.doe",
-                "schedule_relay": "1-1;",
+                "schedules": ["10"],
                 "lift_floor_num": "5",
             },
             blocking=True,
@@ -1597,8 +1765,7 @@ async def test_add_user_fires_event(
         service_data={
             "entity_id": ENTITY_ID,
             "name": "Jane Doe",
-            "user_id": "jane.doe",
-            "schedule_relay": "1-1;",
+            "schedules": ["10"],
             "lift_floor_num": "5",
         },
         blocking=True,
@@ -1639,8 +1806,7 @@ async def test_add_user_device_errors(
             service_data={
                 "entity_id": ENTITY_ID,
                 "name": "Jane Doe",
-                "user_id": "jane.doe",
-                "schedule_relay": "1-1;",
+                "schedules": ["10"],
                 "lift_floor_num": "5",
             },
             blocking=True,

@@ -8,6 +8,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
+import time
 from typing import Any, cast
 
 from homeassistant.components.lock import LockEntity
@@ -47,9 +48,6 @@ _REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
     "1": ("week",),
     "2": (),
 }
-
-# Pattern for schedule_relay: one or more "<number>-<number>;" pairs
-_SCHEDULE_RELAY_RE: re.Pattern[str] = re.compile(r"^([0-9]+-[0-9]+;)+\Z")
 
 # Akuvox devices expose relays as "RelayA", "RelayB", etc.
 # with a single uppercase letter A-Z suffix.
@@ -714,7 +712,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         """
         schedule_id: str = kwargs["id"]
-        await self._fetch_local_schedule(schedule_id, action="delete")
+        schedule = await self._fetch_local_schedule(schedule_id, action="delete")
+        display_id = schedule.display_id or schedule_id
 
         try:
             await self.coordinator.device.delete_schedule(id=schedule_id)
@@ -732,15 +731,16 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             users = await self.coordinator.device.list_users(page=None)
             for user in users:
                 relay = getattr(user, "schedule_relay", "") or ""
-                for pair in relay.split(";"):
-                    if pair and pair.split("-")[0] == schedule_id:
+                for pair in re.split(r"[;,]", relay):
+                    pair = pair.strip()
+                    if pair and pair.split("-")[0] == display_id:
                         _LOGGER.warning(
                             "Orphaned schedule-relay assignment: "
                             "user '%s' (id=%s) still references "
                             "deleted schedule %s",
                             user.name,
                             user.id,
-                            schedule_id,
+                            display_id,
                         )
                         break
         except AkuvoxError:
@@ -757,22 +757,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if config_entry is not None and hasattr(config_entry, "entry_id"):
             event_data["config_entry_id"] = config_entry.entry_id
         self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)
-
-    def _validate_schedule_relay(self, schedule_relay: str) -> None:
-        """Validate schedule_relay format matches ``<N>-<N>;`` pairs.
-
-        Args:
-            schedule_relay: The schedule-relay string to validate.
-
-        Raises:
-            ServiceValidationError: If format is invalid.
-
-        """
-        if not _SCHEDULE_RELAY_RE.match(schedule_relay):
-            raise ServiceValidationError(
-                "Invalid schedule_relay format; "
-                "expected '<schedule_id>-<relay_id>;' pairs",
-            )
 
     def _validate_pin(self, pin: str | None) -> None:
         """Validate private_pin is 4-8 digits if provided.
@@ -791,12 +775,14 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
     async def _check_cloud_schedules(
         self,
-        schedule_relay: str,
+        display_ids: list[str],
     ) -> None:
         """Verify no referenced schedules are cloud-provisioned.
 
+        Looks up schedules by ``display_id`` (not internal ``id``).
+
         Args:
-            schedule_relay: The schedule-relay string to check.
+            display_ids: Schedule display_ids to validate.
 
         Raises:
             ServiceValidationError: If any referenced schedule is
@@ -804,9 +790,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: If schedule list fetch fails.
 
         """
-        schedule_ids = {
-            pair.split("-")[0] for pair in schedule_relay.rstrip(";").split(";") if pair
-        }
         try:
             schedules = await self.coordinator.device.list_schedules(
                 page=None,
@@ -820,26 +803,48 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"Failed to verify schedules: {err}",
             ) from err
 
-        schedule_map = {s.id: s for s in schedules}
-        for sid in schedule_ids:
-            sched = schedule_map.get(sid)
+        display_map = {s.display_id: s for s in schedules if s.display_id is not None}
+        for did in display_ids:
+            sched = display_map.get(did)
             if sched is None:
-                # ServiceValidationError (not HomeAssistantError) because
-                # the caller supplied an invalid schedule_relay reference —
-                # this is an input-validation failure, not a device error.
+                # ServiceValidationError because the caller supplied
+                # an invalid schedule reference (input-validation).
                 raise ServiceValidationError(
-                    f"Schedule '{sid}' not found on device",
+                    f"Schedule '{did}' not found on device",
                 )
             if sched.source_type == "2":
                 raise ServiceValidationError(
                     "Cannot assign cloud-provisioned schedule",
                 )
 
+    def _build_schedule_relay(
+        self,
+        display_ids: list[str],
+    ) -> str:
+        """Build a schedule_relay string from display_ids.
+
+        Pairs each display_id with the entity's relay number
+        using comma separation (device firmware requirement).
+
+        Args:
+            display_ids: Schedule display_ids to assign.
+
+        Returns:
+            Formatted schedule_relay string (e.g. ``"10-1,20-1"``).
+
+        """
+        parts: list[str] = []
+        for did in display_ids:
+            parts.append(f"{did}-{self._relay_number}")
+        return ",".join(parts)
+
     async def add_user(self, **kwargs: Any) -> None:
         """Create a new user on the device.
 
         Validates input fields, checks that referenced schedules
-        are not cloud-provisioned, then forwards the call.
+        are not cloud-provisioned, builds the schedule_relay
+        string from display_ids and relay numbers, then forwards
+        the call.
 
         Args:
             **kwargs: Service call data with user fields.
@@ -849,15 +854,16 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: On device communication errors.
 
         """
-        schedule_relay: str = kwargs["schedule_relay"]
-        self._validate_schedule_relay(schedule_relay)
+        schedules: list[str] = kwargs["schedules"]
         self._validate_pin(kwargs.get("private_pin"))
-        await self._check_cloud_schedules(schedule_relay)
+        await self._check_cloud_schedules(schedules)
+
+        schedule_relay = self._build_schedule_relay(schedules)
 
         try:
             await self.coordinator.device.add_user(
                 name=kwargs["name"],
-                user_id=kwargs["user_id"],
+                user_id=kwargs.get("user_id") or str(int(time.time())),
                 schedule_relay=schedule_relay,
                 lift_floor_num=kwargs["lift_floor_num"],
                 web_relay=kwargs.get("web_relay"),

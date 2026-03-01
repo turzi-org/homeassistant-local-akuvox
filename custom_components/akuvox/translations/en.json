@@ -184,11 +184,11 @@
         },
         "user_id": {
           "name": "User ID",
-          "description": "External user identifier."
+          "description": "Optional user identifier (auto-generated if omitted)."
         },
-        "schedule_relay": {
-          "name": "Schedule-relay pairs",
-          "description": "Schedule-relay assignment pairs (e.g., 1-1;)."
+        "schedules": {
+          "name": "Schedules",
+          "description": "Schedule display IDs (comma-separated for multiple)."
         },
         "lift_floor_num": {
           "name": "Lift floor number",
@@ -334,7 +334,7 @@
       "message": "Invalid time format: {value}. Expected HH:MM."
     },
     "invalid_schedule_relay_format": {
-      "message": "Invalid schedule_relay format. Expected pairs like 1-1;2-2;"
+      "message": "Invalid schedule_relay format. Expected pairs like 1-1,2-2"
     },
     "invalid_pin_format": {
       "message": "PIN must be 4-8 digits."

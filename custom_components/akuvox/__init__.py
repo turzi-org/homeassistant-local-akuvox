@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -41,6 +42,29 @@ from .const import (
 from .coordinator import AkuvoxDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _csv_to_list(value: Any) -> list[str]:
+    """Split a comma-separated string into a list of trimmed strings.
+
+    Also flattens lists that contain comma-separated items.
+    Coerces other iterables via ``cv.ensure_list``.
+
+    """
+    if isinstance(value, str):
+        return [s.strip() for s in value.split(",") if s.strip()]
+    if isinstance(value, list):
+        result: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                for part in item.split(","):
+                    stripped = part.strip()
+                    if stripped:
+                        result.append(stripped)
+            else:
+                result.append(str(item))
+        return result
+    return cv.ensure_list(value)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -141,9 +165,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         entity_domain=Platform.LOCK,
         schema={
             vol.Required("name"): cv.string,
-            vol.Required("user_id"): cv.string,
-            vol.Required("schedule_relay"): cv.string,
+            vol.Required("schedules"): vol.All(
+                _csv_to_list,
+                vol.Length(min=1),
+                [vol.All(cv.string, vol.Length(min=1), vol.Match(r"^\d+$"))],
+                vol.Unique(),
+            ),
             vol.Required("lift_floor_num"): cv.string,
+            vol.Optional("user_id"): cv.string,
             vol.Optional("web_relay"): cv.string,
             vol.Optional("private_pin"): cv.string,
             vol.Optional("card_code"): cv.string,

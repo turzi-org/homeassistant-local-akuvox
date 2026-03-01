@@ -205,14 +205,14 @@ add_user:
         text:
           multiline: false
     user_id:
-      required: true
-      example: "john.doe"
+      required: false
+      example: "1709153400"
       selector:
         text:
           multiline: false
-    schedule_relay:
+    schedules:
       required: true
-      example: "1-1;"
+      example: "10, 20"
       selector:
         text:
           multiline: false

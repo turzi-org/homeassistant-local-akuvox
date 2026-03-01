@@ -37,7 +37,7 @@ The service is called on an `AkuvoxLockEntity` instance.
             "id": "42",
             "name": "John Doe",
             "user_id": "john.doe",
-            "schedule_relay": "1-1;",
+            "schedule_relay": "1001-1,1002-1",
             "web_relay": None,
             "private_pin": "1234",     # Plain text
             "card_code": "ABC123",     # Plain text
@@ -73,43 +73,43 @@ list but are clearly identifiable by the `source_type` field.
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
 | name | str | Yes | User display name |
-| user_id | str | Yes | External user identifier |
-| schedule_relay | str | Yes | Schedule-relay pairs (`<ID>-<Relay>;`) |
+| schedules | list[str] | Yes | Schedule display_ids (CSV also accepted) |
 | lift_floor_num | str | Yes | Elevator floor access |
+| user_id | str | No | User ID (auto-timestamp) |
 | web_relay | str | No | Web relay assignment |
 | private_pin | str | No | 4-8 digit PIN |
 | card_code | str | No | Card/badge code |
 
 **Entity targeting**: Uses HA standard entity/device/area targeting.
+The entity's relay number is used to auto-build the
+`schedule_relay` string.
 
 ### Behavior: add_user
 
 1. HA routes the call to the targeted `AkuvoxLockEntity` instance.
-2. Validate required fields are non-empty.
-3. Validate `schedule_relay` matches pattern `^([0-9]+-[0-9]+;)+$`.
-4. Validate `private_pin` is 4-8 digits if provided.
-5. **Cloud schedule check**: Parse schedule IDs from
-   `schedule_relay`, fetch schedule list, verify none of the
-   referenced schedules are cloud-provisioned. If any are,
-   raise `ServiceValidationError`.
-6. Call `await device.add_user(...)`.
+2. Validate `schedules` is a non-empty list.
+3. Validate `private_pin` is 4-8 digits if provided.
+4. **Schedule validation**: Fetch schedule list, look up each
+   schedule by `display_id` (not internal `id`). Verify each
+   exists and is not cloud-provisioned (`source_type` != `"2"`).
+5. **Build schedule_relay**: For each schedule `display_id`,
+   pair it with the entity's relay number as `<display_id>-<relay_num>`,
+   and join all pairs with commas (e.g. `"10-1,30-1"`).
+6. Call `await device.add_user(...)` with built `schedule_relay`
+   and `user_id` (numeric timestamp if not provided).
 7. Fire event `akuvox_user_changed` with
-   `{"action": "add", "config_entry_id": entry_id,
-   "device_user_id": id}` (`device_user_id` is the
-   device-assigned identifier, distinct from the `User`
-   field `user_id` (external identifier), and is
-   included only if the device returns the created ID).
+   `{"action": "add", "config_entry_id": entry_id}`.
 
 ### Error Handling: add_user
 
 | Condition | Exception | Message |
 | --------- | --------- | ------- |
-| Missing required field | ServiceValidationError | "{field} is required" |
-| Invalid schedule_relay | ServiceValidationError | "Invalid format..." |
-| Invalid private_pin | ServiceValidationError | "PIN must be 4-8 digits" |
-| Cloud schedule ref | ServiceValidationError | "Cannot assign cloud schedule" |
-| Library validation | ServiceValidationError | Forwarded message |
-| Device error | HomeAssistantError | "Device error..." |
+| No schedules | vol.Invalid (schema) | Length min 1 |
+| Not found | ServiceValidationError | (schedule not found) |
+| Bad PIN | ServiceValidationError | (4-8 digits) |
+| Cloud ref | ServiceValidationError | (cloud schedule) |
+| Lib error | ServiceValidationError | Forwarded message |
+| Device err | HomeAssistantError | "Device error..." |
 
 ---
 
