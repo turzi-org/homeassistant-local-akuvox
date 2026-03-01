@@ -1978,6 +1978,33 @@ async def test_modify_user_malformed_schedule_relay(
     mock_akuvox_device.modify_user.assert_not_called()
 
 
+async def test_modify_user_semicolon_schedule_relay_normalized(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test semicolon-separated schedule_relay is normalized to commas."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "modify_user",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "42",
+            "schedule_relay": "10-1;10-2;",
+        },
+        blocking=True,
+    )
+
+    call_kwargs = mock_akuvox_device.modify_user.call_args[1]
+    assert call_kwargs["schedule_relay"] == "10-1,10-2"
+
+
 async def test_modify_user_event_fired(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],

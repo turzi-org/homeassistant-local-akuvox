@@ -962,7 +962,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         schedule_relay: str | None = kwargs.get("schedule_relay")
         if schedule_relay is not None:
-            sched_ids: list[str] = []
+            parsed_pairs: list[str] = []
             for raw_pair in re.split(r"[;,]", schedule_relay):
                 pair = raw_pair.strip()
                 if not pair:
@@ -972,8 +972,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                         f"Invalid schedule_relay entry '{pair}'. "
                         "Expected format '<schedule_id>-<relay_id>'.",
                     )
-                sched_ids.append(pair.split("-", 1)[0])
+                parsed_pairs.append(pair)
+            sched_ids = [p.split("-", 1)[0] for p in parsed_pairs]
             await self._check_cloud_schedules(sched_ids)
+            # Normalize to comma-separated (device firmware requirement).
+            schedule_relay = ",".join(parsed_pairs)
 
         try:
             await self.coordinator.device.modify_user(
