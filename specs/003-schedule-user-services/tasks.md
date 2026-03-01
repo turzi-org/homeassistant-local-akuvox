@@ -376,7 +376,7 @@ changes, and event firing.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T020 [US7] Write failing tests for `modify_user` in
+- [x] T020 [US7] Write failing tests for `modify_user` in
   tests/test_services.py: (a) success with partial
   update passes `id` and fields to
   `device.modify_user()`, (b) cloud user (source_type
@@ -390,7 +390,7 @@ changes, and event firing.
 
 ### Implementation for User Story 7
 
-- [ ] T021 [US7] Implement `async modify_user(self,
+- [x] T021 [US7] Implement `async modify_user(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`, fetch
   user list, find user, check `source_type` for `"2"`
