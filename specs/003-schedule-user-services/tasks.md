@@ -452,7 +452,6 @@ Best-effort; concurrent calls may race.
   comma-separated `schedule_relay` string (appending
   `",<sid>-<rid>"` when there is at least one existing pair)
   and calls `device.modify_user()`,
-  schedule_relay and calls `device.modify_user()`,
   (b) duplicate pair raises ServiceValidationError
   "Pair already assigned", (c) cloud user raises
   ServiceValidationError, (d) cloud schedule reference
