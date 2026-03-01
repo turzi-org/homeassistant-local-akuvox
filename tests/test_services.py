@@ -1592,6 +1592,54 @@ async def test_add_user_empty_schedules_rejected(
     mock_akuvox_device.add_user.assert_not_called()
 
 
+async def test_add_user_non_digit_schedule_rejected(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test non-digit schedule display_id raises schema error."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "name": "Jane Doe",
+                "schedules": ["abc"],
+                "lift_floor_num": "5",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_user.assert_not_called()
+
+
+async def test_add_user_duplicate_schedules_rejected(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test duplicate schedule display_ids raises schema error."""
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "name": "Jane Doe",
+                "schedules": ["10", "10"],
+                "lift_floor_num": "5",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.add_user.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "bad_pin",
     ["12", "123", "123456789", "abcd", "12a4"],
