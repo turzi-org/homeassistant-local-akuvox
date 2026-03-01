@@ -1006,3 +1006,40 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if config_entry is not None and hasattr(config_entry, "entry_id"):
             event_data["config_entry_id"] = config_entry.entry_id
         self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data)
+
+    async def delete_user(self, **kwargs: Any) -> None:
+        """Delete an existing user from the device.
+
+        Fetches the user list to verify the target exists and
+        is not cloud-provisioned, then deletes it.
+
+        Args:
+            **kwargs: Service call data (``id`` required).
+
+        Raises:
+            ServiceValidationError: If user is cloud-provisioned.
+            HomeAssistantError: If user not found or device error.
+
+        """
+        user_id: str = kwargs["id"]
+        await self._fetch_local_user(user_id, action="delete")
+
+        try:
+            await self.coordinator.device.delete_user(id=user_id)
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"delete_user: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"delete_user failed: {err}",
+            ) from err
+
+        event_data: dict[str, str] = {
+            "action": "delete",
+            "device_user_id": user_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data)
