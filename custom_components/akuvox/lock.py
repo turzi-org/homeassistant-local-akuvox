@@ -734,7 +734,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             users = await self.coordinator.device.list_users(page=None)
             for user in users:
                 relay = getattr(user, "schedule_relay", "") or ""
-                for pair in relay.split(";"):
+                for pair in re.split(r"[;,]", relay):
+                    pair = pair.strip()
                     if pair and pair.split("-")[0] == display_id:
                         _LOGGER.warning(
                             "Orphaned schedule-relay assignment: "
@@ -761,7 +762,9 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         self.hass.bus.async_fire(EVENT_SCHEDULE_CHANGED, event_data)
 
     def _validate_schedule_relay(self, schedule_relay: str) -> None:
-        """Validate schedule_relay format matches ``<N>-<N>;`` pairs.
+        """Validate schedule_relay format matches ``<N>-<N>`` pairs.
+
+        Pairs are comma-separated (e.g. ``"10-1,20-1"``).
 
         Args:
             schedule_relay: The schedule-relay string to validate.
@@ -773,7 +776,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if not _SCHEDULE_RELAY_RE.match(schedule_relay):
             raise ServiceValidationError(
                 "Invalid schedule_relay format; "
-                "expected '<schedule_id>-<relay_id>;' pairs",
+                "expected comma-separated '<id>-<relay>' pairs",
             )
 
     def _validate_pin(self, pin: str | None) -> None:

@@ -93,8 +93,8 @@ The entity's relay number is used to auto-build the
    schedule by `display_id` (not internal `id`). Verify each
    exists and is not cloud-provisioned (`source_type` != `"2"`).
 5. **Build schedule_relay**: For each schedule `display_id`,
-   pair it with the entity's relay number. Format:
-   `<display_id>-<relay_num>;` concatenated.
+   pair it with the entity's relay number as `<display_id>-<relay_num>`,
+   and join all pairs with commas (e.g. `"10-1,30-1"`).
 6. Call `await device.add_user(...)` with built `schedule_relay`
    and `user_id` (numeric timestamp if not provided).
 7. Fire event `akuvox_user_changed` with
