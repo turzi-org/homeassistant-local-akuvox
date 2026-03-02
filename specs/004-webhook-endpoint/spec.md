@@ -10,8 +10,9 @@ SPDX-License-Identifier: Apache-2.0
 **Status**: Draft
 **Input**: User description: "Akuvox devices support webhooks related to actions
 happening on the device. We are creating feature 004 and the purpose of this
-feature is to add a single webhook endpoint that can handle incoming webhooks
-from the device. We will also need updates to the configuration and
+feature is to add a webhook handler that assigns a unique per-device URL to each
+configured Akuvox device so it can receive incoming webhooks from those devices.
+We will also need updates to the configuration and
 reconfiguration workflows to provide an option for the integration to set up the
 webhook configuration on the device."
 
@@ -48,13 +49,15 @@ enabling real-time automations.
    **Then** the integration fires an event on the Home Assistant event
    bus containing the parsed event type and relevant data.
 2. **Given** the integration is configured and loaded, **When** a
-   malformed or unrecognizable payload is received at the webhook
-   endpoint, **Then** the integration logs a warning with details about
-   the rejected payload and does not fire any event.
+   malformed or unparsable payload (for example, invalid structure or
+   a body from which the event type cannot be determined) is received
+   at the webhook endpoint, **Then** the integration logs a warning
+   with details about the rejected payload and does not fire any event.
 3. **Given** the integration is configured and loaded, **When** a
-   webhook is received from an unknown source (not matching any
-   configured device), **Then** the integration rejects the request
-   and logs a warning.
+   webhook is received with an identifier that does not match any
+   stored webhook identifier for a configured device (as defined in
+   FR-004), **Then** the integration rejects the request and logs a
+   warning.
 4. **Given** the integration is configured and loaded, **When** the
    device sends multiple webhook events in rapid succession, **Then**
    each event is processed and fired independently without loss.
@@ -235,9 +238,12 @@ device configuration is updated accordingly each time.
 - **SC-001**: Users receive Home Assistant events within 2 seconds of
   the Akuvox device triggering a webhook, enabling near-real-time
   automations.
-- **SC-002**: 100% of valid webhook payloads from the device are
+- **SC-002**: 100% of valid webhook payloads from the device received
+  while the integration is loaded and the webhook is enabled are
   successfully parsed and delivered as Home Assistant events without
-  loss.
+  loss; payloads received during integration reload, disable, or
+  teardown windows may be gracefully dropped as defined in the Edge
+  Cases section.
 - **SC-003**: Users can enable webhook support during initial setup in
   under 1 minute with no manual device configuration required.
 - **SC-004**: Users can toggle webhook support on or off via
