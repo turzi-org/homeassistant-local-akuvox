@@ -31,10 +31,18 @@ for each configured Akuvox device, assigning a unique URL to each
 registration. When a device sends a webhook to its URL, the integration
 parses the payload, identifies the event type, and fires a Home Assistant
 event that automations can subscribe to. The event data MUST include, at
-minimum: the device reference, the integration config entry reference,
-a normalized event type string (for example: doorbell pressed, door
-opened, call started), the original raw payload, and a parsed payload
-suitable for use in automations.
+minimum:
+
+- **device_id**: The stable Home Assistant device identifier for the
+  Akuvox device (persists across restarts).
+- **config_entry_id**: The stable integration config entry identifier
+  (persists across restarts).
+- **event_type**: A normalized event type string in `lowercase_snake_case`
+  format (for example: `doorbell_pressed`, `door_opened`,
+  `call_started`). The set of recognized types is extendable as new
+  device event types are discovered.
+- **payload**: A parsed representation of the webhook payload suitable
+  for use in automations.
 
 **Why this priority**: This is the core value of the feature. Without
 the ability to receive and process webhook events, nothing else matters.
@@ -43,8 +51,8 @@ downstream automation use cases.
 
 **Independent Test**: Can be fully tested by sending a simulated webhook
 payload to the endpoint and verifying that a Home Assistant event is
-fired with the expected device reference, config entry reference, event
-type, raw payload, and parsed payload values. Delivers immediate value
+fired with the expected `device_id`, `config_entry_id`, `event_type`,
+and `payload` values. Delivers immediate value
 by enabling real-time automations.
 
 **Acceptance Scenarios**:
@@ -229,9 +237,10 @@ device configuration is updated accordingly each time.
   enabled.
 - **FR-012**: System MUST attempt to remove the webhook configuration
   from the device when the integration entry is removed.
-- **FR-013**: System MUST fire a generic event with the raw payload for
-  unrecognized event types and log a warning-level message identifying
-  the unknown type.
+- **FR-013**: System MUST fire a generic event for unrecognized event
+  types that includes the incoming payload (subject to the same
+  redaction and truncation rules applied to log entries) and log a
+  warning-level message identifying the unknown type.
 - **FR-014**: System MUST handle concurrent webhook deliveries from the
   same device without event loss or processing errors.
 
