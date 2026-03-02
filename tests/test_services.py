@@ -2513,9 +2513,6 @@ async def test_add_user_schedule_relay_event_fired(
     assert events[0].data["config_entry_id"] == entry.entry_id
 
 
-# ── remove_user_schedule_relay (Convenience) ──────────────────
-
-
 @pytest.mark.parametrize(
     ("lib_exc", "ha_exc"),
     [
@@ -2552,6 +2549,9 @@ async def test_add_user_schedule_relay_device_errors(
             },
             blocking=True,
         )
+
+
+# ── remove_user_schedule_relay (Convenience) ──────────────────
 
 
 async def test_remove_user_schedule_relay_success(
@@ -2684,6 +2684,39 @@ async def test_remove_user_schedule_relay_user_not_found(
                 "id": "999",
                 "schedule_id": "10",
                 "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("schedule_id", "relay_id"),
+    [("abc", "1"), ("10", "xyz"), ("", "1"), ("10", "")],
+    ids=["bad-schedule", "bad-relay", "empty-schedule", "empty-relay"],
+)
+async def test_remove_user_schedule_relay_non_numeric(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    schedule_id: str,
+    relay_id: str,
+) -> None:
+    """Test non-numeric schedule_id/relay_id raises ServiceValidationError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Mm]ust be numeric"):
+        await hass.services.async_call(
+            DOMAIN,
+            "remove_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_id": schedule_id,
+                "relay_id": relay_id,
             },
             blocking=True,
         )

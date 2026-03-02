@@ -800,11 +800,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             )
         except AkuvoxValidationError as err:
             raise ServiceValidationError(
-                f"{action}_user: {err}",
+                f"{action} user: {err}",
             ) from err
         except AkuvoxError as err:
             raise HomeAssistantError(
-                f"{action}_user: failed to fetch users: {err}",
+                f"{action} user: failed to fetch users: {err}",
             ) from err
 
         target = None
@@ -891,7 +891,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         return ",".join(parts)
 
     @staticmethod
-    def _parse_schedule_relay_pairs(raw: str) -> list[str]:
+    def _parse_schedule_relay_pairs(
+        raw: str,
+        *,
+        allow_empty: bool = False,
+    ) -> list[str]:
         """Parse a schedule_relay string into validated pairs.
 
         Accepts comma or semicolon separators and strips whitespace.
@@ -899,13 +903,15 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         Args:
             raw: Raw schedule_relay string from user or device.
+            allow_empty: If ``True``, return an empty list instead
+                of raising when no valid pairs are found.
 
         Returns:
             List of validated ``"<schedule_id>-<relay_id>"`` pairs.
 
         Raises:
             ServiceValidationError: If any pair is malformed or
-                the result is empty.
+                the result is empty (unless *allow_empty*).
 
         """
         pairs: list[str] = []
@@ -919,7 +925,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                     "Expected format '<schedule_id>-<relay_id>'.",
                 )
             pairs.append(pair)
-        if not pairs:
+        if not pairs and not allow_empty:
             raise ServiceValidationError(
                 "schedule_relay must contain at least one "
                 "'<schedule_id>-<relay_id>' pair.",
@@ -1100,10 +1106,12 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"Invalid relay_id '{relay_id}'. Must be numeric.",
             )
 
-        user = await self._fetch_local_user(device_user_id, action="add_schedule_relay")
+        user = await self._fetch_local_user(
+            device_user_id, action="add schedule-relay to"
+        )
 
         current_relay = getattr(user, "schedule_relay", "") or ""
-        pairs = self._parse_schedule_relay_pairs(current_relay)
+        pairs = self._parse_schedule_relay_pairs(current_relay, allow_empty=True)
 
         new_pair = f"{schedule_id}-{relay_id}"
         if new_pair in pairs:
@@ -1172,11 +1180,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             )
 
         user = await self._fetch_local_user(
-            device_user_id, action="remove_schedule_relay"
+            device_user_id, action="remove schedule-relay from"
         )
 
         current_relay = getattr(user, "schedule_relay", "") or ""
-        pairs = self._parse_schedule_relay_pairs(current_relay)
+        pairs = self._parse_schedule_relay_pairs(current_relay, allow_empty=True)
 
         target_pair = f"{schedule_id}-{relay_id}"
         if target_pair not in pairs:
