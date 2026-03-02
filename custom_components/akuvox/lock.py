@@ -800,11 +800,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             )
         except AkuvoxValidationError as err:
             raise ServiceValidationError(
-                f"{action} user: {err}",
+                f"{action}_user: {err}",
             ) from err
         except AkuvoxError as err:
             raise HomeAssistantError(
-                f"{action} user: failed to fetch users: {err}",
+                f"{action}_user: failed to fetch users: {err}",
             ) from err
 
         target = None
@@ -1106,9 +1106,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"Invalid relay_id '{relay_id}'. Must be numeric.",
             )
 
-        user = await self._fetch_local_user(
-            device_user_id, action="add schedule-relay to"
-        )
+        user = await self._fetch_local_user(device_user_id, action="add_schedule_relay")
 
         current_relay = getattr(user, "schedule_relay", "") or ""
         pairs = self._parse_schedule_relay_pairs(current_relay, allow_empty=True)
@@ -1180,7 +1178,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             )
 
         user = await self._fetch_local_user(
-            device_user_id, action="remove schedule-relay from"
+            device_user_id, action="remove_schedule_relay"
         )
 
         current_relay = getattr(user, "schedule_relay", "") or ""
