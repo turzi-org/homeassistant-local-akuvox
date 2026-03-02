@@ -1065,6 +1065,15 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         schedule_id: str = kwargs["schedule_id"]
         relay_id: str = kwargs["relay_id"]
 
+        if not re.fullmatch(r"\d+", schedule_id):
+            raise ServiceValidationError(
+                f"Invalid schedule_id '{schedule_id}'. Must be numeric.",
+            )
+        if not re.fullmatch(r"\d+", relay_id):
+            raise ServiceValidationError(
+                f"Invalid relay_id '{relay_id}'. Must be numeric.",
+            )
+
         user = await self._fetch_local_user(user_id)
         await self._check_cloud_schedules([schedule_id])
 
@@ -1123,6 +1132,15 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         user_id: str = kwargs["id"]
         schedule_id: str = kwargs["schedule_id"]
         relay_id: str = kwargs["relay_id"]
+
+        if not re.fullmatch(r"\d+", schedule_id):
+            raise ServiceValidationError(
+                f"Invalid schedule_id '{schedule_id}'. Must be numeric.",
+            )
+        if not re.fullmatch(r"\d+", relay_id):
+            raise ServiceValidationError(
+                f"Invalid relay_id '{relay_id}'. Must be numeric.",
+            )
 
         user = await self._fetch_local_user(user_id)
 
