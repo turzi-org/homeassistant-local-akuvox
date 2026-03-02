@@ -1080,7 +1080,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             )
 
         user = await self._fetch_local_user(user_id)
-        await self._check_cloud_schedules([schedule_id])
 
         current_relay = getattr(user, "schedule_relay", "") or ""
         pairs = [p.strip() for p in re.split(r"[;,]", current_relay) if p.strip()]
@@ -1091,6 +1090,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"Pair already assigned: {new_pair}",
             )
         pairs.append(new_pair)
+
+        # Validate all schedule IDs (existing + new) against cloud.
+        all_sched_ids = [p.split("-", 1)[0] for p in pairs]
+        await self._check_cloud_schedules(all_sched_ids)
 
         try:
             await self.coordinator.device.modify_user(
@@ -1162,6 +1165,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 "Cannot remove last pair",
             )
         pairs.remove(target_pair)
+
+        # Validate remaining schedule IDs against cloud.
+        remaining_sched_ids = [p.split("-", 1)[0] for p in pairs]
+        await self._check_cloud_schedules(remaining_sched_ids)
 
         try:
             await self.coordinator.device.modify_user(

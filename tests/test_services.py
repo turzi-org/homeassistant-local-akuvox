@@ -2350,6 +2350,76 @@ async def test_add_user_schedule_relay_cloud_schedule(
     mock_akuvox_device.modify_user.assert_not_called()
 
 
+async def test_add_user_schedule_relay_existing_cloud_pair(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test existing cloud schedule pair in user raises error."""
+    # Seed user 42 with a cloud schedule pair (display_id=20).
+    from dataclasses import replace
+
+    user_with_cloud = replace(mock_user_list[0], schedule_relay="20-1")
+    mock_akuvox_device.list_users.return_value = [
+        user_with_cloud,
+        mock_user_list[1],
+    ]
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Cc]loud"):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_id": "10",
+                "relay_id": "2",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
+async def test_remove_user_schedule_relay_existing_cloud_pair(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
+) -> None:
+    """Test remaining cloud schedule pair after removal raises error."""
+    # Seed user 42 with local + cloud pair; removing local leaves cloud.
+    from dataclasses import replace
+
+    user_with_cloud = replace(mock_user_list[0], schedule_relay="10-1,20-1")
+    mock_akuvox_device.list_users.return_value = [
+        user_with_cloud,
+        mock_user_list[1],
+    ]
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="[Cc]loud"):
+        await hass.services.async_call(
+            DOMAIN,
+            "remove_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_id": "10",
+                "relay_id": "1",
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
 async def test_add_user_schedule_relay_user_not_found(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
@@ -2451,6 +2521,7 @@ async def test_remove_user_schedule_relay_success(
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
     mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
 ) -> None:
     """Test remove_user_schedule_relay removes pair and calls modify_user."""
     # Give user two pairs so removal leaves one
@@ -2458,6 +2529,7 @@ async def test_remove_user_schedule_relay_success(
 
     mock_user_list[0] = replace(mock_user_list[0], schedule_relay="10-1,10-2")
     mock_akuvox_device.list_users.return_value = mock_user_list
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     await _setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
@@ -2586,12 +2658,14 @@ async def test_remove_user_schedule_relay_event_fired(
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
     mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
 ) -> None:
     """Test remove_user_schedule_relay fires event."""
     from dataclasses import replace
 
     mock_user_list[0] = replace(mock_user_list[0], schedule_relay="10-1,10-2")
     mock_akuvox_device.list_users.return_value = mock_user_list
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     entry = await _setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_USER_CHANGED)
 
