@@ -65,14 +65,22 @@ by enabling real-time automations.
    malformed or unparsable payload (for example, invalid structure or
    a body from which the event type cannot be determined) is received
    at the webhook endpoint, **Then** the integration logs a warning
-   that includes a clear rejection reason while redacting or truncating
-   any sensitive payload content, and does not fire any event.
+   that includes a clear rejection reason and a redacted view of the
+   request, and does not fire any event. Logging MUST follow these
+   redaction rules: (a) any field whose key contains `token`, `secret`,
+   `password`, `authorization`, `auth`, `key`, or `cookie`
+   (case-insensitive) MUST have its value replaced with `[REDACTED]`;
+   (b) webhook identifiers MUST be masked (show only the first 4 and
+   last 2 characters with the middle replaced by `***`, or use a
+   constant placeholder if 8 or fewer characters); (c) logged payload
+   content MUST NOT exceed 2048 characters (truncate with
+   `...[TRUNCATED]` if longer); (d) binary or non-text payloads MUST
+   NOT be logged as raw bytes.
 3. **Given** the integration is configured and loaded, **When** a
    webhook is received with an identifier that does not match any
    stored webhook identifier for a configured device (as defined in
    FR-004), **Then** the integration rejects the request and logs a
-   warning without including secrets, tokens, or full webhook
-   identifiers.
+   warning applying the same identifier masking rules described above.
 4. **Given** the integration is configured and loaded, **When** the
    device sends multiple webhook events in rapid succession, **Then**
    each event is processed and fired independently without loss.
@@ -210,14 +218,14 @@ device configuration is updated accordingly each time.
   request URL matches exactly a stored webhook identifier for a
   configured device. Requests with a missing, empty, or non-matching
   identifier MUST be rejected and MUST NOT be associated with any
-  device. Such rejected requests MUST return an HTTP client error
+  device. Such rejected requests MUST return an HTTP 404 (Not Found)
   response with an empty or generic body that does not include any
   diagnostic details.
 - **FR-005**: System MUST reject and log any webhook request with a
   malformed or unrecognizable payload without crashing or disrupting
-  other operations. Such rejected requests MUST return an HTTP client
-  error response with a minimal, generic error indicator and MUST NOT
-  include any internal diagnostic details.
+  other operations. Such rejected requests MUST return an HTTP 400
+  (Bad Request) response with a minimal, generic error indicator and
+  MUST NOT include any internal diagnostic details.
 - **FR-006**: System MUST include a webhook configuration step in the
   initial setup flow that allows the user to opt in to automatic
   device webhook configuration.
