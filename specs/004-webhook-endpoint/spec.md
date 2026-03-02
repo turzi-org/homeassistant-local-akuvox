@@ -71,8 +71,10 @@ by enabling real-time automations.
 3. **Given** the integration is configured and loaded, **When** a
    webhook is received with an identifier that does not match any
    stored webhook identifier for a configured device (as defined in
-   FR-004), **Then** the integration rejects the request and logs a
-   warning applying the Payload Sanitization Rules from FR-013.
+   FR-004), **Then** Home Assistant's webhook infrastructure returns
+   HTTP 200 with `"Webhook not registered."` without invoking the
+   integration's handler. No event is fired and no integration-level
+   logging occurs for such requests.
 4. **Given** the integration is configured and loaded, **When** the
    device sends multiple webhook events in rapid succession, **Then**
    each event is processed and fired independently without loss.
