@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # local-akuvox Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-01
+Auto-generated from all feature plans. Last updated: 2026-03-02
 
 ## Active Technologies
 - Python ≥3.13.2 with homeassistant, pylocal-akuvox ≥0.2.3, voluptuous (002-device-config-discovery)
