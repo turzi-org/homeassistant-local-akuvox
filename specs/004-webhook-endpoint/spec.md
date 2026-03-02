@@ -12,7 +12,7 @@ SPDX-License-Identifier: Apache-2.0
 happening on the device. We are creating feature 004 and the purpose of this
 feature is to add a single webhook endpoint that can handle incoming webhooks
 from the device. We will also need updates to the configuration and
-reconfiguration workflows to provide an option for the integration to setup the
+reconfiguration workflows to provide an option for the integration to set up the
 webhook configuration on the device."
 
 ## User Scenarios & Testing *(mandatory)*
@@ -25,8 +25,8 @@ presses, door openings, and call events) so that I can build automations
 that respond immediately to device activity instead of waiting for the
 next polling cycle.
 
-The integration exposes a single webhook endpoint that accepts all
-incoming event payloads from the Akuvox device. When the device sends
+The integration registers one webhook handler with a unique per-device
+URL for each configured Akuvox device. When the device sends
 a webhook, the integration parses the payload, identifies the event
 type, and fires a corresponding event within Home Assistant that
 automations can subscribe to.
@@ -148,8 +148,9 @@ device configuration is updated accordingly each time.
 ### Edge Cases
 
 - What happens when the device sends a webhook but the integration is
-  currently reloading? The event should be queued or gracefully
-  dropped with a log entry; it must not cause an error.
+  currently reloading? The event must be gracefully dropped with a
+  log entry; it must not cause an error, and the integration does not
+  attempt to queue or retry the event.
 - What happens when multiple Akuvox devices are configured and both
   send webhooks? Each device has its own config entry and webhook
   identifier; events must be attributed to the correct device.
@@ -158,7 +159,7 @@ device configuration is updated accordingly each time.
   stale. The user must reconfigure webhooks to push the updated URL.
 - What happens when the device sends an event type the integration
   does not recognize? The integration should fire a generic event with
-  the raw payload and log a notice so that unrecognized types can be
+  the raw payload and log a warning so that unrecognized types can be
   identified and added in future updates.
 - What happens when the network between the device and Home Assistant
   is interrupted during a webhook delivery? The delivery fails
@@ -181,8 +182,11 @@ device configuration is updated accordingly each time.
 - **FR-003**: System MUST generate a unique, non-guessable webhook
   identifier for each configured device to prevent unauthorized access
   to the endpoint.
-- **FR-004**: System MUST validate incoming webhook requests to ensure
-  they originate from a configured device before processing.
+- **FR-004**: System MUST validate incoming webhook requests before
+  processing by ensuring that the webhook identifier in the request
+  matches a stored webhook identifier for a configured device. Requests
+  without a matching identifier MUST be rejected and MUST NOT be
+  associated with any device.
 - **FR-005**: System MUST reject and log any webhook request with a
   malformed or unrecognizable payload without crashing or disrupting
   other operations.
@@ -206,8 +210,8 @@ device configuration is updated accordingly each time.
 - **FR-012**: System MUST attempt to remove the webhook configuration
   from the device when the integration entry is removed.
 - **FR-013**: System MUST fire a generic event with the raw payload for
-  unrecognized event types and log a notice identifying the unknown
-  type.
+  unrecognized event types and log a warning-level message identifying
+  the unknown type.
 - **FR-014**: System MUST handle concurrent webhook deliveries from the
   same device without event loss or processing errors.
 
