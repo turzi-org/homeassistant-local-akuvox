@@ -30,11 +30,15 @@ SPDX-License-Identifier: Apache-2.0
 
 - `webhook_id`: Generated via `secrets.token_hex(32)` (256 bits of
   entropy, exceeds FR-003 requirement of 128 bits). Persisted in
-  config entry so the endpoint survives restarts (FR-010). Set to
-  `None` when webhook is not enabled.
+  config entry so the endpoint survives restarts (FR-010).
+  - `None` when webhook has never been configured (user skipped
+    webhook setup during initial config flow).
+  - Preserved (non-`None`) when webhook was previously enabled
+    and later disabled via options flow, to allow re-enabling
+    without generating a new ID.
 - `webhook_enabled`: Boolean flag indicating whether the webhook
-  endpoint is active. Controls registration/unregistration on
-  integration load.
+  endpoint is currently active. Controls registration/unregistration
+  on integration load.
 
 ### Options Flow Additions
 
@@ -133,7 +137,18 @@ parameter. All three identity fields are `None`.
 | `input_b_closed` | `input_b_closed` | No |
 | `valid_code_entered` | `valid_code_entered` | Yes (primary) |
 | `invalid_code_entered` | `invalid_code_entered` | No |
-| (unrecognized value) | `unknown_{value}` (sanitized) | No |
+| (unrecognized value) | `unknown_{normalized}` | No |
+
+Unknown event type normalization:
+
+- Convert raw value to lowercase.
+- Replace characters not in `[a-z0-9_]` with `_`.
+- Collapse consecutive `_` into a single `_`.
+- Trim leading and trailing `_`.
+- Truncate to 32 characters.
+- If empty after normalization, use `event` as the value.
+
+Final event type: `unknown_{normalized}`.
 
 **Note on valid code events**: When a valid code is entered, the
 relay-specific action URLs (`RelayATriggered`, etc.) may NOT fire
