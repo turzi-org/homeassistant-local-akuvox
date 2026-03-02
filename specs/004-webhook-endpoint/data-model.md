@@ -246,8 +246,8 @@ This ensures `webhook_registry` does not keep
 
 ## Payload Sanitization
 
-Sanitization is applied per FR-013 before logging or event emission
-for unrecognized events:
+Sanitization is applied per FR-013 before logging or event
+emission of webhook payload data:
 
 | Rule | Behavior |
 | ---- | -------- |

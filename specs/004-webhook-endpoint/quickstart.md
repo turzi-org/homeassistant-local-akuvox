@@ -91,7 +91,11 @@ curl "http://localhost:8123/api/webhook/{webhook_id}\
 ?event=valid_code_entered&code=1234"
 ```
 
-Listen for events in HA Developer Tools → Events →
+> **Note**: These examples use plaintext HTTP on localhost for
+> local development only. In any non-loopback environment, the
+> device and HA must communicate over HTTPS to protect PINs in
+> transit (GET query parameters appear in logs and network
+> traffic).
 `akuvox_webhook`. Code events emit `device_user_id`, `user_id`,
 and `username` (resolved from PIN lookup) — the raw PIN is never
 included in the event payload.
