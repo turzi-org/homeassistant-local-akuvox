@@ -44,10 +44,11 @@ uv run mypy custom_components/
 Python ≥3.13.2: Follow standard HA integration conventions
 
 ## Recent Changes
-- 004-webhook-endpoint: Added Python ≥3.13.2 + pylocal-akuvox ≥0.2.3 (device
-- 004-webhook-endpoint: Added webhook handler, sanitize module,
-  config/options flow webhook step, action URL push to device,
-  coordinator refresh on relay/valid-code events
+- 004-webhook-endpoint: Planned (design phase) Python ≥3.13.2 +
+  pylocal-akuvox ≥0.2.3 (device communication)
+- 004-webhook-endpoint: Planned (design phase) webhook handler,
+  sanitize module, config/options flow webhook step, action URL
+  push to device, coordinator refresh on relay/valid-code events
 - 003-schedule-user-services: Implemented all 10 schedule/user CRUD
   services (list, add, modify, delete for schedules and users, plus
   add/remove user schedule_relay pair convenience services)
