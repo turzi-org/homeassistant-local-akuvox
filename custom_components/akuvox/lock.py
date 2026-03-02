@@ -973,6 +973,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                         "Expected format '<schedule_id>-<relay_id>'.",
                     )
                 parsed_pairs.append(pair)
+            if not parsed_pairs:
+                raise ServiceValidationError(
+                    "schedule_relay must contain at least one "
+                    "'<schedule_id>-<relay_id>' pair.",
+                )
             sched_ids = [p.split("-", 1)[0] for p in parsed_pairs]
             await self._check_cloud_schedules(sched_ids)
             # Normalize to comma-separated (device firmware requirement).

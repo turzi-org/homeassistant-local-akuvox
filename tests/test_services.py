@@ -1978,6 +1978,37 @@ async def test_modify_user_malformed_schedule_relay(
     mock_akuvox_device.modify_user.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "schedule_relay",
+    ["", ";", ",", " , ; "],
+    ids=["empty", "semicolon-only", "comma-only", "whitespace-separators"],
+)
+async def test_modify_user_empty_schedule_relay(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    schedule_relay: str,
+) -> None:
+    """Test empty/separator-only schedule_relay raises ServiceValidationError."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ServiceValidationError, match="must contain at least one"):
+        await hass.services.async_call(
+            DOMAIN,
+            "modify_user",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_relay": schedule_relay,
+            },
+            blocking=True,
+        )
+
+    mock_akuvox_device.modify_user.assert_not_called()
+
+
 async def test_modify_user_semicolon_schedule_relay_normalized(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
