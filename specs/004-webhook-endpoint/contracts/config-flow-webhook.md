@@ -60,17 +60,19 @@ vol.Schema({
 **Behavior on Enable** (was disabled → now enabled):
 
 1. Generate new `webhook_id` if none exists
-2. Build and push action URLs to device
-3. Set `Config.Features.ACTIONURL.Enable` to `'1'`
-4. Register webhook endpoint in HA
-5. Update config entry with `webhook_id` and `webhook_enabled=True`
+2. Build action URLs and push all 10 URL keys plus
+   `Config.Features.ACTIONURL.Enable='1'` in a single
+   `set_device_config()` call
+3. Register webhook endpoint in HA
+4. Update config entry with `webhook_id` and `webhook_enabled=True`
 
 **Behavior on Disable** (was enabled → now disabled):
 
-1. Push empty strings for all 10 action URL keys to device
-2. Set `Config.Features.ACTIONURL.Enable` to `'0'`
-3. Unregister webhook endpoint from HA
-4. Update config entry with `webhook_enabled=False`
+1. Push empty strings for all 10 action URL keys plus
+   `Config.Features.ACTIONURL.Enable='0'` in a single
+   `set_device_config()` call
+2. Unregister webhook endpoint from HA
+3. Update config entry with `webhook_enabled=False`
    (preserve `webhook_id` for potential re-enable)
 
 **Behavior on No Change**:

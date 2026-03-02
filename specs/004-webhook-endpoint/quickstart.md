@@ -82,7 +82,7 @@ uv run mypy custom_components/
 Simulate a webhook delivery locally:
 
 ```bash
-# Relay A triggered (status=1 means open)
+# Relay A triggered (status=1 = high; meaning depends on NO/NC)
 curl "http://localhost:8123/api/webhook/{webhook_id}\
 ?event=relay_a_triggered&status=1"
 
