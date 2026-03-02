@@ -66,21 +66,13 @@ by enabling real-time automations.
    a body from which the event type cannot be determined) is received
    at the webhook endpoint, **Then** the integration logs a warning
    that includes a clear rejection reason and a redacted view of the
-   request, and does not fire any event. Logging MUST follow these
-   redaction rules: (a) any field whose key contains `token`, `secret`,
-   `password`, `authorization`, `auth`, `key`, or `cookie`
-   (case-insensitive) MUST have its value replaced with `[REDACTED]`;
-   (b) webhook identifiers MUST be masked (show only the first 4 and
-   last 2 characters with the middle replaced by `***`, or use a
-   constant placeholder if 8 or fewer characters); (c) logged payload
-   content MUST NOT exceed 2048 characters (truncate with
-   `...[TRUNCATED]` if longer); (d) binary or non-text payloads MUST
-   NOT be logged as raw bytes.
+   request (applying the Payload Sanitization Rules defined in FR-013),
+   and does not fire any event.
 3. **Given** the integration is configured and loaded, **When** a
    webhook is received with an identifier that does not match any
    stored webhook identifier for a configured device (as defined in
    FR-004), **Then** the integration rejects the request and logs a
-   warning applying the same identifier masking rules described above.
+   warning applying the Payload Sanitization Rules from FR-013.
 4. **Given** the integration is configured and loaded, **When** the
    device sends multiple webhook events in rapid succession, **Then**
    each event is processed and fired independently without loss.
@@ -246,17 +238,25 @@ device configuration is updated accordingly each time.
 - **FR-012**: System MUST attempt to remove the webhook configuration
   from the device when the integration entry is removed.
 - **FR-013**: System MUST define and apply a single set of **Payload
-  Sanitization Rules** for inbound webhook payloads. At a minimum,
-  these rules MUST (a) remove or mask secrets and credentials (such as
-  passwords, tokens, keys, and session identifiers), (b) mask full
-  webhook identifiers leaving at most the final 4 characters unmasked,
-  and (c) truncate arbitrarily large fields so that no individual
-  logged or emitted field exceeds 1024 characters. When the system
-  fires a generic event for unrecognized event types, it MUST include
-  the incoming payload only after applying the Payload Sanitization
-  Rules and MUST log a warning-level message identifying the unknown
-  type. Any log entries that include request payload data MUST also
-  apply the Payload Sanitization Rules.
+  Sanitization Rules** for inbound webhook payloads. These rules are
+  the authoritative reference for all logging and event emission
+  involving webhook data. At a minimum, these rules MUST:
+  (a) replace the value of any field whose key contains `token`,
+  `secret`, `password`, `authorization`, `auth`, `key`, or `cookie`
+  (case-insensitive) with `[REDACTED]`;
+  (b) mask webhook identifiers by showing only the first 4 and last 2
+  characters with the middle replaced by `***` (or use a constant
+  placeholder such as `[REDACTED_ID]` if the identifier is 8 or fewer
+  characters);
+  (c) truncate any individual field value that exceeds 1024 characters,
+  appending `...[TRUNCATED]`;
+  (d) exclude binary or non-text payloads from logging (log content
+  type and size only).
+  When the system fires a generic event for unrecognized event types,
+  it MUST include the incoming payload only after applying these rules
+  and MUST log a warning-level message identifying the unknown type.
+  Any log entries that include request payload data MUST also apply
+  these rules.
 - **FR-014**: System MUST handle concurrent webhook deliveries from the
   same device without event loss or processing errors.
 
