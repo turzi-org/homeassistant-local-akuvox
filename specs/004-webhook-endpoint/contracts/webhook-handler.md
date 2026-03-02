@@ -131,6 +131,12 @@ coordinator = hass.data[DOMAIN][config_entry_id]
 await coordinator.async_refresh()
 ```
 
+Input events (`input_a_triggered`, `input_a_closed`,
+`input_b_triggered`, `input_b_closed`) do NOT trigger a refresh.
+Inputs report external sensor state, not relay-controlled lock
+state, so a coordinator refresh would not yield new lock data.
+Invalid code events also do not trigger a refresh.
+
 This is an *additional* faster path to update entity state. It does
 **not** replace the existing speculative (optimistic) lock state
 mechanism, which MUST remain intact for devices without webhooks

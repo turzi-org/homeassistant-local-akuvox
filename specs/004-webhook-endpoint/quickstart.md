@@ -95,7 +95,7 @@ curl "http://localhost:8123/api/webhook/{webhook_id}\
 > local development only. In any non-loopback environment, the
 > device and HA must communicate over HTTPS to protect PINs in
 > transit (GET query parameters appear in logs and network
-> traffic).
-`akuvox_webhook`. Code events emit `device_user_id`, `user_id`,
-and `username` (resolved from PIN lookup) — the raw PIN is never
-included in the event payload.
+> traffic). Listen for events in HA Developer Tools → Events →
+> `akuvox_webhook`. Code events emit `device_user_id`,
+> `user_id`, and `username` (resolved from PIN lookup) — the
+> raw PIN is never included in the event payload.

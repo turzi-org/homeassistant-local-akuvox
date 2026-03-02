@@ -59,12 +59,14 @@ vol.Schema({
 
 **Behavior on Enable** (was disabled → now enabled):
 
-1. Generate new `webhook_id` if none exists
+1. Reuse existing `webhook_id` from config entry if present;
+   otherwise generate new `webhook_id = secrets.token_hex(32)`
 2. Register webhook endpoint in HA
 3. Build action URLs and push all 10 URL keys plus
    `Config.Features.ACTIONURL.Enable='1'` in a single
    `set_device_config()` call
-4. Update config entry with `webhook_id` and `webhook_enabled=True`
+4. Update config entry with `webhook_enabled=True` and the
+   existing or newly generated `webhook_id`
 
 **Behavior on Disable** (was enabled → now disabled):
 
