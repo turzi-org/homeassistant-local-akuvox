@@ -92,10 +92,20 @@ Event name: `akuvox_webhook` (domain-prefixed)
     "payload": {                # Parsed query parameters
         "event": str,           # Raw event parameter value
         "status": str | None,   # Relay status ("0" or "1")
-        "code": str | None,     # Access code (code events only)
+        "code": str | None,     # Access code (code events)
     },
 }
 ```
+
+**Security note on `code` field**: The `code` value (PIN or access
+code) is intentionally included in plain text in the event payload.
+This is a deliberate design decision: automations need the raw code
+to implement code-specific behavior (e.g., different actions for
+different users). The `code` field is NOT redacted by the Payload
+Sanitization Rules because it is only present in event bus data
+(not logged). Log entries that include payload data MUST still
+apply FR-013 sanitization, which redacts the `code` field via the
+sensitive key pattern match.
 
 ### Event Type Mapping
 

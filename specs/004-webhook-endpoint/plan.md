@@ -94,7 +94,7 @@ specs/004-webhook-endpoint/
 │   ├── webhook-handler.md
 │   ├── config-flow-webhook.md
 │   └── payload-sanitization.md
-└── tasks.md
+└── tasks.md             # Created by /speckit.tasks (not this PR)
 ```
 
 ### Source Code (repository root)

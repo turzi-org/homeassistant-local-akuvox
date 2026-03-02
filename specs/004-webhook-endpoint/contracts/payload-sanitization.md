@@ -23,8 +23,17 @@ def sanitize_payload(
 Applied in order:
 
 1. **Sensitive field masking**: If a key contains any of `token`,
-   `secret`, `password`, `authorization`, `auth`, `key`, `cookie`
-   (case-insensitive match), replace the value with `[REDACTED]`.
+   `secret`, `password`, `authorization`, `auth`, `key`, `cookie`,
+   or `code` (case-insensitive match), replace the value with
+   `[REDACTED]`.
+
+   **Note on `code`**: Access codes (PINs) are intentionally
+   included in plain text in the event bus payload so automations
+   can react to specific codes. The sanitization rule for `code`
+   applies only to **log entries** and **generic event payloads
+   for unrecognized types** (per FR-013). The recognized event
+   payload fired on the HA event bus preserves `code` in plain
+   text as a deliberate design decision.
 
 2. **Webhook ID masking**: If `webhook_id` is provided, replace any
    value containing the full webhook ID with a masked version

@@ -15,8 +15,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-01
 ## Active Technologies
 - Python ≥3.13.2 with homeassistant, pylocal-akuvox ≥0.2.3, voluptuous (002-device-config-discovery)
 - Python ≥3.13.2 + pylocal-akuvox ≥0.2.3 schedule/user services (003-schedule-user-services)
-- Python ≥3.13.2 + pylocal-akuvox ≥0.2.3 (device (004-webhook-endpoint)
-- Home Assistant config entries (webhook_id and (004-webhook-endpoint)
+- Python ≥3.13.2 + pylocal-akuvox ≥0.2.3, HA webhook infra (004-webhook-endpoint)
+- HA config entries with webhook_id, webhook_enabled (004-webhook-endpoint)
 
 - Python ≥3.13.2 with pylocal-akuvox (001-akuvox-lock-integration)
 - Home Assistant config entries (001-akuvox-lock-integration)
@@ -42,7 +42,9 @@ uv run mypy custom_components/
 Python ≥3.13.2: Follow standard HA integration conventions
 
 ## Recent Changes
-- 004-webhook-endpoint: Added Python ≥3.13.2 + pylocal-akuvox ≥0.2.3 (device
+- 004-webhook-endpoint: Added webhook handler, sanitize module,
+  config/options flow webhook step, action URL push to device,
+  coordinator refresh on relay/valid-code events
 - 003-schedule-user-services: Implemented all 10 schedule/user CRUD
   services (list, add, modify, delete for schedules and users, plus
   add/remove user schedule_relay pair convenience services)

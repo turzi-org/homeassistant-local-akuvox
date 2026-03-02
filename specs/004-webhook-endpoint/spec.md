@@ -315,5 +315,7 @@ device configuration is updated accordingly each time.
   integration does not handle NAT traversal or external URL
   provisioning; the device and Home Assistant must be on the same
   network or have appropriate routing configured.
-- Webhook payloads are delivered via HTTP POST with a content type
-  the integration can parse (e.g., JSON or form-encoded).
+- Webhook payloads are delivered via HTTP GET with event data
+  encoded as query parameters. The device performs variable
+  substitution (e.g., `$relay1status`, `$code`) in the URL
+  before sending the request.
