@@ -52,12 +52,14 @@ enabling real-time automations.
    malformed or unparsable payload (for example, invalid structure or
    a body from which the event type cannot be determined) is received
    at the webhook endpoint, **Then** the integration logs a warning
-   with details about the rejected payload and does not fire any event.
+   that includes a clear rejection reason while redacting or truncating
+   any sensitive payload content, and does not fire any event.
 3. **Given** the integration is configured and loaded, **When** a
    webhook is received with an identifier that does not match any
    stored webhook identifier for a configured device (as defined in
    FR-004), **Then** the integration rejects the request and logs a
-   warning.
+   warning without including secrets, tokens, or full webhook
+   identifiers.
 4. **Given** the integration is configured and loaded, **When** the
    device sends multiple webhook events in rapid succession, **Then**
    each event is processed and fired independently without loss.
@@ -182,18 +184,26 @@ device configuration is updated accordingly each time.
 - **FR-002**: System MUST parse incoming webhook payloads and fire a
   corresponding event on the Home Assistant event bus with the event
   type and relevant data fields.
-- **FR-003**: System MUST generate a unique, non-guessable webhook
-  identifier for each configured device to prevent unauthorized access
-  to the endpoint.
+- **FR-003**: System MUST generate a webhook identifier for each
+  configured device that: (a) is unique per device within the
+  integration; (b) is generated using a cryptographically secure
+  random source with at least 128 bits of entropy; (c) is represented
+  as an ASCII, URL-safe string; and (d) is not derived from any
+  device- or installation-specific identifiers (such as MAC address,
+  IP address, or serial number) to prevent unauthorized access to the
+  endpoint.
 - **FR-004**: System MUST validate incoming webhook requests before
   processing by ensuring that the webhook identifier embedded in the
   request URL matches exactly a stored webhook identifier for a
   configured device. Requests with a missing, empty, or non-matching
   identifier MUST be rejected and MUST NOT be associated with any
-  device.
+  device. Such rejected requests MUST return a non-success response
+  with no diagnostic details.
 - **FR-005**: System MUST reject and log any webhook request with a
   malformed or unrecognizable payload without crashing or disrupting
-  other operations.
+  other operations. Such rejected requests MUST return a non-success
+  response with a minimal error indicator and MUST NOT include
+  internal diagnostic details.
 - **FR-006**: System MUST include a webhook configuration step in the
   initial setup flow that allows the user to opt in to automatic
   device webhook configuration.
