@@ -177,8 +177,9 @@ device configuration is updated accordingly each time.
   stale. The user must reconfigure webhooks to push the updated URL.
 - What happens when the device sends an event type the integration
   does not recognize? The integration should fire a generic event with
-  the raw payload and log a warning so that unrecognized types can be
-  identified and added in future updates.
+  the sanitized payload (per Payload Sanitization Rules / FR-013) and
+  log a warning so that unrecognized types can be identified and added
+  in future updates.
 - What happens when the network between the device and Home Assistant
   is interrupted during a webhook delivery? The delivery fails
   silently on the device side; no special handling is required from
