@@ -1,3 +1,8 @@
+---
+description: Development guidelines and conventions for the local-akuvox Home Assistant integration.
+applyTo: '**'
+---
+
 <!--
 SPDX-FileCopyrightText: 2026 Andrew Grimberg <tykeal@bardicgrove.org>
 SPDX-License-Identifier: Apache-2.0
