@@ -2516,6 +2516,44 @@ async def test_add_user_schedule_relay_event_fired(
 # ── remove_user_schedule_relay (Convenience) ──────────────────
 
 
+@pytest.mark.parametrize(
+    ("lib_exc", "ha_exc"),
+    [
+        (AkuvoxConnectionError, HomeAssistantError),
+        (AkuvoxDeviceError, HomeAssistantError),
+        (AkuvoxValidationError, ServiceValidationError),
+    ],
+    ids=["connection", "device", "validation"],
+)
+async def test_add_user_schedule_relay_device_errors(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
+    lib_exc: type[Exception],
+    ha_exc: type[Exception],
+) -> None:
+    """Test device errors are mapped to HA exceptions."""
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    mock_akuvox_device.modify_user.side_effect = lib_exc("fail")
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ha_exc):
+        await hass.services.async_call(
+            DOMAIN,
+            "add_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_id": "10",
+                "relay_id": "2",
+            },
+            blocking=True,
+        )
+
+
 async def test_remove_user_schedule_relay_success(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
@@ -2688,3 +2726,44 @@ async def test_remove_user_schedule_relay_event_fired(
     assert events[0].data["schedule_id"] == "10"
     assert events[0].data["relay_id"] == "2"
     assert events[0].data["config_entry_id"] == entry.entry_id
+
+
+@pytest.mark.parametrize(
+    ("lib_exc", "ha_exc"),
+    [
+        (AkuvoxConnectionError, HomeAssistantError),
+        (AkuvoxDeviceError, HomeAssistantError),
+        (AkuvoxValidationError, ServiceValidationError),
+    ],
+    ids=["connection", "device", "validation"],
+)
+async def test_remove_user_schedule_relay_device_errors(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_user_list: list[User],
+    mock_schedule_list: list[AccessSchedule],
+    lib_exc: type[Exception],
+    ha_exc: type[Exception],
+) -> None:
+    """Test device errors are mapped to HA exceptions."""
+    from dataclasses import replace
+
+    mock_user_list[0] = replace(mock_user_list[0], schedule_relay="10-1,10-2")
+    mock_akuvox_device.list_users.return_value = mock_user_list
+    mock_akuvox_device.list_schedules.return_value = mock_schedule_list
+    mock_akuvox_device.modify_user.side_effect = lib_exc("fail")
+    await _setup_entry(hass, mock_config_entry_data_none)
+
+    with pytest.raises(ha_exc):
+        await hass.services.async_call(
+            DOMAIN,
+            "remove_user_schedule_relay",
+            service_data={
+                "entity_id": ENTITY_ID,
+                "id": "42",
+                "schedule_id": "10",
+                "relay_id": "2",
+            },
+            blocking=True,
+        )
