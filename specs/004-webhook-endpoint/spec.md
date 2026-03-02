@@ -245,10 +245,18 @@ device configuration is updated accordingly each time.
   enabled.
 - **FR-012**: System MUST attempt to remove the webhook configuration
   from the device when the integration entry is removed.
-- **FR-013**: System MUST fire a generic event for unrecognized event
-  types that includes the incoming payload (subject to the same
-  redaction and truncation rules applied to log entries) and log a
-  warning-level message identifying the unknown type.
+- **FR-013**: System MUST define and apply a single set of **Payload
+  Sanitization Rules** for inbound webhook payloads. At a minimum,
+  these rules MUST (a) remove or mask secrets and credentials (such as
+  passwords, tokens, keys, and session identifiers), (b) mask full
+  webhook identifiers leaving at most the final 4 characters unmasked,
+  and (c) truncate arbitrarily large fields so that no individual
+  logged or emitted field exceeds 1024 characters. When the system
+  fires a generic event for unrecognized event types, it MUST include
+  the incoming payload only after applying the Payload Sanitization
+  Rules and MUST log a warning-level message identifying the unknown
+  type. Any log entries that include request payload data MUST also
+  apply the Payload Sanitization Rules.
 - **FR-014**: System MUST handle concurrent webhook deliveries from the
   same device without event loss or processing errors.
 
