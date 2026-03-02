@@ -35,7 +35,9 @@ uv run mypy custom_components/
 Python ≥3.13.2: Follow standard HA integration conventions
 
 ## Recent Changes
-- 003-schedule-user-services: Added schedule/user CRUD services plan
+- 003-schedule-user-services: Implemented all 10 schedule/user CRUD
+  services (list, add, modify, delete for schedules and users, plus
+  add/remove user schedule_relay pair convenience services)
 - 002-device-config-discovery: Added device config fetch, relay naming,
   hold delay, NO/NC type awareness, edge case tests, reload coverage,
   pylocal-akuvox for device communication

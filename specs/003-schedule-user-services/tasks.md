@@ -376,7 +376,7 @@ changes, and event firing.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T020 [US7] Write failing tests for `modify_user` in
+- [x] T020 [US7] Write failing tests for `modify_user` in
   tests/test_services.py: (a) success with partial
   update passes `id` and fields to
   `device.modify_user()`, (b) cloud user (source_type
@@ -390,7 +390,7 @@ changes, and event firing.
 
 ### Implementation for User Story 7
 
-- [ ] T021 [US7] Implement `async modify_user(self,
+- [x] T021 [US7] Implement `async modify_user(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`, fetch
   user list, find user, check `source_type` for `"2"`
@@ -414,7 +414,7 @@ event firing, regardless of schedule-relay pair count.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T022 [US8] Write failing tests for `delete_user` in
+- [x] T022 [US8] Write failing tests for `delete_user` in
   tests/test_services.py: (a) success calls
   `device.delete_user(id=)`, (b) cloud user raises
   ServiceValidationError, (c) non-existent user raises
@@ -425,7 +425,7 @@ event firing, regardless of schedule-relay pair count.
 
 ### Implementation for User Story 8
 
-- [ ] T023 [US8] Implement `async delete_user(self,
+- [x] T023 [US8] Implement `async delete_user(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`, fetch
   user list for cloud check, reject if cloud, call
@@ -446,7 +446,7 @@ Best-effort; concurrent calls may race.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL**
 
-- [ ] T024 [P] Write failing tests for
+- [x] T024 [P] Write failing tests for
   `add_user_schedule_relay` in tests/test_services.py:
   (a) success adds the `"<sid>-<rid>"` pair to the user's
   comma-separated `schedule_relay` string (appending
@@ -458,7 +458,7 @@ Best-effort; concurrent calls may race.
   raises ServiceValidationError, (e) user not found
   raises HomeAssistantError, (f) event fired with
   action "add_schedule_relay".
-- [ ] T025 [P] Write failing tests for
+- [x] T025 [P] Write failing tests for
   `remove_user_schedule_relay` in tests/test_services.py:
   (a) success removes pair from schedule_relay string
   and calls `device.modify_user()`, (b) pair not found
@@ -471,7 +471,7 @@ Best-effort; concurrent calls may race.
 
 ### Implementation for Convenience Services
 
-- [ ] T026 Implement `async add_user_schedule_relay(self,
+- [x] T026 Implement `async add_user_schedule_relay(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`,
   `schedule_id`, `relay_id`; fetch user by `id` via
@@ -484,7 +484,7 @@ Best-effort; concurrent calls may race.
   fire `akuvox_user_changed` with action
   "add_schedule_relay" including schedule_id and
   relay_id in event data.
-- [ ] T027 Implement `async remove_user_schedule_relay(self,
+- [x] T027 Implement `async remove_user_schedule_relay(self,
   **kwargs)` on `AkuvoxLockEntity` in
   custom_components/akuvox/lock.py: extract `id`,
   `schedule_id`, `relay_id`; fetch user; check cloud
@@ -503,15 +503,15 @@ Best-effort; concurrent calls may race.
 
 **Purpose**: Final validation and documentation updates.
 
-- [ ] T028 [P] Update .github/agents/copilot-instructions.md
+- [x] T028 [P] Update .github/agents/copilot-instructions.md
   with implementation completion status for feature 003
-- [ ] T029 Run full test suite (`uv run pytest tests/ -x -q`)
+- [x] T029 Run full test suite (`uv run pytest tests/ -x -q`)
   and linters (`uv run ruff check`, `uv run mypy`) to
   verify all checks pass. Note: SC-001 (5s response time)
   and SC-006 (10s error timeout) are deferred to
   integration testing with real hardware; unit tests
   verify error propagation but not timing constraints.
-- [ ] T030 Validate quickstart.md service call examples
+- [x] T030 Validate quickstart.md service call examples
   against implemented services for accuracy
 
 ---

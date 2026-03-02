@@ -268,7 +268,7 @@ modify_user:
           multiline: false
     schedule_relay:
       required: false
-      example: "1-1;2-2;"
+      example: "1-1,2-2"
       selector:
         text:
           multiline: false

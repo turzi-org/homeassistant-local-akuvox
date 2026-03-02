@@ -21,6 +21,7 @@ from pylocal_akuvox import (
     AccessSchedule,
     AkuvoxError,
     AkuvoxValidationError,
+    User,
 )
 
 from .const import (
@@ -773,6 +774,57 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 "PIN must be 4-8 digits",
             )
 
+    async def _fetch_local_user(
+        self,
+        user_id: str,
+        *,
+        service: str = "modify_user",
+    ) -> User:
+        """Fetch a user by ID and verify it is locally managed.
+
+        Args:
+            user_id: The device-internal ID of the user.
+            service: Service name for error message prefixes.
+
+        Returns:
+            The matching User.
+
+        Raises:
+            ServiceValidationError: If user is cloud-provisioned.
+            HomeAssistantError: If user not found or fetch fails.
+
+        """
+        try:
+            users = await self.coordinator.device.list_users(
+                page=None,
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"{service}: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"{service}: failed to fetch users: {err}",
+            ) from err
+
+        target = None
+        for u in users:
+            if u.id == user_id:
+                target = u
+                break
+
+        if target is None:
+            raise HomeAssistantError(
+                f"{service}: user '{user_id}' not found",
+            )
+
+        if target.source_type == "2":
+            raise ServiceValidationError(
+                f"{service}: user is cloud-provisioned",
+            )
+
+        return target
+
     async def _check_cloud_schedules(
         self,
         display_ids: list[str],
@@ -838,6 +890,48 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             parts.append(f"{did}-{self._relay_number}")
         return ",".join(parts)
 
+    @staticmethod
+    def _parse_schedule_relay_pairs(
+        raw: str,
+        *,
+        allow_empty: bool = False,
+    ) -> list[str]:
+        """Parse a schedule_relay string into validated pairs.
+
+        Accepts comma or semicolon separators and strips whitespace.
+        Each pair must match the ``<digits>-<digits>`` format.
+
+        Args:
+            raw: Raw schedule_relay string from user or device.
+            allow_empty: If ``True``, return an empty list instead
+                of raising when no valid pairs are found.
+
+        Returns:
+            List of validated ``"<schedule_id>-<relay_id>"`` pairs.
+
+        Raises:
+            ServiceValidationError: If any pair is malformed or
+                the result is empty (unless *allow_empty*).
+
+        """
+        pairs: list[str] = []
+        for raw_pair in re.split(r"[;,]", raw):
+            pair = raw_pair.strip()
+            if not pair:
+                continue
+            if not re.fullmatch(r"\d+-\d+", pair):
+                raise ServiceValidationError(
+                    f"Invalid schedule_relay entry '{pair}'. "
+                    "Expected format '<schedule_id>-<relay_id>'.",
+                )
+            pairs.append(pair)
+        if not pairs and not allow_empty:
+            raise ServiceValidationError(
+                "schedule_relay must contain at least one "
+                "'<schedule_id>-<relay_id>' pair.",
+            )
+        return pairs
+
     async def add_user(self, **kwargs: Any) -> None:
         """Create a new user on the device.
 
@@ -880,6 +974,253 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ) from err
 
         event_data: dict[str, str] = {"action": "add"}
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data)
+
+    async def modify_user(self, **kwargs: Any) -> None:
+        """Modify an existing user on the device.
+
+        Fetches the current user list to verify the user exists and
+        is not cloud-provisioned, validates fields, checks cloud
+        schedules if schedule_relay is updated, then forwards the
+        update.
+
+        Args:
+            **kwargs: Service call data (``id`` required, other
+                user fields optional).
+
+        Raises:
+            ServiceValidationError: If user is cloud-provisioned,
+                input validation fails, or cloud schedule referenced.
+            HomeAssistantError: If user not found or device error.
+
+        """
+        device_user_id: str = kwargs["id"]
+        await self._fetch_local_user(device_user_id)
+
+        self._validate_pin(kwargs.get("private_pin"))
+
+        schedule_relay: str | None = kwargs.get("schedule_relay")
+        if schedule_relay is not None:
+            parsed_pairs = self._parse_schedule_relay_pairs(schedule_relay)
+            sched_ids = [p.split("-", 1)[0] for p in parsed_pairs]
+            await self._check_cloud_schedules(sched_ids)
+            # Normalize to comma-separated (device firmware requirement).
+            schedule_relay = ",".join(parsed_pairs)
+
+        try:
+            await self.coordinator.device.modify_user(
+                id=device_user_id,
+                name=kwargs.get("name"),
+                user_id=kwargs.get("user_id"),
+                schedule_relay=schedule_relay,
+                lift_floor_num=kwargs.get("lift_floor_num"),
+                web_relay=kwargs.get("web_relay"),
+                private_pin=kwargs.get("private_pin"),
+                card_code=kwargs.get("card_code"),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"modify_user: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"modify_user failed: {err}",
+            ) from err
+
+        event_data: dict[str, str] = {
+            "action": "modify",
+            "device_user_id": device_user_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data)
+
+    async def delete_user(self, **kwargs: Any) -> None:
+        """Delete an existing user from the device.
+
+        Fetches the user list to verify the target exists and
+        is not cloud-provisioned, then deletes it.
+
+        Args:
+            **kwargs: Service call data (``id`` required).
+
+        Raises:
+            ServiceValidationError: If user is cloud-provisioned.
+            HomeAssistantError: If user not found or device error.
+
+        """
+        device_user_id: str = kwargs["id"]
+        await self._fetch_local_user(device_user_id, service="delete_user")
+
+        try:
+            await self.coordinator.device.delete_user(id=device_user_id)
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"delete_user: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"delete_user failed: {err}",
+            ) from err
+
+        event_data_del: dict[str, str] = {
+            "action": "delete",
+            "device_user_id": device_user_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data_del["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data_del)
+
+    async def add_user_schedule_relay(self, **kwargs: Any) -> None:
+        """Add a schedule-relay pair to an existing user.
+
+        Fetches the user, verifies not cloud-provisioned, checks the
+        schedule is not cloud-provisioned, appends the pair, and
+        calls ``modify_user`` on the device.
+
+        Args:
+            **kwargs: Service call data (``id``, ``schedule_id``,
+                ``relay_id`` required).
+
+        Raises:
+            ServiceValidationError: If user/schedule is cloud,
+                pair is duplicate.
+            HomeAssistantError: If user not found or device error.
+
+        """
+        device_user_id: str = kwargs["id"]
+        schedule_id: str = kwargs["schedule_id"]
+        relay_id: str = kwargs["relay_id"]
+
+        if not re.fullmatch(r"\d+", schedule_id):
+            raise ServiceValidationError(
+                f"Invalid schedule_id '{schedule_id}'. Must be numeric.",
+            )
+        if not re.fullmatch(r"\d+", relay_id):
+            raise ServiceValidationError(
+                f"Invalid relay_id '{relay_id}'. Must be numeric.",
+            )
+
+        user = await self._fetch_local_user(
+            device_user_id, service="add_user_schedule_relay"
+        )
+
+        current_relay = getattr(user, "schedule_relay", "") or ""
+        pairs = self._parse_schedule_relay_pairs(current_relay, allow_empty=True)
+
+        new_pair = f"{schedule_id}-{relay_id}"
+        if new_pair in pairs:
+            raise ServiceValidationError(
+                f"Pair already assigned: {new_pair}",
+            )
+        pairs.append(new_pair)
+
+        # Validate all schedule IDs (existing + new) against cloud.
+        all_sched_ids = [p.split("-", 1)[0] for p in pairs]
+        await self._check_cloud_schedules(all_sched_ids)
+
+        try:
+            await self.coordinator.device.modify_user(
+                id=device_user_id,
+                schedule_relay=",".join(pairs),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"add_user_schedule_relay: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"add_user_schedule_relay failed: {err}",
+            ) from err
+
+        event_data: dict[str, str] = {
+            "action": "add_schedule_relay",
+            "device_user_id": device_user_id,
+            "schedule_id": schedule_id,
+            "relay_id": relay_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data)
+
+    async def remove_user_schedule_relay(self, **kwargs: Any) -> None:
+        """Remove a schedule-relay pair from an existing user.
+
+        Fetches the user, verifies not cloud-provisioned, removes
+        the pair from the schedule_relay string, and calls
+        ``modify_user`` on the device.
+
+        Args:
+            **kwargs: Service call data (``id``, ``schedule_id``,
+                ``relay_id`` required).
+
+        Raises:
+            ServiceValidationError: If user is cloud, pair not found,
+                or removal would leave zero pairs.
+            HomeAssistantError: If user not found or device error.
+
+        """
+        device_user_id: str = kwargs["id"]
+        schedule_id: str = kwargs["schedule_id"]
+        relay_id: str = kwargs["relay_id"]
+
+        if not re.fullmatch(r"\d+", schedule_id):
+            raise ServiceValidationError(
+                f"Invalid schedule_id '{schedule_id}'. Must be numeric.",
+            )
+        if not re.fullmatch(r"\d+", relay_id):
+            raise ServiceValidationError(
+                f"Invalid relay_id '{relay_id}'. Must be numeric.",
+            )
+
+        user = await self._fetch_local_user(
+            device_user_id, service="remove_user_schedule_relay"
+        )
+
+        current_relay = getattr(user, "schedule_relay", "") or ""
+        pairs = self._parse_schedule_relay_pairs(current_relay, allow_empty=True)
+
+        target_pair = f"{schedule_id}-{relay_id}"
+        if target_pair not in pairs:
+            raise ServiceValidationError(
+                f"Pair not assigned: {target_pair}",
+            )
+        if len(pairs) == 1:
+            raise ServiceValidationError(
+                "Cannot remove last pair",
+            )
+        pairs.remove(target_pair)
+
+        # Validate remaining schedule IDs against cloud.
+        remaining_sched_ids = [p.split("-", 1)[0] for p in pairs]
+        await self._check_cloud_schedules(remaining_sched_ids)
+
+        try:
+            await self.coordinator.device.modify_user(
+                id=device_user_id,
+                schedule_relay=",".join(pairs),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"remove_user_schedule_relay: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"remove_user_schedule_relay failed: {err}",
+            ) from err
+
+        event_data: dict[str, str] = {
+            "action": "remove_schedule_relay",
+            "device_user_id": device_user_id,
+            "schedule_id": schedule_id,
+            "relay_id": relay_id,
+        }
         config_entry = self.coordinator.config_entry
         if config_entry is not None and hasattr(config_entry, "entry_id"):
             event_data["config_entry_id"] = config_entry.entry_id
