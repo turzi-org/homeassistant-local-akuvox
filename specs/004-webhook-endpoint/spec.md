@@ -26,11 +26,11 @@ presses, door openings, and call events) so that I can build automations
 that respond immediately to device activity instead of waiting for the
 next polling cycle.
 
-The integration registers one webhook handler with a unique per-device
-URL for each configured Akuvox device. When the device sends
-a webhook, the integration parses the payload, identifies the event
-type, and fires a corresponding event within Home Assistant that
-automations can subscribe to.
+The integration defines a single webhook handler and registers it once
+for each configured Akuvox device, assigning a unique URL to each
+registration. When a device sends a webhook to its URL, the integration
+parses the payload, identifies the event type, and fires a corresponding
+event within Home Assistant that automations can subscribe to.
 
 **Why this priority**: This is the core value of the feature. Without
 the ability to receive and process webhook events, nothing else matters.
@@ -186,10 +186,11 @@ device configuration is updated accordingly each time.
   identifier for each configured device to prevent unauthorized access
   to the endpoint.
 - **FR-004**: System MUST validate incoming webhook requests before
-  processing by ensuring that the webhook identifier in the request
-  matches a stored webhook identifier for a configured device. Requests
-  without a matching identifier MUST be rejected and MUST NOT be
-  associated with any device.
+  processing by ensuring that the webhook identifier embedded in the
+  request URL matches exactly a stored webhook identifier for a
+  configured device. Requests with a missing, empty, or non-matching
+  identifier MUST be rejected and MUST NOT be associated with any
+  device.
 - **FR-005**: System MUST reject and log any webhook request with a
   malformed or unrecognizable payload without crashing or disrupting
   other operations.
