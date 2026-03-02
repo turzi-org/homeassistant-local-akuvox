@@ -29,8 +29,12 @@ next polling cycle.
 The integration defines a single webhook handler and registers it once
 for each configured Akuvox device, assigning a unique URL to each
 registration. When a device sends a webhook to its URL, the integration
-parses the payload, identifies the event type, and fires a corresponding
-event within Home Assistant that automations can subscribe to.
+parses the payload, identifies the event type, and fires a Home Assistant
+event that automations can subscribe to. The event data MUST include, at
+minimum: the device reference, the integration config entry reference,
+a normalized event type string (for example: doorbell pressed, door
+opened, call started), the original raw payload, and a parsed payload
+suitable for use in automations.
 
 **Why this priority**: This is the core value of the feature. Without
 the ability to receive and process webhook events, nothing else matters.
@@ -38,9 +42,10 @@ Real-time event delivery is the fundamental capability that enables all
 downstream automation use cases.
 
 **Independent Test**: Can be fully tested by sending a simulated webhook
-payload to the endpoint and verifying that the correct Home Assistant
-event is fired with the expected data. Delivers immediate value by
-enabling real-time automations.
+payload to the endpoint and verifying that a Home Assistant event is
+fired with the expected device reference, config entry reference, event
+type, raw payload, and parsed payload values. Delivers immediate value
+by enabling real-time automations.
 
 **Acceptance Scenarios**:
 
@@ -197,13 +202,14 @@ device configuration is updated accordingly each time.
   request URL matches exactly a stored webhook identifier for a
   configured device. Requests with a missing, empty, or non-matching
   identifier MUST be rejected and MUST NOT be associated with any
-  device. Such rejected requests MUST return a non-success response
-  with no diagnostic details.
+  device. Such rejected requests MUST return an HTTP client error
+  response with an empty or generic body that does not include any
+  diagnostic details.
 - **FR-005**: System MUST reject and log any webhook request with a
   malformed or unrecognizable payload without crashing or disrupting
-  other operations. Such rejected requests MUST return a non-success
-  response with a minimal error indicator and MUST NOT include
-  internal diagnostic details.
+  other operations. Such rejected requests MUST return an HTTP client
+  error response with a minimal, generic error indicator and MUST NOT
+  include any internal diagnostic details.
 - **FR-006**: System MUST include a webhook configuration step in the
   initial setup flow that allows the user to opt in to automatic
   device webhook configuration.
