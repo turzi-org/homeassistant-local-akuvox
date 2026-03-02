@@ -67,7 +67,14 @@ async def async_handle_webhook(
 3. Extract `event` parameter → determines `event_type`
 4. Extract additional parameters (`status`, `code`)
 5. Validate event type against known set
-6. Fire Home Assistant event
+6. **User lookup** (valid code events only): If `code` parameter
+   is present and event is `valid_code_entered`, look up the PIN
+   against the coordinator's cached user data (match on
+   `private_pin`). On cache miss, fall back to
+   `device.list_users()` to fetch fresh data. Resolve
+   `device_user_id`, `user_id`, and `username`. If still no
+   match after fallback, set all three to `None`.
+7. Fire Home Assistant event (with user identity, never raw PIN)
 
 ### Response Codes
 
@@ -100,12 +107,20 @@ hass.bus.async_fire(
         "event_type": event_type,
         "payload": {
             "event": raw_event,
-            "status": status_value,  # or None
-            "code": code_value,      # or None
+            "status": status_value,        # or None
+            "device_user_id": user.id,     # or None
+            "user_id": user.user_id,       # or None
+            "username": user.name,         # or None
         },
     },
 )
 ```
+
+**Security**: The raw PIN (`$code` query parameter) is used ONLY
+for the user lookup and MUST NOT appear in the event payload or
+be stored anywhere. Log entries that include the raw query string
+MUST apply FR-013 sanitization (the `code` key is in the
+sensitive pattern list).
 
 ### Coordinator Refresh
 

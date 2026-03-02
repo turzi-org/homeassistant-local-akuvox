@@ -27,13 +27,15 @@ Applied in order:
    or `code` (case-insensitive match), replace the value with
    `[REDACTED]`.
 
-   **Note on `code`**: Access codes (PINs) are intentionally
-   included in plain text in the event bus payload so automations
-   can react to specific codes. The sanitization rule for `code`
-   applies only to **log entries** and **generic event payloads
-   for unrecognized types** (per FR-013). The recognized event
-   payload fired on the HA event bus preserves `code` in plain
-   text as a deliberate design decision.
+   **Note on `code`**: The raw PIN (`$code` query parameter) is
+   NEVER included in HA event payloads. The webhook handler uses
+   the raw code only for user lookup (matching against
+   `private_pin` in coordinator cache, with device fallback).
+   Event payloads contain resolved user identity fields
+   (`device_user_id`, `user_id`, `username`) instead. The
+   sanitization rule for `code` applies to **log entries** and
+   **raw query parameter dumps** to ensure the PIN is redacted
+   wherever it might appear in diagnostic output.
 
 2. **Webhook ID masking**: If `webhook_id` is provided, replace any
    value containing the full webhook ID with a masked version

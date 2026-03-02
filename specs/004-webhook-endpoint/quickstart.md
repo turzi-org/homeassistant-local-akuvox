@@ -86,9 +86,12 @@ Simulate a webhook delivery locally:
 curl "http://localhost:8123/api/webhook/{webhook_id}\
 ?event=relay_a_triggered&status=1"
 
-# Valid code entered
+# Valid code entered (handler resolves user identity from PIN)
 curl "http://localhost:8123/api/webhook/{webhook_id}\
 ?event=valid_code_entered&code=1234"
 ```
 
-Listen for events in HA Developer Tools → Events → `akuvox_webhook`.
+Listen for events in HA Developer Tools → Events →
+`akuvox_webhook`. Code events emit `device_user_id`, `user_id`,
+and `username` (resolved from PIN lookup) — the raw PIN is never
+included in the event payload.

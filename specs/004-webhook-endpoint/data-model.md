@@ -86,26 +86,38 @@ Event name: `akuvox_webhook` (domain-prefixed)
 
 ```python
 {
-    "device_id": str,           # HA device registry ID (stable)
-    "config_entry_id": str,     # HA config entry ID (stable)
+    "device_id": str,           # HA device registry ID
+    "config_entry_id": str,     # HA config entry ID
     "event_type": str,          # lowercase_snake_case event name
     "payload": {                # Parsed query parameters
         "event": str,           # Raw event parameter value
-        "status": str | None,   # Relay status ("0" or "1")
-        "code": str | None,     # Access code (code events)
+        "status": str | None,   # Relay status ("0"/"1")
+        "device_user_id": str | None,  # Device-assigned ID
+        "user_id": str | None,  # User-defined external ID
+        "username": str | None, # User's display name
     },
 }
 ```
 
-**Security note on `code` field**: The `code` value (PIN or access
-code) is intentionally included in plain text in the event payload.
-This is a deliberate design decision: automations need the raw code
-to implement code-specific behavior (e.g., different actions for
-different users). The `code` field is NOT redacted by the Payload
-Sanitization Rules because it is only present in event bus data
-(not logged). Log entries that include payload data MUST still
-apply FR-013 sanitization, which redacts the `code` field via the
-sensitive key pattern match.
+**Security: no PIN in events.** The raw access code (`$code`)
+received from the device is used ONLY for user lookup against
+the coordinator's cached user data (matched on `private_pin`).
+The resolved user identity fields (`device_user_id`, `user_id`,
+`username`) are emitted instead. The raw PIN MUST NEVER appear
+in event payloads.
+
+For `valid_code_entered` events: the handler resolves the user
+by matching the raw PIN against the coordinator's cached user
+data (`private_pin`). On cache miss, falls back to
+`device.list_users()` for fresh data. Populates all three
+identity fields. If still no match after fallback, the fields
+are `None`.
+
+For `invalid_code_entered` events: no user lookup is possible
+(the code is invalid). All three identity fields are `None`.
+
+For relay and input events: these events do not carry a code
+parameter. All three identity fields are `None`.
 
 ### Event Type Mapping
 
@@ -197,7 +209,7 @@ for unrecognized events:
 | Binary/non-text | Log content type and size only |
 
 Sensitive key patterns (case-insensitive): `token`, `secret`,
-`password`, `authorization`, `auth`, `key`, `cookie`.
+`password`, `authorization`, `auth`, `key`, `cookie`, `code`.
 
 ## Relationship Diagram
 

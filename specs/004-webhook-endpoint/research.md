@@ -263,6 +263,13 @@ state and is a no-op.
    additional action URL keys (InputC, Card, Face, Alarm, Call,
    etc.); these are model-specific and handled via the generic
    event path without code changes.
+7. **PIN security in events**: The raw PIN (`$code`) MUST NEVER
+   appear in HA event payloads. The handler resolves user identity
+   (device-assigned ID, user-defined ID, username) by matching
+   the PIN against coordinator-cached user data (`private_pin`),
+   falling back to `device.list_users()` on cache miss. Events
+   emit identity fields only. Invalid codes emit `None` for all
+   user fields (no lookup possible).
 
 ## Risk Assessment
 
