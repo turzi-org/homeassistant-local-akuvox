@@ -110,10 +110,10 @@ webhook URL configuration. Delivers value by automating device setup.
 
 As a user with an existing Akuvox integration entry, I want to be able
 to enable, disable, or reconfigure webhook event delivery through the
-options/reconfiguration flow so that I can adjust my setup without
+options flow so that I can adjust my setup without
 removing and re-adding the integration.
 
-The reconfiguration flow includes a webhook section where the user can
+The options flow includes a webhook section where the user can
 toggle webhook support on or off. When enabling, the integration pushes
 the webhook configuration to the device. When disabling, the integration
 removes the webhook configuration from the device and unregisters the
@@ -131,11 +131,11 @@ device configuration is updated accordingly each time.
 **Acceptance Scenarios**:
 
 1. **Given** an existing integration entry without webhooks enabled,
-   **When** the user enables webhooks in the reconfiguration flow,
+   **When** the user enables webhooks in the options flow,
    **Then** the integration generates a webhook URL, pushes it to the
    device, and begins receiving events.
 2. **Given** an existing integration entry with webhooks enabled,
-   **When** the user disables webhooks in the reconfiguration flow,
+   **When** the user disables webhooks in the options flow,
    **Then** the integration removes the webhook configuration from the
    device and unregisters the local endpoint.
 3. **Given** an existing integration entry with webhooks enabled,
@@ -198,7 +198,7 @@ device configuration is updated accordingly each time.
   initial setup flow that allows the user to opt in to automatic
   device webhook configuration.
 - **FR-007**: System MUST include a webhook management section in the
-  reconfiguration/options flow that allows the user to enable or
+  options flow that allows the user to enable or
   disable webhook support.
 - **FR-008**: When webhook support is enabled, the system MUST push
   the webhook URL to the Akuvox device's configuration.
