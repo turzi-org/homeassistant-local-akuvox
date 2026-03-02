@@ -85,6 +85,7 @@ async def async_handle_webhook(
 | Valid unknown event (generic) | 200 OK | Empty |
 | Missing `event` parameter | 400 Bad Request | `"Bad Request"` |
 | Webhook ID not in registry | N/A (HA returns 200 default) | N/A |
+| Registry hit but coordinator missing | 200 OK | Empty |
 
 Note: HA's webhook infrastructure handles the routing. If the
 webhook ID is not registered, HA itself returns a 200 with
@@ -93,6 +94,13 @@ updated to reflect this (HTTP 200 instead of 404). The
 security goal (no diagnostic details, no event fired) is met
 since the response body is generic and the handler is never
 invoked.
+
+If the `webhook_id` is found in the registry but the
+corresponding coordinator is no longer in
+`hass.data[DOMAIN][config_entry_id]` (e.g., due to a race
+during unload), the handler MUST catch the `KeyError`, log a
+warning, and return HTTP 200 with an empty body rather than
+raising an unhandled exception.
 
 ### Event Firing
 

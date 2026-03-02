@@ -88,7 +88,11 @@ vol.Schema({
 **Errors**:
 
 - `webhook_push_failed` — Device config push failed; show error,
-  allow retry or cancel
+  allow retry or cancel. If the user cancels, unregister the HA
+  webhook endpoint (if it was registered in step 2) and keep
+  `webhook_enabled=False` in the config entry to avoid an
+  inconsistent state where HA has a registered endpoint but the
+  device has no matching action URLs.
 
 ## Action URL Construction
 

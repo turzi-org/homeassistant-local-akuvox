@@ -27,7 +27,7 @@ configuration is stored in the device's config tree under
 
 ### Supported Action URL Keys
 
-Observed from a live device at 192.168.30.50:
+Observed from a live device at `<device-ip>`:
 
 | Config Key (suffix after `ACTIONURL.`) | Variable | Event |
 | -------------------------------------- | -------- | ----- |
@@ -91,15 +91,18 @@ The device substitutes variables in the URL before sending:
 The live device has URLs configured as:
 
 ```text
-https://test-ha.h7925.bardicgrove.org/api/webhook/intercom?relaya_triggered=$relay1status
+https://homeassistant.example.local/api/webhook/intercom?relaya_triggered=$relay1status
 ```
 
 This confirms:
 
 - Device sends HTTP GET with query parameters
 - Variable substitution happens in query string values
-- All action URLs point to the same webhook endpoint with different
-  query parameters identifying the event type
+- All action URLs can reuse the same base webhook endpoint and differ
+  only in query parameters. Note: the observed device uses parameter
+  names that embed the event type (e.g., `relaya_triggered=<status>`),
+  whereas the integration's proposed design uses a cleaner
+  `event=<name>&status=<value>` scheme for easier parsing.
 
 ### Device Configuration API
 
@@ -280,11 +283,11 @@ override, but typically finds the device state already current.
 
 ## Risk Assessment
 
-| Risk | Like. | Impact | Mitigation |
-| ---- | ----- | ------ | ---------- |
-| Missing action URL keys | Low | Med | Ignore; log warning |
-| HA URL unreachable | Med | High | Document; config flow |
-| set_device_config fails | Low | Med | Retry/skip in flow |
-| Rapid-fire webhooks | Med | Low | Stateless handler |
-| Webhook ID in logs | Low | Med | FR-013 masking |
+| Risk | Likelihood | Impact | Mitigation |
+| ---- | ---------- | ------ | ---------- |
+| Missing action URL keys | Low | Medium | Ignore; log warning |
+| HA URL unreachable | Medium | High | Document; config flow |
+| set_device_config fails | Low | Medium | Retry/skip in flow |
+| Rapid-fire webhooks | Medium | Low | Stateless handler |
+| Webhook ID in logs | Low | Medium | FR-013 masking |
 | Unexpected query params | Low | Low | Generic event path |

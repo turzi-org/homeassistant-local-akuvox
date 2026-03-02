@@ -47,7 +47,7 @@ The options flow adds a webhook management section (FR-007):
 ```python
 vol.Schema({
     # Existing connection fields...
-    vol.Required(CONF_WEBHOOK_ENABLED, default=False): bool,
+    vol.Required(CONF_WEBHOOK_ENABLED, default=current_value): bool,
 })
 ```
 
@@ -278,7 +278,7 @@ ConfigEntry (1)
   │     └── set_device_config() ─── push action URLs to device
   │
   ├── DataUpdateCoordinator (1)
-  │     └── async_refresh() ─── triggered by valid_code
+  │     └── async_refresh() ─── triggered by relay/valid_code events
   │
   ├── Webhook Registration (0..1)
   │     ├── webhook_id ─── random 64-char hex
