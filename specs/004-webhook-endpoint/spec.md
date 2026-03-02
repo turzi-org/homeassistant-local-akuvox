@@ -309,9 +309,8 @@ device configuration is updated accordingly each time.
   setting a webhook destination URL programmatically (via the same
   connection method used for other device configuration in this
   integration).
-- The Akuvox device sends webhook payloads as HTTP requests to the
-  configured URL with a structured body containing the event type and
-  relevant data.
+- The Akuvox device sends webhook payloads as HTTP GET requests to the
+  configured URL with event data encoded as query parameters.
 - Home Assistant's internal webhook infrastructure is available and
   used for registering local webhook endpoints (this is a standard
   Home Assistant capability).
@@ -321,7 +320,3 @@ device configuration is updated accordingly each time.
   integration does not handle NAT traversal or external URL
   provisioning; the device and Home Assistant must be on the same
   network or have appropriate routing configured.
-- Webhook payloads are delivered via HTTP GET with event data
-  encoded as query parameters. The device performs variable
-  substitution (e.g., `$relay1status`, `$code`) in the URL
-  before sending the request.
