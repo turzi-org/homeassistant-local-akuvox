@@ -187,19 +187,23 @@ existing speculative (optimistic) lock state mechanism.
 **When webhooks are enabled**: Relay and valid code webhook events
 trigger an immediate coordinator refresh that:
 
-1. Fetches real device state ahead of the next 30-second poll.
-2. Clears the lock entity's `_optimistic_locked` override when the
-   refresh completes (via the existing `_async_finish_optimistic_unlock`
-   path).
+1. Fetches real device state ahead of the next 30-second poll so the
+   coordinator has up-to-date data as soon as possible.
+2. Does **not** itself clear the lock entity's `_optimistic_locked`
+   override; that override is still cleared only when the existing
+   delayed timer fires and calls `_async_finish_optimistic_unlock()`.
 
 **When webhooks are NOT enabled**: The existing behavior is
 completely unchanged — speculative state is set on unlock, held
-until the delayed refresh fires after the hold delay, then cleared.
+until the delayed refresh fires after the hold delay, then cleared
+via `_async_finish_optimistic_unlock()`.
 
 The delayed refresh scheduled by `async_unlock()` always remains
 active as a safety net regardless of webhook state. If a
-webhook-triggered refresh arrives first, the delayed refresh
-simply reads already-current state and is a no-op.
+webhook-triggered refresh arrives first, the delayed refresh still
+runs the `_async_finish_optimistic_unlock()` path to clear the
+optimistic override, but it typically finds that the device state
+is already current thanks to the earlier webhook-triggered refresh.
 
 ## Webhook Handler Lookup
 

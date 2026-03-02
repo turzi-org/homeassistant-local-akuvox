@@ -217,28 +217,34 @@ When webhooks ARE enabled:
 
 - **Relay triggered event** (e.g., `relay_a_triggered` with
   `status=1`): Confirms the relay actually opened. The webhook
-  handler calls `coordinator.async_refresh()`, which
-  fetches real device state. When the refresh completes, the
-  entity's `_async_finish_optimistic_unlock` clears
-  `_optimistic_locked` and the entity shows real state.
+  handler calls `coordinator.async_refresh()`, which fetches
+  real device state into the coordinator. This does **not**
+  itself clear `_optimistic_locked`; the optimistic override
+  is only cleared when the separately-scheduled delayed timer
+  fires `_async_finish_optimistic_unlock()`. The webhook
+  refresh ensures the coordinator has current data when that
+  happens.
 - **Relay closed event** (e.g., `relay_a_closed` with `status=0`):
-  Confirms the relay returned to its resting state. A coordinator
-  refresh clears the optimistic override and restores the real
-  locked state.
-- **Valid code event**: Triggers immediate coordinator refresh. Since
-  a valid code may unlock one or more relays, the refresh captures
-  all relay state changes and clears any optimistic overrides.
+  Confirms the relay returned to its resting state. The
+  coordinator refresh fetches current data, but the optimistic
+  override is still cleared via the delayed timer path.
+- **Valid code event**: Triggers immediate coordinator refresh.
+  Since a valid code may unlock one or more relays, the refresh
+  ensures the coordinator has current state for all relays. The
+  optimistic override for each lock is still cleared by its own
+  delayed timer's `_async_finish_optimistic_unlock()` call.
 
 When webhooks are NOT enabled:
 
 - The existing behavior is completely unchanged: speculative state
   is set on unlock, held until the delayed refresh fires after the
-  hold delay, then cleared when the coordinator refresh completes.
+  hold delay, then cleared via `_async_finish_optimistic_unlock()`.
 
 In both cases, the delayed refresh scheduled by `async_unlock()`
 remains active as a safety net. If the webhook-triggered refresh
-arrives first, the delayed refresh simply reads already-current
-state and is a no-op.
+arrives first, the delayed refresh still runs
+`_async_finish_optimistic_unlock()` to clear the optimistic
+override, but typically finds the device state already current.
 
 ## Resolved Clarifications
 

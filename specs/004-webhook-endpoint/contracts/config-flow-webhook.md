@@ -30,9 +30,13 @@ vol.Schema({
   1. Generate `webhook_id = secrets.token_hex(32)`
   2. Build action URLs using `async_generate_url(hass, webhook_id)`
      with appropriate query parameters and variable placeholders
-  3. Push all 10 action URL keys + enable flag to device via
+  3. Using the credentials stored in `self._data`, open a new
+     `AkuvoxDevice` connection (e.g., via
+     `async with AkuvoxDevice(...) as device:`) since the
+     connection from the test step is already closed
+  4. Push all 10 action URL keys + enable flag to device via
      `device.set_device_config()`
-  4. Store `webhook_id` and `webhook_enabled=True` in entry data
+  5. Store `webhook_id` and `webhook_enabled=True` in entry data
 - If skipped (disabled):
   1. Store `webhook_id=None` and `webhook_enabled=False`
   2. No device configuration changes
