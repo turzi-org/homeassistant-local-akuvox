@@ -128,7 +128,7 @@ When `event_type` is a relay event (`relay_a_triggered`,
 
 ```python
 coordinator = hass.data[DOMAIN][config_entry_id]
-await coordinator.async_request_refresh()
+await coordinator.async_refresh()
 ```
 
 This is an *additional* faster path to update entity state. It does

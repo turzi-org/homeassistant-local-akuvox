@@ -158,7 +158,7 @@ entity's existing relay type logic handles interpretation.
 
 ### Coordinator Refresh Behavior
 
-The webhook handler triggers `coordinator.async_request_refresh()`
+The webhook handler triggers `coordinator.async_refresh()`
 for relay events and valid code events. This provides an *additional*
 faster path to update entity state — it does **not** replace the
 existing speculative (optimistic) lock state mechanism.
@@ -253,7 +253,7 @@ ConfigEntry (1)
   │     └── set_device_config() ─── push action URLs to device
   │
   ├── DataUpdateCoordinator (1)
-  │     └── async_request_refresh() ─── triggered by valid_code
+  │     └── async_refresh() ─── triggered by valid_code
   │
   ├── Webhook Registration (0..1)
   │     ├── webhook_id ─── random 64-char hex

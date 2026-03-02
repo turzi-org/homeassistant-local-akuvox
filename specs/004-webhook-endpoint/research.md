@@ -217,7 +217,7 @@ When webhooks ARE enabled:
 
 - **Relay triggered event** (e.g., `relay_a_triggered` with
   `status=1`): Confirms the relay actually opened. The webhook
-  handler calls `coordinator.async_request_refresh()`, which
+  handler calls `coordinator.async_refresh()`, which
   fetches real device state. When the refresh completes, the
   entity's `_async_finish_optimistic_unlock` clears
   `_optimistic_locked` and the entity shows real state.
