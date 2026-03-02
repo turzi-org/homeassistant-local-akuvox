@@ -112,10 +112,16 @@ in event payloads.
 
 For `valid_code_entered` events: the handler resolves the user
 by matching the raw PIN against the coordinator's cached user
-data (`private_pin`). On cache miss, falls back to
-`device.list_users()` for fresh data. Populates all three
-identity fields. If still no match after fallback, the fields
-are `None`.
+data (`private_pin`). On cache miss, the implementation MAY
+perform a best-effort refresh via `device.list_users()` to
+obtain fresh data and populate all three identity fields.
+However, this lookup MUST NOT cause the webhook HTTP response
+to exceed the SC-001 2-second delivery requirement:
+implementers SHOULD bound any synchronous refresh with a short
+timeout, or emit the event immediately with identity fields
+set to `None` and perform the lookup asynchronously. If no
+matching user is found (from cache or after refresh), the
+identity fields are `None`.
 
 For `invalid_code_entered` events: no user lookup is possible
 (the code is invalid). All three identity fields are `None`.
