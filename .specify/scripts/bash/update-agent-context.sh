@@ -355,6 +355,15 @@ create_new_agent_file() {
     # Clean up backup files
     rm -f "$temp_file.bak" "$temp_file.bak2"
 
+    # Prepend Cursor frontmatter for .mdc files so rules are auto-included
+    if [[ "$target_file" == *.mdc ]]; then
+        local frontmatter_file
+        frontmatter_file=$(mktemp) || return 1
+        printf '%s\n' "---" "description: Project Development Guidelines" "globs: [\"**/*\"]" "alwaysApply: true" "---" "" > "$frontmatter_file"
+        cat "$temp_file" >> "$frontmatter_file"
+        mv "$frontmatter_file" "$temp_file"
+    fi
+
     return 0
 }
 
@@ -490,6 +499,17 @@ update_existing_agent_file() {
         echo "## Recent Changes" >> "$temp_file"
         echo "$new_change_entry" >> "$temp_file"
         changes_entries_added=true
+    fi
+
+    # Ensure Cursor .mdc files have YAML frontmatter for auto-inclusion
+    if [[ "$target_file" == *.mdc ]]; then
+        if ! head -1 "$temp_file" | grep -q '^---'; then
+            local frontmatter_file
+            frontmatter_file=$(mktemp) || { rm -f "$temp_file"; return 1; }
+            printf '%s\n' "---" "description: Project Development Guidelines" "globs: [\"**/*\"]" "alwaysApply: true" "---" "" > "$frontmatter_file"
+            cat "$temp_file" >> "$frontmatter_file"
+            mv "$frontmatter_file" "$temp_file"
+        fi
     fi
 
     # Move temp file to target atomically
