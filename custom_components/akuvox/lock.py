@@ -778,13 +778,13 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         self,
         user_id: str,
         *,
-        action: str = "modify",
+        service: str = "modify_user",
     ) -> User:
         """Fetch a user by ID and verify it is locally managed.
 
         Args:
             user_id: The device-internal ID of the user.
-            action: Action label for error messages.
+            service: Service name for error message prefixes.
 
         Returns:
             The matching User.
@@ -800,11 +800,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             )
         except AkuvoxValidationError as err:
             raise ServiceValidationError(
-                f"{action}_user: {err}",
+                f"{service}: {err}",
             ) from err
         except AkuvoxError as err:
             raise HomeAssistantError(
-                f"{action}_user: failed to fetch users: {err}",
+                f"{service}: failed to fetch users: {err}",
             ) from err
 
         target = None
@@ -815,12 +815,12 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         if target is None:
             raise HomeAssistantError(
-                f"User '{user_id}' not found",
+                f"{service}: user '{user_id}' not found",
             )
 
         if target.source_type == "2":
             raise ServiceValidationError(
-                f"Cannot {action} cloud-provisioned user",
+                f"{service}: user is cloud-provisioned",
             )
 
         return target
@@ -1054,7 +1054,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         """
         device_user_id: str = kwargs["id"]
-        await self._fetch_local_user(device_user_id, action="delete")
+        await self._fetch_local_user(device_user_id, service="delete_user")
 
         try:
             await self.coordinator.device.delete_user(id=device_user_id)
@@ -1106,7 +1106,9 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"Invalid relay_id '{relay_id}'. Must be numeric.",
             )
 
-        user = await self._fetch_local_user(device_user_id, action="add_schedule_relay")
+        user = await self._fetch_local_user(
+            device_user_id, service="add_user_schedule_relay"
+        )
 
         current_relay = getattr(user, "schedule_relay", "") or ""
         pairs = self._parse_schedule_relay_pairs(current_relay, allow_empty=True)
@@ -1178,7 +1180,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             )
 
         user = await self._fetch_local_user(
-            device_user_id, action="remove_schedule_relay"
+            device_user_id, service="remove_user_schedule_relay"
         )
 
         current_relay = getattr(user, "schedule_relay", "") or ""
