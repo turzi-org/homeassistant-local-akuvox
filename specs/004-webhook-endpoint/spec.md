@@ -211,9 +211,13 @@ device configuration is updated accordingly each time.
   request URL matches exactly a stored webhook identifier for a
   configured device. Requests with a missing, empty, or non-matching
   identifier MUST be rejected and MUST NOT be associated with any
-  device. Such rejected requests MUST return an HTTP 404 (Not Found)
-  response with an empty or generic body that does not include any
-  diagnostic details.
+  device. Such rejected requests MUST return an HTTP 200 (OK)
+  response with a generic body that does not include any
+  diagnostic details. (Home Assistant's webhook infrastructure
+  returns HTTP 200 with `"Webhook not registered."` for
+  unregistered webhook IDs; the integration cannot customize
+  this response. The security goal — no diagnostic leak, no
+  event fired — is still met.)
 - **FR-005**: System MUST reject and log any webhook request with a
   malformed or unrecognizable payload without crashing or disrupting
   other operations. Such rejected requests MUST return an HTTP 400
@@ -243,8 +247,8 @@ device configuration is updated accordingly each time.
   the authoritative reference for all logging and event emission
   involving webhook data. At a minimum, these rules MUST:
   (a) replace the value of any field whose key contains `token`,
-  `secret`, `password`, `authorization`, `auth`, `key`, or `cookie`
-  (case-insensitive) with `[REDACTED]`;
+  `secret`, `password`, `authorization`, `auth`, `key`, `cookie`,
+  or `code` (case-insensitive) with `[REDACTED]`;
   (b) mask webhook identifiers by showing only the first 4 and last 2
   characters with the middle replaced by `***` (or use a constant
   placeholder such as `[REDACTED_ID]` if the identifier is 8 or fewer
