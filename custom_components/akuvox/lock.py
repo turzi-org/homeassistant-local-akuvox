@@ -955,8 +955,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: If user not found or device error.
 
         """
-        user_id: str = kwargs["id"]
-        await self._fetch_local_user(user_id)
+        device_user_id: str = kwargs["id"]
+        await self._fetch_local_user(device_user_id)
 
         self._validate_pin(kwargs.get("private_pin"))
 
@@ -985,7 +985,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         try:
             await self.coordinator.device.modify_user(
-                id=user_id,
+                id=device_user_id,
                 name=kwargs.get("name"),
                 user_id=kwargs.get("user_id"),
                 schedule_relay=schedule_relay,
@@ -1005,7 +1005,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         event_data: dict[str, str] = {
             "action": "modify",
-            "device_user_id": user_id,
+            "device_user_id": device_user_id,
         }
         config_entry = self.coordinator.config_entry
         if config_entry is not None and hasattr(config_entry, "entry_id"):
@@ -1026,11 +1026,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: If user not found or device error.
 
         """
-        user_id: str = kwargs["id"]
-        await self._fetch_local_user(user_id, action="delete")
+        device_user_id: str = kwargs["id"]
+        await self._fetch_local_user(device_user_id, action="delete")
 
         try:
-            await self.coordinator.device.delete_user(id=user_id)
+            await self.coordinator.device.delete_user(id=device_user_id)
         except AkuvoxValidationError as err:
             raise ServiceValidationError(
                 f"delete_user: {err}",
@@ -1042,7 +1042,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         event_data_del: dict[str, str] = {
             "action": "delete",
-            "device_user_id": user_id,
+            "device_user_id": device_user_id,
         }
         config_entry = self.coordinator.config_entry
         if config_entry is not None and hasattr(config_entry, "entry_id"):
@@ -1066,7 +1066,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: If user not found or device error.
 
         """
-        user_id: str = kwargs["id"]
+        device_user_id: str = kwargs["id"]
         schedule_id: str = kwargs["schedule_id"]
         relay_id: str = kwargs["relay_id"]
 
@@ -1079,7 +1079,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"Invalid relay_id '{relay_id}'. Must be numeric.",
             )
 
-        user = await self._fetch_local_user(user_id)
+        user = await self._fetch_local_user(device_user_id)
 
         current_relay = getattr(user, "schedule_relay", "") or ""
         pairs = [p.strip() for p in re.split(r"[;,]", current_relay) if p.strip()]
@@ -1097,7 +1097,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         try:
             await self.coordinator.device.modify_user(
-                id=user_id,
+                id=device_user_id,
                 schedule_relay=",".join(pairs),
             )
         except AkuvoxValidationError as err:
@@ -1111,7 +1111,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         event_data: dict[str, str] = {
             "action": "add_schedule_relay",
-            "device_user_id": user_id,
+            "device_user_id": device_user_id,
             "schedule_id": schedule_id,
             "relay_id": relay_id,
         }
@@ -1137,7 +1137,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             HomeAssistantError: If user not found or device error.
 
         """
-        user_id: str = kwargs["id"]
+        device_user_id: str = kwargs["id"]
         schedule_id: str = kwargs["schedule_id"]
         relay_id: str = kwargs["relay_id"]
 
@@ -1150,7 +1150,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"Invalid relay_id '{relay_id}'. Must be numeric.",
             )
 
-        user = await self._fetch_local_user(user_id)
+        user = await self._fetch_local_user(device_user_id)
 
         current_relay = getattr(user, "schedule_relay", "") or ""
         pairs = [p.strip() for p in re.split(r"[;,]", current_relay) if p.strip()]
@@ -1172,7 +1172,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         try:
             await self.coordinator.device.modify_user(
-                id=user_id,
+                id=device_user_id,
                 schedule_relay=",".join(pairs),
             )
         except AkuvoxValidationError as err:
@@ -1186,7 +1186,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         event_data: dict[str, str] = {
             "action": "remove_schedule_relay",
-            "device_user_id": user_id,
+            "device_user_id": device_user_id,
             "schedule_id": schedule_id,
             "relay_id": relay_id,
         }
