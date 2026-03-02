@@ -196,6 +196,39 @@ From `config_entry_id`, the handler retrieves the coordinator from
 `hass.data[DOMAIN][config_entry_id]` and the device registry entry
 for `device_id`.
 
+### Initialization and Lifetime
+
+`async_setup_entry` MUST initialize the shared registry if it does
+not already exist:
+
+```python
+hass.data.setdefault(DOMAIN, {})
+hass.data[DOMAIN].setdefault("webhook_registry", {})
+```
+
+Each entry's webhook registration adds to the shared registry:
+
+```python
+hass.data[DOMAIN]["webhook_registry"][webhook_id] = entry.entry_id
+```
+
+### Unload and Cleanup Semantics
+
+`async_unload_entry` cleans up both the per-entry coordinator and
+that entry's webhook registrations:
+
+1. Remove the coordinator:
+   `hass.data[DOMAIN].pop(entry.entry_id, None)`
+2. Remove all `webhook_id` entries pointing to this
+   `config_entry_id` from `webhook_registry`.
+3. If `webhook_registry` is now empty, remove the
+   `"webhook_registry"` key from `hass.data[DOMAIN]`.
+4. If `hass.data[DOMAIN]` is empty, pop the `DOMAIN` key
+   from `hass.data`.
+
+This ensures `webhook_registry` does not keep
+`hass.data[DOMAIN]` alive after the last entry is unloaded.
+
 ## Payload Sanitization
 
 Sanitization is applied per FR-013 before logging or event emission

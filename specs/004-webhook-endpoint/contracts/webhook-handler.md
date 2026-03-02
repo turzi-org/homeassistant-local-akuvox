@@ -24,6 +24,7 @@ async_register(
     name=f"Akuvox {device_name}",           # Human-readable
     webhook_id=entry.data["webhook_id"],    # 64-char hex
     handler=async_handle_webhook,           # Callback
+    allowed_methods=["GET"],                # Akuvox sends GET
 )
 ```
 
@@ -87,14 +88,11 @@ async def async_handle_webhook(
 
 Note: HA's webhook infrastructure handles the routing. If the
 webhook ID is not registered, HA itself returns a 200 with
-`"Webhook not registered."`. This is a known deviation from
-FR-004's HTTP 404 requirement: HA does not expose a mechanism
-to customize the response for unregistered webhook IDs. The
-spec (FR-004) should be updated to align with HA's actual
-behavior — the security goal (no diagnostic details, no event
-fired) is still met since the response body is generic and the
-handler is never invoked. The 200 response does not leak any
-information about whether the webhook ID was ever valid.
+`"Webhook not registered."`. FR-004 in `spec.md` has been
+updated to reflect this (HTTP 200 instead of 404). The
+security goal (no diagnostic details, no event fired) is met
+since the response body is generic and the handler is never
+invoked.
 
 ### Event Firing
 
