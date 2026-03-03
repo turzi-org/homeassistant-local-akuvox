@@ -24,6 +24,8 @@ from .const import (
     CONF_USE_SSL,
     CONF_USERNAME,
     CONF_VERIFY_SSL,
+    CONF_WEBHOOK_ENABLED,
+    CONF_WEBHOOK_ID,
     DOMAIN,
     PLATFORMS,
     SERVICE_ADD_SCHEDULE,
@@ -40,6 +42,7 @@ from .const import (
     get_auth_method_map,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
+from .webhook import async_register_webhook, async_unregister_webhook
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -312,7 +315,17 @@ async def async_setup_entry(
         raise
 
     hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN].setdefault("webhook_registry", {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
+
+    # Register webhook if enabled
+    webhook_enabled = bool(_get_config_value(entry, CONF_WEBHOOK_ENABLED, False))
+    webhook_id = _get_config_value(entry, CONF_WEBHOOK_ID)
+    if webhook_enabled and webhook_id is not None:
+        device_name = ""
+        if coordinator.data:
+            device_name = coordinator.data.device_name
+        async_register_webhook(hass, entry, device_name=device_name)
 
     try:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -359,11 +372,29 @@ async def async_unload_entry(
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
+        # Unregister webhook if in registry
+        async_unregister_webhook(hass, entry)
+
         coordinator: AkuvoxDataUpdateCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
         await coordinator.device.__aexit__(None, None, None)
         _LOGGER.debug("Closed device session for %s", entry.title)
 
-        if not hass.data[DOMAIN]:
-            hass.data.pop(DOMAIN)
+        # Clean up webhook registry entry
+        webhook_id = _get_config_value(entry, CONF_WEBHOOK_ID)
+        if webhook_id is not None:
+            hass.data[DOMAIN].get("webhook_registry", {}).pop(
+                str(webhook_id),
+                None,
+            )
+
+        # Clean up empty webhook_registry
+        if (
+            "webhook_registry" in hass.data.get(DOMAIN, {})
+            and not hass.data[DOMAIN]["webhook_registry"]
+        ):
+            hass.data[DOMAIN].pop("webhook_registry", None)
+
+        if not hass.data.get(DOMAIN):
+            hass.data.pop(DOMAIN, None)
 
     return unload_ok
