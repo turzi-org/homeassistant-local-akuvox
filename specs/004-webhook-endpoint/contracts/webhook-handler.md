@@ -65,7 +65,11 @@ async def async_handle_webhook(
 
 ### Request Processing
 
-1. Look up `config_entry_id` from webhook registry
+1. Look up `config_entry_id` from webhook registry.
+   If the `webhook_id` is not found in the integration's
+   `webhook_registry` (e.g., race during startup or
+   registration ordering bug), log a warning and return
+   200 OK with an empty body — do not proceed further.
 2. Parse query parameters from `request.query`
 3. Extract `event` parameter → determines `event_type`
 4. Extract additional parameters (`status`, `code`)
@@ -89,12 +93,12 @@ async def async_handle_webhook(
 | --------- | ----------- | ---- |
 | Valid known event | 200 OK | Empty |
 | Valid unknown event (generic) | 200 OK | Empty |
-
-> **Note**: For unknown event types, a warning-level message
-> identifying the unknown type MUST also be logged per FR-013.
 | Missing `event` parameter | 400 Bad Request | `"Bad Request"` |
 | Webhook ID not in registry | N/A (HA returns 200 default) | N/A |
 | Registry hit but coordinator missing | 200 OK | Empty |
+
+> **Note**: For unknown event types, a warning-level message
+> identifying the unknown type MUST also be logged per FR-013.
 
 Note: HA's webhook infrastructure handles the routing. If the
 webhook ID is not registered, HA itself returns a 200 with
