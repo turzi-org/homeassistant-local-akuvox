@@ -160,6 +160,12 @@ Unknown event type normalization:
 
 Final event type: `unknown_{normalized}`.
 
+For events with an `event_type` of `unknown_{normalized}`, the
+`payload` field MUST consist solely of the sanitized raw incoming
+data (for example, the raw query parameters) after applying the
+Payload Sanitization Rules defined in FR-013. No additional or
+derived fields may be included in the payload for these events.
+
 **Note on valid code events**: When a valid code is entered, the
 relay-specific action URLs (`RelayATriggered`, etc.) may NOT fire
 even though relays change state. `valid_code_entered` is the only
@@ -249,8 +255,10 @@ hass.data[DOMAIN]["webhook_registry"][webhook_id] = entry.entry_id
 `async_unload_entry` cleans up both the per-entry coordinator and
 that entry's webhook registrations:
 
-1. Remove the coordinator:
-   `hass.data[DOMAIN].pop(entry.entry_id, None)`
+1. Remove and capture the coordinator:
+   `coordinator = hass.data[DOMAIN].pop(entry.entry_id)`
+   (the coordinator reference is needed to close the device
+   session via `coordinator.device.__aexit__(...)`)
 2. Remove all `webhook_id` entries pointing to this
    `config_entry_id` from `webhook_registry`.
 3. If `webhook_registry` is now empty, remove the

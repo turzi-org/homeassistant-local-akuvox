@@ -40,7 +40,10 @@ Observed from a live device at `<device-ip>`:
 | `InputBTriggered` | `$relay2status` | Input B trig |
 | `InputBClosed` | `$relay2status` | Input B close |
 | `ValidCodeEntered` | `$code` | Valid code |
-| `InvalidCodeEntered` | `$code` | Invalid code |
+| `InvalidCodeEntered` | `$code` | Invalid code \* |
+
+\* `$code` is available on the device but deliberately omitted
+from the URL template by design; see Resolved Clarifications #3.
 
 All keys are prefixed with `Config.Features.ACTIONURL.`.
 
