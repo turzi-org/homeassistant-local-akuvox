@@ -49,6 +49,8 @@ tests/
 - `custom_components/akuvox/translations/en.json` — add
   webhook translations
 - `tests/test_config_flow.py` — add webhook config flow tests
+- `tests/test_coordinator.py` — add coordinator user cache
+  tests for PIN→user lookup
 - `tests/test_init.py` — add webhook setup/teardown tests
 - `tests/conftest.py` — add webhook fixtures
 
