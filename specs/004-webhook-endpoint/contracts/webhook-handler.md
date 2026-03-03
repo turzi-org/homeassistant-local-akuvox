@@ -31,7 +31,7 @@ async_register(
 > **Note on `local_only`**: The `local_only` parameter is
 > intentionally **omitted**. While Akuvox devices are typically
 > on the local network, some deployments route through NAT,
-> VPN tunnels, or reverse proxies where HA may not recognise
+> VPN tunnels, or reverse proxies where HA may not recognize
 > the source IP as local. Setting `local_only=True` would
 > silently reject such requests (HTTP 200, body
 > `"Webhook not registered."`), making failures hard to
