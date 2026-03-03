@@ -36,7 +36,11 @@ vol.Schema({
      connection from the test step is already closed
   4. Push all 10 action URL keys + enable flag to device via
      `device.set_device_config()`
-  5. Store `webhook_id` and `webhook_enabled=True` in entry data
+  5. Store `webhook_id` and `webhook_enabled=True` in entry data;
+     the actual HA webhook endpoint will be registered during
+     `async_setup_entry()` immediately after the config entry is
+     created, so the config flow itself does not perform webhook
+     registration
 
 > **Warning**: If `async_generate_url()` produces an HTTP (not
 > HTTPS) base URL, the `ValidCodeEntered` action URL will

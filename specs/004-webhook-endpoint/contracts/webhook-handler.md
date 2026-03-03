@@ -142,8 +142,9 @@ Do not include `status`, `device_user_id`, `user_id`, or
 
 ```python
 hass.bus.async_fire(
-    f"{DOMAIN}_event",
+    f"{DOMAIN}_webhook",
     {
+        "device_id": device_id,
         "config_entry_id": config_entry_id,
         "event_type": f"unknown_{normalized}",
         "payload": sanitized_query_params,
