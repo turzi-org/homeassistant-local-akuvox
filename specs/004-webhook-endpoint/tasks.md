@@ -334,9 +334,8 @@ options; integration removal cleans up device config
 
 - T003, T004, T005, T006 (Phase 2) can all run in parallel
 - T007, T008, T009 (US1 tests) can all run in parallel
-- T010 [P] can run in parallel with T007-T009 (different
-  files); T011 depends on T010 (webhook.py imports
-  sanitize.py)
+- T010 starts after T007 (its test) is written and failing;
+  T011 depends on T010 (webhook.py imports sanitize.py)
 - T013 (US2 tests) can run alone (single file)
 - T015, T016 (US2 strings) can run in parallel with each
   other and with T014
@@ -352,9 +351,9 @@ Task T007: "Write sanitization tests in tests/test_sanitize.py"
 Task T008: "Write webhook handler tests in tests/test_webhook.py"
 Task T009: "Write webhook lifecycle tests in tests/test_init.py"
 
-# Then launch implementation (T010 parallel with T011):
+# Then implement sequentially (T011 after T010):
 Task T010: "Create sanitize.py module"
-Task T011: "Create webhook.py module" (after T010 passes its tests)
+Task T011: "Create webhook.py module" (after T010)
 
 # Then wire lifecycle (depends on T011):
 Task T012: "Wire webhook into __init__.py"
