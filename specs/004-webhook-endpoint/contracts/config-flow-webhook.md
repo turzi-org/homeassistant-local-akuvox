@@ -76,23 +76,35 @@ vol.Schema({
 
 1. Reuse existing `webhook_id` from config entry if present;
    otherwise generate new `webhook_id = secrets.token_hex(32)`
-2. Register webhook endpoint in HA
-3. Build action URLs and push all 10 URL keys plus
+2. Build action URLs and push all 10 URL keys plus
    `Config.Features.ACTIONURL.Enable='1'` in a single
    `set_device_config()` call
-4. Update config entry with `webhook_enabled=True` and the
+3. Update config entry with `webhook_enabled=True` and the
    existing or newly generated `webhook_id`
+
+> **Note**: The options flow does NOT inline-register the HA
+> webhook endpoint. The existing `_async_update_listener`
+> triggers a full reload on every options change
+> (`async_unload_entry` → `async_setup_entry`), and
+> `async_setup_entry` handles webhook registration when
+> `webhook_enabled=True`. Inline registration would create
+> redundant churn and a brief window where the endpoint is
+> absent during the reload cycle.
 
 **Behavior on Disable** (was enabled → now disabled):
 
 1. Push empty strings for all 10 action URL keys plus
    `Config.Features.ACTIONURL.Enable='0'` in a single
    `set_device_config()` call
-2. Unregister webhook endpoint from HA
-3. Remove the `webhook_id` entry from
-   `hass.data[DOMAIN]["webhook_registry"]`
-4. Update config entry with `webhook_enabled=False`
+2. Update config entry with `webhook_enabled=False`
    (preserve `webhook_id` for potential re-enable)
+
+> **Note**: The options flow does NOT inline-unregister the HA
+> webhook endpoint or remove the registry entry. The reload
+> triggered by the options change handles both via
+> `async_unload_entry`. This avoids double-unregistration
+> (which could raise if HA's `async_unregister` rejects
+> unknown IDs).
 
 **Behavior on No Change**:
 
@@ -102,18 +114,12 @@ vol.Schema({
 
 - `webhook_push_failed` — Device config push failed; show error
   and allow retry or cancel.
-  - **Enable path — retry**: On retry, skip step 2 (webhook
-    registration) if `async_register()` already succeeded in
-    the previous attempt; only re-attempt step 3 (device push).
-    Track registration state with a flow-level flag.
-  - **Enable path — cancel**: If the user cancels, unregister
-    the HA webhook endpoint (if it was registered in step 2)
-    and keep `webhook_enabled=False` in the config entry to
-    avoid an inconsistent state.
-  - **Disable path** (was enabled → now disabled): If the user
-    cancels, keep the existing HA webhook endpoint registered
-    and `webhook_enabled=True` unchanged (preserving the
-    current working state).
+  - **Enable path — cancel**: Keep `webhook_enabled=False` in
+    the config entry. No HA webhook cleanup needed since the
+    options flow does not register the endpoint.
+  - **Disable path — cancel**: Keep `webhook_enabled=True`
+    unchanged (preserving the current working state). The
+    reload will keep the HA endpoint registered.
 
 ## Action URL Construction
 
