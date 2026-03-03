@@ -103,11 +103,16 @@ vol.Schema({
    (preserve `webhook_id` for potential re-enable)
 
 > **Note**: The options flow does NOT inline-unregister the HA
-> webhook endpoint or remove the registry entry. The reload
-> triggered by the options change handles both via
-> `async_unload_entry`. This avoids double-unregistration
-> (which could raise if HA's `async_unregister` rejects
-> unknown IDs).
+> webhook endpoint or remove the registry entry. Instead, the
+> integration ensures that `async_unload_entry` always
+> unregisters the webhook whenever `webhook_id` is not `None`
+> and is present in the `webhook_registry`, regardless of the
+> `webhook_enabled` flag in the config entry. This avoids
+> double-unregistration in the options flow itself (which
+> could raise if HA's `async_unregister` rejects unknown IDs),
+> while still guaranteeing that a previously registered
+> endpoint is cleaned up on unload — including when webhooks
+> are disabled via the options flow.
 
 **Behavior on No Change**:
 

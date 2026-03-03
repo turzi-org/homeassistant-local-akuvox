@@ -286,24 +286,25 @@ via the `_get_config_value()` helper (which checks
 `async_unload_entry` cleans up both the per-entry coordinator and
 that entry's webhook registrations:
 
-1. Look up the optional `webhook_id` and `webhook_enabled` for
-   this entry using the existing `_get_config_value()` helper
-   (which checks `entry.options` first, then `entry.data`),
-   since the options flow may store these values in
-   `entry.options`. If `webhook_id` is not `None` **and**
-   `webhook_enabled` is `True`, call
+1. Look up the optional `webhook_id` for this entry using the
+   existing `_get_config_value()` helper (which checks
+   `entry.options` first, then `entry.data`). If `webhook_id`
+   is not `None` **and** present in
+   `hass.data[DOMAIN].get("webhook_registry", {})`, call
    `async_unregister(hass, webhook_id)` to remove the webhook
-   endpoint from HA's infrastructure. (A non-`None` `webhook_id`
-   with `webhook_enabled=False` means the ID is preserved for
-   re-enable but was never registered with HA.)
+   endpoint from HA's infrastructure. The registry check (not
+   `webhook_enabled`) is the correct gate because the options
+   flow may set `webhook_enabled=False` before the reload that
+   triggers `async_unload_entry`, but the webhook_registry
+   reflects actual registration state.
 2. Remove and capture the coordinator:
    `coordinator = hass.data[DOMAIN].pop(entry.entry_id)`
    (the coordinator reference is needed to close the device
    session via `coordinator.device.__aexit__(...)`)
-3. If `webhook_id` is not `None` **and** `webhook_enabled` is
-   `True`, remove the corresponding entry from
-   `webhook_registry`:
+3. If `webhook_id` is not `None`, remove the corresponding
+   entry from `webhook_registry`:
    `hass.data[DOMAIN]["webhook_registry"].pop(webhook_id, None)`
+   (safe no-op if the ID is not present)
 4. If `"webhook_registry"` exists in `hass.data[DOMAIN]` and
    is now empty, remove the `"webhook_registry"` key. This
    check is unconditional (not gated on `webhook_enabled`)
