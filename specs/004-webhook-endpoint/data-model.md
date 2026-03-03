@@ -255,19 +255,23 @@ hass.data[DOMAIN]["webhook_registry"][webhook_id] = entry.entry_id
 `async_unload_entry` cleans up both the per-entry coordinator and
 that entry's webhook registrations:
 
-1. Remove and capture the coordinator:
+1. For each `webhook_id` associated with this `config_entry_id`,
+   call `async_unregister(hass, webhook_id)` to remove the
+   webhook endpoint from Home Assistant's webhook infrastructure.
+2. Remove and capture the coordinator:
    `coordinator = hass.data[DOMAIN].pop(entry.entry_id)`
    (the coordinator reference is needed to close the device
    session via `coordinator.device.__aexit__(...)`)
-2. Remove all `webhook_id` entries pointing to this
+3. Remove all `webhook_id` entries pointing to this
    `config_entry_id` from `webhook_registry`.
-3. If `webhook_registry` is now empty, remove the
+4. If `webhook_registry` is now empty, remove the
    `"webhook_registry"` key from `hass.data[DOMAIN]`.
-4. If `hass.data[DOMAIN]` is empty, pop the `DOMAIN` key
+5. If `hass.data[DOMAIN]` is empty, pop the `DOMAIN` key
    from `hass.data`.
 
 This ensures `webhook_registry` does not keep
-`hass.data[DOMAIN]` alive after the last entry is unloaded.
+`hass.data[DOMAIN]` alive after the last entry is unloaded and
+that no stale webhook routes remain registered in Home Assistant.
 
 ## Payload Sanitization
 
