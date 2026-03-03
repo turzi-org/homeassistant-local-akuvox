@@ -270,9 +270,12 @@ scanning `webhook_registry` for a reverse lookup.
 `async_unload_entry` cleans up both the per-entry coordinator and
 that entry's webhook registrations:
 
-1. Look up the optional `webhook_id` for this entry (e.g.,
-   `webhook_id = entry.data.get("webhook_id")`), and if it is
-   not `None` **and** `webhook_enabled` is `True`, call
+1. Look up the optional `webhook_id` and `webhook_enabled` for
+   this entry using the existing `_get_config_value()` helper
+   (which checks `entry.options` first, then `entry.data`),
+   since the options flow may store these values in
+   `entry.options`. If `webhook_id` is not `None` **and**
+   `webhook_enabled` is `True`, call
    `async_unregister(hass, webhook_id)` to remove the webhook
    endpoint from HA's infrastructure. (A non-`None` `webhook_id`
    with `webhook_enabled=False` means the ID is preserved for

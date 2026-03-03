@@ -25,9 +25,19 @@ async_register(
     webhook_id=entry.data["webhook_id"],    # 64-char hex
     handler=async_handle_webhook,           # Callback
     allowed_methods=["GET"],                # Akuvox sends GET
-    local_only=True,                        # Local network only
 )
 ```
+
+> **Note on `local_only`**: The `local_only` parameter is
+> intentionally **omitted**. While Akuvox devices are typically
+> on the local network, some deployments route through NAT,
+> VPN tunnels, or reverse proxies where HA may not recognise
+> the source IP as local. Setting `local_only=True` would
+> silently reject such requests (HTTP 200, body
+> `"Webhook not registered."`), making failures hard to
+> diagnose. The existing `allowed_methods=["GET"]` restriction
+> and webhook ID secrecy (64-char random hex) provide adequate
+> access control.
 
 **Postconditions**:
 

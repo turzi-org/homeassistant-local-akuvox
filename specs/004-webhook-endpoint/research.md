@@ -150,6 +150,8 @@ async_register(
     webhook_id=webhook_id,     # Unique random ID
     handler=handle_webhook,    # Async callback
     allowed_methods=["GET"],   # Akuvox sends GET requests
+    # local_only intentionally omitted — see webhook-handler
+    # contract for rationale (NAT/VPN/proxy compatibility)
 )
 
 # Generate URL for external access
