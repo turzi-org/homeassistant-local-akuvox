@@ -20,6 +20,9 @@ independent implementation and testing.
 - **[P]**: Can run in parallel (different files, no deps)
 - **[Story]**: US1, US2, US3 (maps to spec.md user stories)
 - Exact file paths included in all descriptions
+  (source/test paths are absolute from repo root;
+  references to design docs are relative to
+  `/specs/004-webhook-endpoint/`)
 
 ## Path Conventions
 
@@ -35,7 +38,8 @@ independent implementation and testing.
 - [ ] T001 Verify all existing tests pass with
   `uv run pytest tests/ -x -q`
 - [ ] T002 Verify linting passes with
-  `uv run ruff check custom_components/ tests/`
+  `uv run ruff check custom_components/ tests/` and
+  `uv run ruff format --check custom_components/ tests/`
 
 ---
 
@@ -98,7 +102,8 @@ triggers coordinator refresh for relay/code events
 > before implementation
 
 - [ ] T007 [P] [US1] Write sanitization unit tests in
-  `tests/test_sanitize.py` — test `sanitize_payload()`:
+  `tests/test_sanitize.py` — test
+  `sanitize_payload(payload, webhook_id=None)`:
   sensitive key masking (contains-match for token, secret,
   password, authorization, auth, key, cookie, code),
   webhook ID substring replacement (64-char and ≤8-char
@@ -128,7 +133,7 @@ triggers coordinator refresh for relay/code events
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] Create `sanitize.py` module at
+- [ ] T010 [US1] Create `sanitize.py` module at
   `custom_components/akuvox/sanitize.py` — implement
   `sanitize_payload(payload, webhook_id=None)` per
   contracts/payload-sanitization.md: sensitive field
@@ -291,8 +296,9 @@ options; integration removal cleans up device config
 - [ ] T022 Run full test suite with
   `uv run pytest tests/ -x -q` and verify all tests pass
 - [ ] T023 Run full lint suite with
-  `uv run ruff check custom_components/ tests/` and
-  `uv run mypy custom_components/` and verify clean
+  `uv run ruff check custom_components/ tests/`,
+  `uv run ruff format --check custom_components/ tests/`,
+  and `uv run mypy custom_components/` and verify clean
 - [ ] T024 Run quickstart.md validation: verify all files
   listed in New Files and Modified Existing Files exist
   and match the documented purpose
