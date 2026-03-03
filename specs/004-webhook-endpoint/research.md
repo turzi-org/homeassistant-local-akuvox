@@ -186,10 +186,9 @@ this requirement.
 
 ### Lifecycle
 
-- Register in `async_setup_entry()` if webhook was previously enabled
-- Register after user enables webhook in config/options flow
+- Register in `async_setup_entry()` when `webhook_enabled=True`
+  (covers initial setup, reload after options change, and restart)
 - Unregister in `async_unload_entry()` (reload/remove)
-- Unregister when user disables webhook in options flow
 
 ## Valid Code as Primary Relay Change Signal
 
@@ -286,7 +285,14 @@ override, but typically finds the device state already current.
    appear in HA event payloads. The handler resolves user identity
    (device-assigned ID, user-defined ID, username) by matching
    the PIN against coordinator-cached user data (`private_pin`),
-   falling back to `device.list_users()` on cache miss. Events
+   falling back to `device.list_users()` on cache miss.
+
+   > **Note**: The current `AkuvoxCoordinatorData` does not
+   > include a user cache. This feature requires extending the
+   > coordinator to cache user data (e.g., a `users` field or
+   > PIN→user map populated during `_async_update_data()`).
+
+   Events
    emit identity fields only. Invalid codes emit `None` for all
    user fields (no lookup possible).
 

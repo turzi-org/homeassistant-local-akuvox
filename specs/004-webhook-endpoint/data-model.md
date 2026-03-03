@@ -123,6 +123,12 @@ Event name: `akuvox_webhook` (domain-prefixed)
 **Security: no PIN in events.** The raw access code (`$code`)
 received from the device is used ONLY for user lookup against
 the coordinator's cached user data (matched on `private_pin`).
+
+> **Note**: The current `AkuvoxCoordinatorData` does not include
+> a user cache. This feature requires extending the coordinator
+> to cache user data (e.g., a `users` field or PIN→user map
+> populated during `_async_update_data()`).
+
 The resolved user identity fields (`device_user_id`, `user_id`,
 `username`) are emitted instead. The raw PIN MUST NEVER appear
 in event payloads.
