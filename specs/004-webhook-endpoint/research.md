@@ -148,7 +148,7 @@ async_register(
     domain="akuvox",           # Integration domain
     name="Akuvox {device}",    # Human-readable name
     webhook_id=webhook_id,     # Unique random ID
-    handler=handle_webhook,    # Async callback
+    handler=async_handle_webhook,  # Async callback
     allowed_methods=["GET"],   # Akuvox sends GET requests
     # local_only intentionally omitted — see webhook-handler
     # contract for rationale (NAT/VPN/proxy compatibility)

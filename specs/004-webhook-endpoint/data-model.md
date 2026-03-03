@@ -69,6 +69,7 @@ When webhook is enabled, the integration writes these keys via
 | Key (after `ACTIONURL.`) | URL Template |
 | ------------------------ | ------------ |
 | `Enable` | `"1"` |
+| `Method` | `""` (reset to default GET) |
 | `RelayATriggered` | `{base}?event=relay_a_triggered&status=$relay1status` |
 | `RelayAClosed` | `{base}?event=relay_a_closed&status=$relay1status` |
 | `RelayBTriggered` | `{base}?event=relay_b_triggered&status=$relay2status` |
@@ -276,9 +277,9 @@ hass.data[DOMAIN]["webhook_registry"][webhook_id] = entry.entry_id
 This registry is a **forward map** from `webhook_id` to
 `config_entry_id`. Each config entry has at most one associated
 `webhook_id`. Implementations should look up the `webhook_id`
-directly from the config entry data (e.g.,
-`webhook_id = entry.data.get("webhook_id")`) rather than
-scanning `webhook_registry` for a reverse lookup.
+via the `_get_config_value()` helper (which checks
+`entry.options` first, then `entry.data`) rather than scanning
+`webhook_registry` for a reverse lookup.
 
 ### Unload and Cleanup Semantics
 
