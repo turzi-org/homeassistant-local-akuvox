@@ -36,7 +36,8 @@ tests/
 - `custom_components/akuvox/config_flow.py` — add webhook
   setup step and options flow toggle
 - `custom_components/akuvox/__init__.py` — add webhook
-  lifecycle in setup/unload/remove
+  lifecycle in `async_setup_entry`, `async_unload_entry`,
+  and the new `async_remove_entry` hook
 - `custom_components/akuvox/coordinator.py` — extend
   `AkuvoxCoordinatorData` with a user cache (e.g., `users`
   field or PIN→user map) for `valid_code_entered` lookup
@@ -49,6 +50,7 @@ tests/
   webhook translations
 - `tests/test_config_flow.py` — add webhook config flow tests
 - `tests/test_init.py` — add webhook setup/teardown tests
+- `tests/conftest.py` — add webhook fixtures
 
 ## No Changes Required
 

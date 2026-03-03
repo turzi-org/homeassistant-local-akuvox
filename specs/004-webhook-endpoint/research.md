@@ -304,4 +304,5 @@ override, but typically finds the device state already current.
 | set_device_config fails | Low | Medium | Retry/skip in flow |
 | Rapid-fire webhooks | Medium | Low | Stateless handler |
 | Webhook ID in logs | Low | Medium | FR-013 masking |
+| PIN exposure over HTTP | Medium | High | Log warning; document HTTPS |
 | Unexpected query params | Low | Low | Generic event path |

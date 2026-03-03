@@ -34,7 +34,7 @@ Applied in order:
    `key`, `cookie`, or `code` as a substring
    (case-insensitive), replace the value with `[REDACTED]`.
    This is a broad match by design: e.g., `reauth` matches
-   `auth`, `monkey` matches `key`. The spec (FR-013a) uses
+   `auth`, `monkey` matches `key`. The spec (FR-013(a)) uses
    "contains" semantics to err on the side of redaction.
 
    **Note on `code`**: The raw PIN (`$code` query parameter) is

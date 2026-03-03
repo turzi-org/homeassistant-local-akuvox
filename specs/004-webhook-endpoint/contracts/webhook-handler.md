@@ -116,7 +116,8 @@ async def async_handle_webhook(
 | Valid known event | 200 OK | Empty |
 | Valid unknown event (generic) | 200 OK | Empty |
 | Missing `event` parameter | 400 Bad Request | `"Bad Request"` |
-| Webhook ID not in registry | N/A (HA returns 200 default) | N/A |
+| Webhook ID unregistered in HA | 200 OK (HA) | `"Webhook not registered."` |
+| Webhook ID in HA but not in registry (race) | 200 OK | Empty |
 | Registry hit but coordinator missing | 200 OK | Empty |
 
 > **Note**: For unknown event types, a warning-level message

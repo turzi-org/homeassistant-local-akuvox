@@ -283,8 +283,14 @@ via the `_get_config_value()` helper (which checks
 
 ### Unload and Cleanup Semantics
 
-`async_unload_entry` cleans up both the per-entry coordinator and
-that entry's webhook registrations:
+`async_unload_entry` first unloads platforms, then cleans up
+both the per-entry coordinator and that entry's webhook
+registrations. **All cleanup steps below are gated on
+`unload_ok`** (the return value of
+`await hass.config_entries.async_unload_platforms(...)`).
+If platform unload fails, the function returns `False` and
+no webhook or coordinator cleanup occurs — this prevents
+unregistering the webhook while entities are still active.
 
 1. Look up the optional `webhook_id` for this entry using the
    existing `_get_config_value()` helper (which checks
