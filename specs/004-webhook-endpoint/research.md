@@ -81,9 +81,13 @@ The device substitutes variables in the URL before sending:
 
 - `$relay1status` — Relay A / Input A electrical state (0=low, 1=high).
   Interpretation depends on relay type: for normally-open (NO) relays,
-  0=open and 1=closed; for normally-closed (NC) relays, 0=closed and
-  1=open. The same NO/NC inversion logic already used in the lock
-  entity's `_parse_relay_state()` applies here.
+  0=open and 1=closed; for normally-closed (NC) relays,
+  0=closed and 1=open. Here, "open"/"closed" describe the
+  relay contact position (electrical circuit state), not
+  the physical door state: following the lock entity's
+  `_parse_int_state()` / `_parse_relay_state()` logic,
+  NO maps 0→locked, 1→unlocked and NC maps 0→unlocked,
+  1→locked.
 - `$relay2status` — Relay B / Input B electrical state (same semantics)
 - `$relay3status` — Relay C / Input C electrical state (3-relay models)
 - `$code` — PIN or access code entered

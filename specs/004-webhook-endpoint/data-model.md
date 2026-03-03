@@ -215,13 +215,17 @@ simultaneously.
 The `status` query parameter carries the raw electrical state of the
 relay: `0` = low, `1` = high. The meaning depends on the relay type
 configuration (NO vs NC), using the same inversion logic as the
-lock entity's `_parse_relay_state()`:
+lock entity's `_parse_relay_state()` and `_parse_int_state()`:
 
-- **Normally Open (NO, type=0)**: 0=open, 1=closed
-- **Normally Closed (NC, type=1)**: 0=closed, 1=open
+- **Normally Open (NO, type=0)**: `0` = **locked**,
+  `1` = **unlocked**
+- **Normally Closed (NC, type=1)**: `0` = **unlocked**,
+  `1` = **locked**
 
-The status value is included in the event payload as-is; the lock
-entity's existing relay type logic handles interpretation.
+The status value is included in the event payload as-is;
+the lock entity's existing relay type logic handles
+interpretation of these raw electrical levels into lock
+state.
 
 ### Coordinator Refresh Behavior
 
