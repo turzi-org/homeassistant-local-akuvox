@@ -71,8 +71,10 @@ by enabling real-time automations.
 3. **Given** the integration is configured and loaded, **When** a
    webhook is received with an identifier that does not match any
    stored webhook identifier for a configured device (as defined in
-   FR-004), **Then** the integration rejects the request and logs a
-   warning applying the Payload Sanitization Rules from FR-013.
+   FR-004), **Then** Home Assistant's webhook infrastructure returns
+   HTTP 200 with `"Webhook not registered."` without invoking the
+   integration's handler. No event is fired and no integration-level
+   logging occurs for such requests.
 4. **Given** the integration is configured and loaded, **When** the
    device sends multiple webhook events in rapid succession, **Then**
    each event is processed and fired independently without loss.
@@ -159,7 +161,8 @@ device configuration is updated accordingly each time.
    the stored webhook identifier.
 4. **Given** the user disables webhooks via reconfiguration, **When**
    the device still sends a webhook to the old URL, **Then** the
-   request is rejected since the endpoint is no longer registered.
+   request is dropped and no event is fired, since the endpoint
+   is no longer registered.
 
 ---
 
@@ -211,9 +214,12 @@ device configuration is updated accordingly each time.
   request URL matches exactly a stored webhook identifier for a
   configured device. Requests with a missing, empty, or non-matching
   identifier MUST be rejected and MUST NOT be associated with any
-  device. Such rejected requests MUST return an HTTP 404 (Not Found)
-  response with an empty or generic body that does not include any
-  diagnostic details.
+  device. The integration MUST NOT register, process, or fire an
+  event for such requests. (Home Assistant's webhook
+  infrastructure returns HTTP 200 with `"Webhook not registered."`
+  for unregistered webhook IDs; the integration cannot customize
+  this response. The security goal — no diagnostic leak, no
+  event fired — is still met.)
 - **FR-005**: System MUST reject and log any webhook request with a
   malformed or unrecognizable payload without crashing or disrupting
   other operations. Such rejected requests MUST return an HTTP 400
@@ -243,8 +249,8 @@ device configuration is updated accordingly each time.
   the authoritative reference for all logging and event emission
   involving webhook data. At a minimum, these rules MUST:
   (a) replace the value of any field whose key contains `token`,
-  `secret`, `password`, `authorization`, `auth`, `key`, or `cookie`
-  (case-insensitive) with `[REDACTED]`;
+  `secret`, `password`, `authorization`, `auth`, `key`, `cookie`,
+  or `code` (case-insensitive) with `[REDACTED]`;
   (b) mask webhook identifiers by showing only the first 4 and last 2
   characters with the middle replaced by `***` (or use a constant
   placeholder such as `[REDACTED_ID]` if the identifier is 8 or fewer
@@ -303,9 +309,8 @@ device configuration is updated accordingly each time.
   setting a webhook destination URL programmatically (via the same
   connection method used for other device configuration in this
   integration).
-- The Akuvox device sends webhook payloads as HTTP requests to the
-  configured URL with a structured body containing the event type and
-  relevant data.
+- The Akuvox device sends webhook payloads as HTTP GET requests to the
+  configured URL with event data encoded as query parameters.
 - Home Assistant's internal webhook infrastructure is available and
   used for registering local webhook endpoints (this is a standard
   Home Assistant capability).
@@ -315,5 +320,8 @@ device configuration is updated accordingly each time.
   integration does not handle NAT traversal or external URL
   provisioning; the device and Home Assistant must be on the same
   network or have appropriate routing configured.
-- Webhook payloads are delivered via HTTP POST with a content type
-  the integration can parse (e.g., JSON or form-encoded).
+- It is assumed that communication between the Akuvox device
+  and Home Assistant uses HTTPS (TLS) in production deployments
+  whenever PINs or other sensitive data are transmitted as URL
+  query parameters, to protect them in transit and avoid
+  logging them in plaintext by intermediaries.
