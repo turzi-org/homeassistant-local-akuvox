@@ -36,6 +36,11 @@ tests/
 └── test_init.py         # + webhook setup/teardown tests
 ```
 
+### Modified Existing Files
+
+- `custom_components/akuvox/manifest.json` — update `iot_class`
+  (from `local_polling` to the appropriate push variant)
+
 ## Running Tests
 
 ```bash

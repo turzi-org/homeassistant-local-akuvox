@@ -104,6 +104,14 @@ Event name: `akuvox_webhook` (domain-prefixed)
 }
 ```
 
+> Note: This structured `payload` shape applies only to known
+> event types (e.g., `valid_code_entered`). For unknown event
+> types (where `event_type` is prefixed with `unknown_`), the
+> `payload` MUST instead consist solely of the sanitized raw
+> query parameters provided by the device (simple key/value
+> strings), and MUST NOT be coerced into the structured form
+> shown above.
+
 **Security: no PIN in events.** The raw access code (`$code`)
 received from the device is used ONLY for user lookup against
 the coordinator's cached user data (matched on `private_pin`).
@@ -250,20 +258,29 @@ Each entry's webhook registration adds to the shared registry:
 hass.data[DOMAIN]["webhook_registry"][webhook_id] = entry.entry_id
 ```
 
+This registry is a **forward map** from `webhook_id` to
+`config_entry_id`. Each config entry has at most one associated
+`webhook_id`. Implementations should look up the `webhook_id`
+directly from the config entry data (e.g.,
+`webhook_id = entry.data.get("webhook_id")`) rather than
+scanning `webhook_registry` for a reverse lookup.
+
 ### Unload and Cleanup Semantics
 
 `async_unload_entry` cleans up both the per-entry coordinator and
 that entry's webhook registrations:
 
-1. For each `webhook_id` associated with this `config_entry_id`,
-   call `async_unregister(hass, webhook_id)` to remove the
-   webhook endpoint from Home Assistant's webhook infrastructure.
+1. Look up the optional `webhook_id` for this entry (e.g.,
+   `webhook_id = entry.data.get("webhook_id")`), and if it is
+   not `None` call `async_unregister(hass, webhook_id)` to
+   remove the webhook endpoint from HA's infrastructure.
 2. Remove and capture the coordinator:
    `coordinator = hass.data[DOMAIN].pop(entry.entry_id)`
    (the coordinator reference is needed to close the device
    session via `coordinator.device.__aexit__(...)`)
-3. Remove all `webhook_id` entries pointing to this
-   `config_entry_id` from `webhook_registry`.
+3. If `webhook_id` is not `None`, remove the corresponding
+   entry from `webhook_registry`:
+   `hass.data[DOMAIN]["webhook_registry"].pop(webhook_id, None)`
 4. If `webhook_registry` is now empty, remove the
    `"webhook_registry"` key from `hass.data[DOMAIN]`.
 5. If `hass.data[DOMAIN]` is empty, pop the `DOMAIN` key
