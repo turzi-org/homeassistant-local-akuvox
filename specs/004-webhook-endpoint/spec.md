@@ -320,8 +320,8 @@ device configuration is updated accordingly each time.
   integration does not handle NAT traversal or external URL
   provisioning; the device and Home Assistant must be on the same
   network or have appropriate routing configured.
-- Communication between the Akuvox device and Home Assistant
-  MUST occur over HTTPS (TLS) in production deployments
+- It is assumed that communication between the Akuvox device
+  and Home Assistant uses HTTPS (TLS) in production deployments
   whenever PINs or other sensitive data are transmitted as URL
   query parameters, to protect them in transit and avoid
   logging them in plaintext by intermediaries.

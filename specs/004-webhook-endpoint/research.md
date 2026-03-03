@@ -220,13 +220,14 @@ When webhooks ARE enabled:
 
 - **Relay triggered event** (e.g., `relay_a_triggered` with
   `status=1`): Confirms the relay actually opened. The webhook
-  handler calls `coordinator.async_refresh()`, which fetches
-  real device state into the coordinator. This does **not**
-  itself clear `_optimistic_locked`; the optimistic override
-  is only cleared when the separately-scheduled delayed timer
-  fires `_async_finish_optimistic_unlock()`. The webhook
-  refresh ensures the coordinator has current data when that
-  happens.
+  handler schedules `coordinator.async_refresh()` as a background
+  task (not awaited inline) so the HTTP response returns
+  immediately. The refresh fetches real device state into the
+  coordinator. This does **not** itself clear
+  `_optimistic_locked`; the optimistic override is only cleared
+  when the separately-scheduled delayed timer fires
+  `_async_finish_optimistic_unlock()`. The webhook refresh
+  ensures the coordinator has current data when that happens.
 - **Relay closed event** (e.g., `relay_a_closed` with `status=0`):
   Confirms the relay returned to its resting state. The
   coordinator refresh fetches current data, but the optimistic

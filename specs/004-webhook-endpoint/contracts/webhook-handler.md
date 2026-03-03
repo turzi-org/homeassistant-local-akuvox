@@ -140,8 +140,13 @@ When `event_type` is a relay event (`relay_a_triggered`,
 
 ```python
 coordinator = hass.data[DOMAIN][config_entry_id]
-await coordinator.async_refresh()
+hass.async_create_task(coordinator.async_refresh())
 ```
+
+The refresh is scheduled as a background task so the HTTP response
+is returned to the device immediately, avoiding slow-device
+timeouts. This is consistent with the existing
+`_schedule_delayed_refresh()` pattern in `lock.py`.
 
 Input events (`input_a_triggered`, `input_a_closed`,
 `input_b_triggered`, `input_b_closed`) do NOT trigger a refresh.

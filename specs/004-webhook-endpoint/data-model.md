@@ -179,10 +179,13 @@ entity's existing relay type logic handles interpretation.
 
 ### Coordinator Refresh Behavior
 
-The webhook handler triggers `coordinator.async_refresh()`
-for relay events and valid code events. This provides an *additional*
-faster path to update entity state — it does **not** replace the
-existing speculative (optimistic) lock state mechanism.
+The webhook handler schedules `coordinator.async_refresh()` as a
+background task (`hass.async_create_task()`) for relay events and
+valid code events. This provides an *additional* faster path to
+update entity state — it does **not** replace the existing
+speculative (optimistic) lock state mechanism. The refresh is not
+awaited inline so the HTTP response returns to the device
+immediately.
 
 **When webhooks are enabled**: Relay and valid code webhook events
 trigger an immediate coordinator refresh that:
