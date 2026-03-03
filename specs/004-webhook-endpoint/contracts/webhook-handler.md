@@ -126,11 +126,27 @@ hass.bus.async_fire(
         "event_type": event_type,
         "payload": {
             "event": raw_event,
-            "status": status_value,        # or None
-            "device_user_id": user.id,     # or None
-            "user_id": user.user_id,       # or None
-            "username": user.name,         # or None
+            "status": status_value,                    # or None
+            "device_user_id": user.id if user else None,
+            "user_id": user.user_id if user else None,
+            "username": user.name if user else None,
         },
+    },
+)
+```
+
+For **unknown event types** (`unknown_{normalized}`), the payload
+MUST consist solely of sanitized raw query parameters per FR-013.
+Do not include `status`, `device_user_id`, `user_id`, or
+`username` fields. Example:
+
+```python
+hass.bus.async_fire(
+    f"{DOMAIN}_event",
+    {
+        "config_entry_id": config_entry_id,
+        "event_type": f"unknown_{normalized}",
+        "payload": sanitized_query_params,
     },
 )
 ```
