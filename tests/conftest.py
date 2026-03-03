@@ -26,6 +26,8 @@ from custom_components.akuvox.const import (
     CONF_USE_SSL,
     CONF_USERNAME,
     CONF_VERIFY_SSL,
+    CONF_WEBHOOK_ENABLED,
+    CONF_WEBHOOK_ID,
     CONFIG_KEY_LOCATION,
     CONFIG_KEY_RELAY_HOLD_DELAY,
     CONFIG_KEY_RELAY_MODE_SUFFIX,
@@ -39,6 +41,7 @@ MOCK_MAC = "AA:BB:CC:DD:EE:FF"
 MOCK_MODEL = "E21V"
 MOCK_FW_VERSION = "1.0.0"
 MOCK_HW_VERSION = "2.0.0"
+MOCK_WEBHOOK_ID = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a190"
 
 
 @pytest.fixture(autouse=True)
@@ -310,3 +313,69 @@ def mock_user_list() -> list[User]:
 def mock_empty_list() -> list[Any]:
     """Return an empty list for schedule/user mocks."""
     return []
+
+
+# ── Webhook test fixtures ────────────────────────────────────
+
+
+@pytest.fixture
+def mock_config_entry_data_webhook() -> dict[str, Any]:
+    """Return mock config entry data with webhooks enabled."""
+    return {
+        CONF_HOST: MOCK_HOST,
+        CONF_USE_SSL: False,
+        CONF_VERIFY_SSL: True,
+        CONF_AUTH_METHOD: AUTH_NONE,
+        CONF_USERNAME: "",
+        CONF_PASSWORD: "",
+        CONF_WEBHOOK_ID: MOCK_WEBHOOK_ID,
+        CONF_WEBHOOK_ENABLED: True,
+    }
+
+
+@pytest.fixture
+def mock_config_entry_data_webhook_disabled() -> dict[str, Any]:
+    """Return mock config entry data with webhooks disabled."""
+    return {
+        CONF_HOST: MOCK_HOST,
+        CONF_USE_SSL: False,
+        CONF_VERIFY_SSL: True,
+        CONF_AUTH_METHOD: AUTH_NONE,
+        CONF_USERNAME: "",
+        CONF_PASSWORD: "",
+        CONF_WEBHOOK_ID: MOCK_WEBHOOK_ID,
+        CONF_WEBHOOK_ENABLED: False,
+    }
+
+
+@pytest.fixture
+def mock_user_list_with_pins() -> list[User]:
+    """Return a mock user list with known PINs for webhook tests."""
+    return [
+        User(
+            id="42",
+            name="John Doe",
+            user_id="john.doe",
+            schedule_relay="10-1",
+            web_relay=None,
+            private_pin="1234",
+            card_code="ABC123",
+            lift_floor_num="3",
+            user_type=None,
+            source=None,
+            source_type="1",
+        ),
+        User(
+            id="99",
+            name="Jane Smith",
+            user_id="jane.smith",
+            schedule_relay="20-1",
+            web_relay=None,
+            private_pin="5678",
+            card_code=None,
+            lift_floor_num="1",
+            user_type=None,
+            source=None,
+            source_type="1",
+        ),
+    ]

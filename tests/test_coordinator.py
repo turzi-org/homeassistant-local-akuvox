@@ -760,3 +760,158 @@ def test_build_relay_config_relay_mode_negative(
     assert "-1" in caplog.text
     assert "RelayAMode" in caplog.text
     assert f"default {DEFAULT_RELAY_MODE}" in caplog.text
+
+
+# ── User cache tests (T003) ─────────────────────────────────
+
+
+async def test_coordinator_populates_user_cache(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+    mock_user_list: list[Any],
+) -> None:
+    """Test coordinator populates users from list_users."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+    device.list_users = AsyncMock(return_value=mock_user_list)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    data = await coordinator._async_update_data()
+
+    assert data.users == mock_user_list
+    device.list_users.assert_awaited_once_with(page=None)
+
+
+async def test_coordinator_user_cache_empty_on_no_users(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test coordinator returns empty users when device has none."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+    device.list_users = AsyncMock(return_value=[])
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    data = await coordinator._async_update_data()
+
+    assert data.users == []
+
+
+async def test_coordinator_user_cache_survives_fetch_failure(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+    mock_user_list: list[Any],
+) -> None:
+    """Test user cache is preserved when fetch fails."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+    device.list_users = AsyncMock(return_value=mock_user_list)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    data1 = await coordinator._async_update_data()
+    assert len(data1.users) == 2
+
+    # Second fetch fails
+    device.list_users = AsyncMock(
+        side_effect=AkuvoxConnectionError("timeout"),
+    )
+    data2 = await coordinator._async_update_data()
+
+    # Cache preserved
+    assert len(data2.users) == 2
+
+
+async def test_get_user_by_pin_cache_hit(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+    mock_user_list: list[Any],
+) -> None:
+    """Test get_user_by_pin returns matching user."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+    device.list_users = AsyncMock(return_value=mock_user_list)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    await coordinator._async_update_data()
+
+    user = coordinator.get_user_by_pin("1234")
+    assert user is not None
+    assert user.name == "John Doe"
+    assert user.id == "42"
+
+
+async def test_get_user_by_pin_cache_miss(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+    mock_user_list: list[Any],
+) -> None:
+    """Test get_user_by_pin returns None for unknown PIN."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+    device.list_users = AsyncMock(return_value=mock_user_list)
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    await coordinator._async_update_data()
+
+    user = coordinator.get_user_by_pin("9999")
+    assert user is None
+
+
+async def test_get_user_by_pin_empty_cache(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test get_user_by_pin returns None with empty cache."""
+    device = AsyncMock()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+    device.list_users = AsyncMock(return_value=[])
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    await coordinator._async_update_data()
+
+    assert coordinator.get_user_by_pin("1234") is None
+
+
+async def test_coordinator_user_cache_returns_none_when_list_users_absent(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test user cache is empty when device lacks list_users."""
+    device = AsyncMock(spec=[])
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(return_value=mock_device_config)
+    # Explicitly remove list_users
+    if hasattr(device, "list_users"):
+        delattr(device, "list_users")
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+    data = await coordinator._async_update_data()
+
+    assert data.users == []

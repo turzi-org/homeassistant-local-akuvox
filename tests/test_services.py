@@ -387,7 +387,9 @@ async def test_list_users_page_passed_through(
         return_response=True,
     )
 
-    mock_akuvox_device.list_users.assert_called_once_with(page=2)
+    mock_akuvox_device.list_users.assert_any_call(page=2)
+    # Coordinator also calls list_users(page=None) during setup
+    assert mock_akuvox_device.list_users.call_count == 2
 
 
 async def test_list_users_no_page_default(
@@ -407,7 +409,10 @@ async def test_list_users_no_page_default(
         return_response=True,
     )
 
-    mock_akuvox_device.list_users.assert_called_once_with(page=None)
+    # Coordinator calls list_users(page=None) during setup,
+    # and the service call also uses page=None
+    assert mock_akuvox_device.list_users.call_count == 2
+    mock_akuvox_device.list_users.assert_called_with(page=None)
 
 
 @pytest.mark.parametrize(

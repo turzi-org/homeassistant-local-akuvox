@@ -14,6 +14,61 @@ if TYPE_CHECKING:
 DOMAIN: Final = "akuvox"
 PLATFORMS: Final = ["lock"]
 
+# Webhook config keys
+CONF_WEBHOOK_ID: Final = "webhook_id"
+CONF_WEBHOOK_ENABLED: Final = "webhook_enabled"
+
+# Webhook event name
+EVENT_WEBHOOK_RECEIVED: Final = "akuvox_webhook_received"
+
+# Action URL config key prefix
+ACTIONURL_PREFIX: Final = "Config.Features.ACTIONURL"
+
+# Action URL keys — maps logical name to device config key
+ACTIONURL_KEYS: Final[dict[str, str]] = {
+    "RelayATriggered": f"{ACTIONURL_PREFIX}.RelayATriggered",
+    "RelayAClosed": f"{ACTIONURL_PREFIX}.RelayAClosed",
+    "RelayBTriggered": f"{ACTIONURL_PREFIX}.RelayBTriggered",
+    "RelayBClosed": f"{ACTIONURL_PREFIX}.RelayBClosed",
+    "InputATriggered": f"{ACTIONURL_PREFIX}.InputATriggered",
+    "InputAClosed": f"{ACTIONURL_PREFIX}.InputAClosed",
+    "InputBTriggered": f"{ACTIONURL_PREFIX}.InputBTriggered",
+    "InputBClosed": f"{ACTIONURL_PREFIX}.InputBClosed",
+    "ValidCodeEntered": f"{ACTIONURL_PREFIX}.ValidCodeEntered",
+    "InvalidCodeEntered": f"{ACTIONURL_PREFIX}.InvalidCodeEntered",
+}
+
+# Action URL enable/method keys
+ACTIONURL_ENABLE_KEY: Final = f"{ACTIONURL_PREFIX}.Enable"
+ACTIONURL_METHOD_KEY: Final = f"{ACTIONURL_PREFIX}.Method"
+
+# Known event types (from device action URL names)
+KNOWN_EVENT_TYPES: Final[frozenset[str]] = frozenset(
+    {
+        "relay_a_triggered",
+        "relay_a_closed",
+        "relay_b_triggered",
+        "relay_b_closed",
+        "input_a_triggered",
+        "input_a_closed",
+        "input_b_triggered",
+        "input_b_closed",
+        "valid_code_entered",
+        "invalid_code_entered",
+    }
+)
+
+# Event types that trigger coordinator refresh
+REFRESH_EVENT_TYPES: Final[frozenset[str]] = frozenset(
+    {
+        "relay_a_triggered",
+        "relay_a_closed",
+        "relay_b_triggered",
+        "relay_b_closed",
+        "valid_code_entered",
+    }
+)
+
 # Service names
 SERVICE_LIST_SCHEDULES: Final = "list_schedules"
 SERVICE_ADD_SCHEDULE: Final = "add_schedule"
