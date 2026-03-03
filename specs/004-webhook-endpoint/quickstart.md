@@ -21,11 +21,11 @@ SPDX-License-Identifier: Apache-2.0
 ```text
 custom_components/akuvox/
 ├── webhook.py           # Webhook handler + registration helpers
-├── sanitize.py          # FR-013 payload sanitization
+└── sanitize.py          # FR-013 payload sanitization
 
 tests/
 ├── test_webhook.py      # Webhook handler tests
-├── test_sanitize.py     # Sanitization rule tests
+└── test_sanitize.py     # Sanitization rule tests
 ```
 
 ## Modified Existing Files
