@@ -203,6 +203,3 @@ even though relays change state. `valid_code_entered` is the only
 reliable signal for code-initiated relay changes. The refresh on
 `valid_code_entered` is therefore critical — it is the primary
 path for updating lock entity state after code entry.
-
-Input events and invalid code events do not trigger a refresh
-as they do not affect relay state.

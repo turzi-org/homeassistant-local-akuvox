@@ -40,6 +40,14 @@ SPDX-License-Identifier: Apache-2.0
   endpoint is currently active. Controls registration/unregistration
   on integration load.
 
+> **Note on storage location**: `webhook_id` and `webhook_enabled`
+> are initially set in `entry.data` during the config flow. The
+> options flow updates them in `entry.options`. The existing
+> `_get_config_value()` helper resolves this by checking
+> `entry.options` first, then `entry.data`. All code reading
+> these values MUST use this helper (or equivalent logic) rather
+> than accessing `entry.data` directly.
+
 ### Options Flow Additions
 
 The options flow adds a webhook management section (FR-007):
@@ -309,8 +317,11 @@ enabled (`webhook_enabled=True` and `webhook_id` is not `None`):
 3. If the push fails, log a warning but do not block removal
 
 This is best-effort: the device may be unreachable at removal
-time. The entry data and webhook registrations are cleaned up
-regardless by HA's normal entry deletion process.
+time. HA calls `async_unload_entry` before `async_remove_entry`
+during deletion, so the webhook endpoint is already unregistered
+from HA and the coordinator/registry cleaned up before this hook
+runs. `async_remove_entry` only needs to push the disable
+payload to the device.
 
 ## Payload Sanitization
 
