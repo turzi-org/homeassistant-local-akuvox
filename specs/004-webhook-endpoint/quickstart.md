@@ -39,7 +39,7 @@ tests/
 ### Modified Existing Files
 
 - `custom_components/akuvox/manifest.json` — update `iot_class`
-  (from `local_polling` to the appropriate push variant)
+  (from `local_polling` to `local_push`)
 
 ## Running Tests
 

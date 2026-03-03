@@ -272,8 +272,11 @@ that entry's webhook registrations:
 
 1. Look up the optional `webhook_id` for this entry (e.g.,
    `webhook_id = entry.data.get("webhook_id")`), and if it is
-   not `None` call `async_unregister(hass, webhook_id)` to
-   remove the webhook endpoint from HA's infrastructure.
+   not `None` **and** `webhook_enabled` is `True`, call
+   `async_unregister(hass, webhook_id)` to remove the webhook
+   endpoint from HA's infrastructure. (A non-`None` `webhook_id`
+   with `webhook_enabled=False` means the ID is preserved for
+   re-enable but was never registered with HA.)
 2. Remove and capture the coordinator:
    `coordinator = hass.data[DOMAIN].pop(entry.entry_id)`
    (the coordinator reference is needed to close the device

@@ -18,6 +18,13 @@ def sanitize_payload(
     """Apply FR-013 Payload Sanitization Rules."""
 ```
 
+> **Note**: `aiohttp.web.Request.query` returns a
+> `MultiDictProxy[str]` which can have duplicate keys. The
+> webhook handler MUST convert it to a plain `dict[str, str]`
+> using `dict(request.query)` (last-value-wins) before passing
+> it to this function. Duplicate keys in query strings are not
+> expected from Akuvox devices and are safely collapsed.
+
 ### Rules (FR-013)
 
 Applied in order:
@@ -43,7 +50,8 @@ Applied in order:
    If the ID is 8 or fewer characters, use `[REDACTED_ID]`.
 
 3. **Field truncation**: If any value exceeds 1024 characters,
-   truncate to 1024 and append `...[TRUNCATED]`.
+   truncate to 1010 characters and append `...[TRUNCATED]`
+   (total capped at 1024 characters).
 
 4. **Binary exclusion**: Not applicable for query parameter payloads
    (always text). Included for completeness if POST payloads are
