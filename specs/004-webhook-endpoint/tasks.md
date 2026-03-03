@@ -35,9 +35,9 @@ independent implementation and testing.
 
 **Purpose**: Verify baseline and prepare for feature work
 
-- [ ] T001 Verify all existing tests pass with
+- [x] T001 Verify all existing tests pass with
   `uv run pytest tests/ -x -q`
-- [ ] T002 Verify linting passes with
+- [x] T002 Verify linting passes with
   `uv run ruff check custom_components/ tests/` and
   `uv run ruff format --check custom_components/ tests/`
 
@@ -53,7 +53,7 @@ phase is complete
 
 ### Tests for Foundational
 
-- [ ] T003 [P] Extend tests for coordinator user cache in
+- [x] T003 [P] Extend tests for coordinator user cache in
   `tests/test_coordinator.py` — add tests that
   `AkuvoxCoordinatorData` includes a `users` field populated
   from `device.list_users(page=None)` during
@@ -62,19 +62,19 @@ phase is complete
 
 ### Implementation for Foundational
 
-- [ ] T004 [P] Add webhook constants to
+- [x] T004 [P] Add webhook constants to
   `custom_components/akuvox/const.py` — add
   `CONF_WEBHOOK_ID`, `CONF_WEBHOOK_ENABLED`,
   `EVENT_WEBHOOK_RECEIVED` (`akuvox_webhook_received`),
   `ACTIONURL_KEYS` dict mapping all 10 action URL config
   key names, `KNOWN_EVENT_TYPES` frozenset, and
   `REFRESH_EVENT_TYPES` frozenset (relay + valid_code events)
-- [ ] T005 [P] Extend coordinator user cache in
+- [x] T005 [P] Extend coordinator user cache in
   `custom_components/akuvox/coordinator.py` — add a `users`
   field (or PIN→user map keyed by `private_pin`) to
   `AkuvoxCoordinatorData`, populate it from
   `device.list_users(page=None)` in `_async_update_data()`
-- [ ] T006 [P] Add webhook test fixtures to
+- [x] T006 [P] Add webhook test fixtures to
   `tests/conftest.py` — add fixtures for mock webhook
   requests (aiohttp test requests with query params),
   mock coordinator with user cache, sample webhook_id,
@@ -101,7 +101,7 @@ triggers coordinator refresh for relay/code events
 > **NOTE**: Write these tests FIRST, ensure they FAIL
 > before implementation
 
-- [ ] T007 [P] [US1] Write sanitization unit tests in
+- [x] T007 [P] [US1] Write sanitization unit tests in
   `tests/test_sanitize.py` — test
   `sanitize_payload(payload, webhook_id=None)`:
   sensitive key masking (contains-match for token, secret,
@@ -109,7 +109,7 @@ triggers coordinator refresh for relay/code events
   webhook ID substring replacement (64-char and ≤8-char
   cases), field truncation at 1024 chars, original dict
   not mutated; test `mask_webhook_id()` output format
-- [ ] T008 [P] [US1] Write webhook handler tests in
+- [x] T008 [P] [US1] Write webhook handler tests in
   `tests/test_webhook.py` — test `async_handle_webhook()`:
   valid known event (relay_a_triggered with status), valid
   code event (user lookup from cache hit, cache miss with
@@ -122,7 +122,7 @@ triggers coordinator refresh for relay/code events
   event payload; test rapid-fire concurrent deliveries
   (FR-014) — multiple simultaneous requests processed
   independently without event loss
-- [ ] T009 [P] [US1] Write webhook lifecycle tests in
+- [x] T009 [P] [US1] Write webhook lifecycle tests in
   `tests/test_init.py` — test `async_setup_entry()`:
   webhook registered when `webhook_enabled=True`, not
   registered when `False`; test `async_unload_entry()`:
@@ -133,14 +133,14 @@ triggers coordinator refresh for relay/code events
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Create `sanitize.py` module at
+- [x] T010 [US1] Create `sanitize.py` module at
   `custom_components/akuvox/sanitize.py` — implement
   `sanitize_payload(payload, webhook_id=None)` per
   contracts/payload-sanitization.md: sensitive field
   masking with contains-match, webhook ID substring
   replacement, field truncation at 1024 chars, returns
   new dict; implement `mask_webhook_id(webhook_id)` helper
-- [ ] T011 [US1] Create `webhook.py` module at
+- [x] T011 [US1] Create `webhook.py` module at
   `custom_components/akuvox/webhook.py` — implement:
   (a) `async_handle_webhook(hass, webhook_id, request)`
   per contracts/webhook-handler.md 8-step processing;
@@ -154,7 +154,7 @@ triggers coordinator refresh for relay/code events
   contracts/config-flow-webhook.md;
   (e) unknown event normalization (lowercase, replace
   non-alnum with `_`, collapse, trim, truncate 32 chars)
-- [ ] T012 [US1] Wire webhook lifecycle into
+- [x] T012 [US1] Wire webhook lifecycle into
   `custom_components/akuvox/__init__.py` — in
   `async_setup_entry()`: init webhook_registry via
   `hass.data.setdefault()`, call
