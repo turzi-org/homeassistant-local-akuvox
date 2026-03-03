@@ -23,13 +23,15 @@ code entry (since multiple relays may change simultaneously).
 
 The integration also manages the device-side configuration: when
 the user enables webhooks, the integration pushes all 10 core action
-URLs plus the `Config.Features.ACTIONURL.Enable` flag to the device
-via `set_device_config()`. The 10 action URLs are the core set
-present on all PIN-controlled Akuvox devices: relay A/B
-triggered/closed, input A/B triggered/closed, and valid/invalid
-code entered. Model-specific action URLs (InputC, Card, Face,
-Alarm, Call) are handled through the generic event path without
-code changes.
+URLs plus the `Config.Features.ACTIONURL.Enable` and
+`Config.Features.ACTIONURL.Method` keys to the device
+via `set_device_config()` (with `Method` set to `""` to
+ensure default GET behavior). The 10 action URLs are the
+core set present on all PIN-controlled Akuvox devices:
+relay A/B triggered/closed, input A/B triggered/closed,
+and valid/invalid code entered. Model-specific action
+URLs (InputC, Card, Face, Alarm, Call) are handled
+through the generic event path without code changes.
 
 ## Technical Context
 

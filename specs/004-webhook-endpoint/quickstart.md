@@ -107,12 +107,10 @@ Simulate a webhook delivery locally:
 
 ```bash
 # Relay A triggered (status=1 = high; meaning depends on NO/NC)
-curl "http://localhost:8123/api/webhook/{webhook_id}\
-?event=relay_a_triggered&status=1"
+curl "http://localhost:8123/api/webhook/{webhook_id}?event=relay_a_triggered&status=1"
 
 # Valid code entered (handler resolves user identity from PIN)
-curl "http://localhost:8123/api/webhook/{webhook_id}\
-?event=valid_code_entered&code=1234"
+curl "http://localhost:8123/api/webhook/{webhook_id}?event=valid_code_entered&code=1234"
 ```
 
 > **Note**: These examples use plaintext HTTP on localhost for

@@ -289,7 +289,8 @@ override, but typically finds the device state already current.
    appear in HA event payloads. The handler resolves user identity
    (device-assigned ID, user-defined ID, username) by matching
    the PIN against coordinator-cached user data (`private_pin`),
-   falling back to `device.list_users()` on cache miss.
+   falling back to `device.list_users(page=None)` on cache
+   miss.
 
    > **Note**: The current `AkuvoxCoordinatorData` does not
    > include a user cache. This feature requires extending the

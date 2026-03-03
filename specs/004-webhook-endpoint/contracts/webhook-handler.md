@@ -99,8 +99,8 @@ async def async_handle_webhook(
    is present and event is `valid_code_entered`, look up the PIN
    against the coordinator's cached user data (match on
    `private_pin`). On cache miss, fall back to
-   `device.list_users()` to fetch fresh data, but this fallback
-   MUST NOT delay the webhook HTTP response beyond 2 seconds
+   `device.list_users(page=None)` to fetch fresh data, but
+   this fallback MUST NOT delay the webhook HTTP response
    (SC-001). Implementations SHOULD apply a short timeout on
    the device call or emit the event immediately with `None`
    identity fields and perform the lookup asynchronously.
