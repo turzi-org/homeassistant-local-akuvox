@@ -49,8 +49,8 @@ phase is complete
 
 ### Tests for Foundational
 
-- [ ] T003 [P] Write tests for coordinator user cache in
-  `tests/test_coordinator.py` — test that
+- [ ] T003 [P] Extend tests for coordinator user cache in
+  `tests/test_coordinator.py` — add tests that
   `AkuvoxCoordinatorData` includes a `users` field populated
   from `device.list_users(page=None)` during
   `_async_update_data()`, and that PIN→user lookup works
