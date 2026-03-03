@@ -22,28 +22,39 @@ SPDX-License-Identifier: Apache-2.0
 custom_components/akuvox/
 ├── webhook.py           # Webhook handler + registration helpers
 ├── sanitize.py          # FR-013 payload sanitization
-├── const.py             # + new webhook constants
-├── config_flow.py       # + webhook setup step + options toggle
-├── __init__.py          # + webhook lifecycle in setup/unload/remove
-├── strings.json         # + webhook UI strings
-└── translations/
-    └── en.json          # + webhook translations
 
 tests/
 ├── test_webhook.py      # Webhook handler tests
 ├── test_sanitize.py     # Sanitization rule tests
-├── test_config_flow.py  # + webhook config flow tests
-└── test_init.py         # + webhook setup/teardown tests
 ```
 
-### Modified Existing Files
+## Modified Existing Files
 
-- `custom_components/akuvox/manifest.json` — add
-  webhook-related metadata if needed (no `iot_class` change;
-  polling always remains active and webhooks are optional)
+- `custom_components/akuvox/const.py` — add webhook-related
+  constants (config keys, event name, action URL key mapping,
+  known event types)
+- `custom_components/akuvox/config_flow.py` — add webhook
+  setup step and options flow toggle
+- `custom_components/akuvox/__init__.py` — add webhook
+  lifecycle in setup/unload/remove
 - `custom_components/akuvox/coordinator.py` — extend
   `AkuvoxCoordinatorData` with a user cache (e.g., `users`
   field or PIN→user map) for `valid_code_entered` lookup
+- `custom_components/akuvox/manifest.json` — add
+  webhook-related metadata if needed (no `iot_class` change;
+  polling always remains active and webhooks are optional)
+- `custom_components/akuvox/strings.json` — add webhook UI
+  strings
+- `custom_components/akuvox/translations/en.json` — add
+  webhook translations
+- `tests/test_config_flow.py` — add webhook config flow tests
+- `tests/test_init.py` — add webhook setup/teardown tests
+
+## No Changes Required
+
+- `custom_components/akuvox/entity.py` — base entity unchanged
+- `custom_components/akuvox/lock.py` — lock entity unchanged
+- `custom_components/akuvox/services.yaml` — services unchanged
 
 ## Running Tests
 
