@@ -77,7 +77,8 @@ vol.Schema({
 1. Reuse existing `webhook_id` from config entry if present;
    otherwise generate new `webhook_id = secrets.token_hex(32)`
 2. Build action URLs and push all 10 URL keys plus
-   `Config.Features.ACTIONURL.Enable='1'` in a single
+   `Config.Features.ACTIONURL.Enable='1'` and
+   `Config.Features.ACTIONURL.Method=''` in a single
    `set_device_config()` call
 3. Update config entry with `webhook_enabled=True` and the
    existing or newly generated `webhook_id`
@@ -94,7 +95,8 @@ vol.Schema({
 **Behavior on Disable** (was enabled → now disabled):
 
 1. Push empty strings for all 10 action URL keys plus
-   `Config.Features.ACTIONURL.Enable='0'` in a single
+   `Config.Features.ACTIONURL.Enable='0'` and
+   `Config.Features.ACTIONURL.Method=''` in a single
    `set_device_config()` call
 2. Update config entry with `webhook_enabled=False`
    (preserve `webhook_id` for potential re-enable)
