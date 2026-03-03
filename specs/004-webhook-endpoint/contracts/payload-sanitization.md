@@ -47,10 +47,14 @@ Applied in order:
    **raw query parameter dumps** to ensure the PIN is redacted
    wherever it might appear in diagnostic output.
 
-2. **Webhook ID masking**: If `webhook_id` is provided, replace any
-   value containing the full webhook ID with a masked version
-   showing the first 4 and last 2 characters with `***` in between.
-   If the ID is 8 or fewer characters, use `[REDACTED_ID]`.
+2. **Webhook ID masking**: If `webhook_id` is provided, then
+   for each value, replace every occurrence of the full
+   webhook ID substring with a masked version showing the
+   first 4 and last 2 characters with `***` in between.
+   If the ID is 8 or fewer characters, use `[REDACTED_ID]`
+   as the replacement for each occurrence. Surrounding
+   context in the value is preserved (e.g., a URL retains
+   its structure with only the ID portion masked).
 
 3. **Field truncation**: If any value exceeds 1024 characters,
    truncate to 1010 characters and append `...[TRUNCATED]`

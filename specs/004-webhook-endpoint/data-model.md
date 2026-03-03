@@ -143,9 +143,14 @@ However, this lookup MUST NOT cause the webhook HTTP response
 to exceed the SC-001 2-second delivery requirement:
 implementers SHOULD bound any synchronous refresh with a short
 timeout, or emit the event immediately with identity fields
-set to `None` and perform the lookup asynchronously. If no
-matching user is found (from cache or after refresh), the
-identity fields are `None`.
+set to `None` and perform the lookup asynchronously. In the
+asynchronous fallback, exactly one event is emitted per
+physical code entry: the event fires with whatever identity
+fields were resolved at emit time, and the async lookup
+MUST NOT emit a second event — it MAY only update the
+coordinator's cache for future events. If no matching user
+is found (from cache or after any refresh), the identity
+fields are `None`.
 
 For `invalid_code_entered` events: the raw code is not
 transmitted to the integration because the `InvalidCodeEntered`
