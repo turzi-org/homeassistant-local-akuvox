@@ -96,7 +96,7 @@ When webhook is disabled, the integration writes:
 
 ### Event Fired on Home Assistant Bus
 
-Event name: `akuvox_webhook` (domain-prefixed)
+Event name: `akuvox_webhook_received` (domain-prefixed)
 
 ```python
 {

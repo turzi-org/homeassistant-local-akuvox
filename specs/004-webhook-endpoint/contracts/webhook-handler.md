@@ -141,7 +141,7 @@ raising an unhandled exception.
 
 ```python
 hass.bus.async_fire(
-    f"{DOMAIN}_webhook",
+    f"{DOMAIN}_webhook_received",
     {
         "device_id": device_id,
         "config_entry_id": config_entry_id,
@@ -164,7 +164,7 @@ Do not include `status`, `device_user_id`, `user_id`, or
 
 ```python
 hass.bus.async_fire(
-    f"{DOMAIN}_webhook",
+    f"{DOMAIN}_webhook_received",
     {
         "device_id": device_id,
         "config_entry_id": config_entry_id,

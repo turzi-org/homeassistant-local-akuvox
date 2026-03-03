@@ -116,6 +116,6 @@ curl "http://localhost:8123/api/webhook/{webhook_id}\
 > device and HA must communicate over HTTPS to protect PINs in
 > transit (GET query parameters appear in logs and network
 > traffic). Listen for events in HA Developer Tools → Events →
-> `akuvox_webhook`. Code events emit `device_user_id`,
+> `akuvox_webhook_received`. Code events emit `device_user_id`,
 > `user_id`, and `username` (resolved from PIN lookup) — the
 > raw PIN is never included in the event payload.
