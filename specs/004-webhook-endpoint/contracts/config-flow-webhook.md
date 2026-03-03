@@ -128,7 +128,7 @@ action_urls = {
     "Config.Features.ACTIONURL.ValidCodeEntered":
         f"{base_url}?event=valid_code_entered&code=$code",
     "Config.Features.ACTIONURL.InvalidCodeEntered":
-        f"{base_url}?event=invalid_code_entered&code=$code",
+        f"{base_url}?event=invalid_code_entered",
 }
 ```
 
@@ -138,6 +138,7 @@ action_urls = {
 # Enable
 enable_payload = {
     "Config.Features.ACTIONURL.Enable": "1",
+    "Config.Features.ACTIONURL.Method": "",
     **action_urls,
 }
 

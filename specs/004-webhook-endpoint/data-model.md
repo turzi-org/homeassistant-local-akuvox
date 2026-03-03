@@ -70,7 +70,7 @@ When webhook is enabled, the integration writes these keys via
 | `InputBTriggered` | `{base}?event=input_b_triggered&status=$relay2status` |
 | `InputBClosed` | `{base}?event=input_b_closed&status=$relay2status` |
 | `ValidCodeEntered` | `{base}?event=valid_code_entered&code=$code` |
-| `InvalidCodeEntered` | `{base}?event=invalid_code_entered&code=$code` |
+| `InvalidCodeEntered` | `{base}?event=invalid_code_entered` |
 
 All keys prefixed with `Config.Features.ACTIONURL.`.
 `{base}` is `async_generate_url(hass, webhook_id)`.
@@ -80,6 +80,7 @@ When webhook is disabled, the integration writes:
 | Config Key | Value |
 | ---------- | ----- |
 | `Config.Features.ACTIONURL.Enable` | `"0"` |
+| `Config.Features.ACTIONURL.Method` | `""` (reset to default) |
 | All 10 action URL keys | `""` (empty string) |
 
 ## Webhook Event Data
