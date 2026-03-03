@@ -31,6 +31,8 @@ async_register(
 **Postconditions**:
 
 - Webhook ID added to `hass.data[DOMAIN]["webhook_registry"]`
+  **only after** `async_register()` succeeds (avoids stale
+  registry entries if HA registration fails)
 - Endpoint `/api/webhook/{webhook_id}` accepts GET requests
 
 ### Unregister Webhook

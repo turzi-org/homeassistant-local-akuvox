@@ -259,8 +259,10 @@ override, but typically finds the device state already current.
    the webhook handler must accept GET (observed from live device
    configuration).
 3. **Variable mapping**: Relay A=`$relay1status`, Relay B=
-   `$relay2status`; code events use `$code` (user directive and
-   device observation).
+   `$relay2status`; only `ValidCodeEntered` includes `$code`
+   in its URL template. `InvalidCodeEntered` deliberately
+   omits `$code` to avoid transmitting failed PIN attempts
+   (user directive and device observation).
 4. **Config write API**: `device.set_device_config(dict)` supports
    batch writes; all 10 action URLs plus the enable flag can be set
    in a single API call.

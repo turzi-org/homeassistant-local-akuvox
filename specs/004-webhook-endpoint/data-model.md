@@ -124,8 +124,11 @@ set to `None` and perform the lookup asynchronously. If no
 matching user is found (from cache or after refresh), the
 identity fields are `None`.
 
-For `invalid_code_entered` events: no user lookup is possible
-(the code is invalid). All three identity fields are `None`.
+For `invalid_code_entered` events: the raw code is not
+transmitted to the integration because the `InvalidCodeEntered`
+URL template deliberately excludes `&code=$code` to avoid
+exposing failed PIN attempts over the network. All three
+identity fields are `None`.
 
 For relay and input events: these events do not carry a code
 parameter. All three identity fields are `None`.

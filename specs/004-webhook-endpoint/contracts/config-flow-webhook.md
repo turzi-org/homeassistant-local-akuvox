@@ -37,6 +37,13 @@ vol.Schema({
   4. Push all 10 action URL keys + enable flag to device via
      `device.set_device_config()`
   5. Store `webhook_id` and `webhook_enabled=True` in entry data
+
+> **Warning**: If `async_generate_url()` produces an HTTP (not
+> HTTPS) base URL, the `ValidCodeEntered` action URL will
+> transmit PINs in plaintext. Implementations SHOULD log a
+> warning when the generated URL scheme is not HTTPS, alerting
+> the operator to configure an external URL with TLS.
+
 - If skipped (disabled):
   1. Store `webhook_id=None` and `webhook_enabled=False`
   2. No device configuration changes
@@ -145,6 +152,7 @@ enable_payload = {
 # Disable
 disable_payload = {
     "Config.Features.ACTIONURL.Enable": "0",
+    "Config.Features.ACTIONURL.Method": "",
     **{key: "" for key in action_urls},
 }
 ```
