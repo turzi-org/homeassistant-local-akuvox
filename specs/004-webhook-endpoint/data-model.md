@@ -47,6 +47,13 @@ SPDX-License-Identifier: Apache-2.0
 > `entry.options` first, then `entry.data`. All code reading
 > these values MUST use this helper (or equivalent logic) rather
 > than accessing `entry.data` directly.
+>
+> **Note on config entry version**: A `VERSION` bump is NOT
+> required for these additions. Both fields are fully optional
+> with safe defaults (`webhook_id=None`, `webhook_enabled=False`)
+> and `_get_config_value()` accepts a `default` parameter that
+> handles their absence in pre-existing config entries. No
+> migration step is needed.
 
 ### Options Flow Additions
 

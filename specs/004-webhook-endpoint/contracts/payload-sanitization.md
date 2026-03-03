@@ -78,6 +78,6 @@ def mask_webhook_id(webhook_id: str) -> str:
 - Input: `"a1b2c3d4e5f6...7890"` (64 chars)
 - Output: `"a1b2***90"`
 - Input: `"short"` (≤8 chars)
-- Output: `[REDACTED_ID]`
+- Output: `"[REDACTED_ID]"`
 
 Used in log messages wherever the webhook ID appears.
