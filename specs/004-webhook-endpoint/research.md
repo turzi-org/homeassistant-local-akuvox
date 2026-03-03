@@ -292,9 +292,8 @@ override, but typically finds the device state already current.
    > coordinator to cache user data (e.g., a `users` field or
    > PIN→user map populated during `_async_update_data()`).
 
-   Events
-   emit identity fields only. Invalid codes emit `None` for all
-   user fields (no lookup possible).
+   Events emit identity fields only. Invalid codes emit
+   `None` for all user fields (no lookup possible).
 
 ## Risk Assessment
 
