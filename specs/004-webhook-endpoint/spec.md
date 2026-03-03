@@ -214,11 +214,10 @@ device configuration is updated accordingly each time.
   request URL matches exactly a stored webhook identifier for a
   configured device. Requests with a missing, empty, or non-matching
   identifier MUST be rejected and MUST NOT be associated with any
-  device. Such rejected requests MUST return an HTTP 200 (OK)
-  response with a generic body that does not include any
-  diagnostic details. (Home Assistant's webhook infrastructure
-  returns HTTP 200 with `"Webhook not registered."` for
-  unregistered webhook IDs; the integration cannot customize
+  device. The integration MUST NOT register, process, or fire an
+  event for such requests. (Home Assistant's webhook
+  infrastructure returns HTTP 200 with `"Webhook not registered."`
+  for unregistered webhook IDs; the integration cannot customize
   this response. The security goal — no diagnostic leak, no
   event fired — is still met.)
 - **FR-005**: System MUST reject and log any webhook request with a

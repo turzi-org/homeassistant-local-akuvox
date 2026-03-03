@@ -292,8 +292,9 @@ that entry's webhook registrations:
    `coordinator = hass.data[DOMAIN].pop(entry.entry_id)`
    (the coordinator reference is needed to close the device
    session via `coordinator.device.__aexit__(...)`)
-3. If `webhook_id` is not `None`, remove the corresponding
-   entry from `webhook_registry`:
+3. If `webhook_id` is not `None` **and** `webhook_enabled` is
+   `True`, remove the corresponding entry from
+   `webhook_registry`:
    `hass.data[DOMAIN]["webhook_registry"].pop(webhook_id, None)`
 4. If `webhook_registry` is now empty, remove the
    `"webhook_registry"` key from `hass.data[DOMAIN]`.
