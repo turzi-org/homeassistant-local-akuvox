@@ -110,7 +110,7 @@ custom_components/akuvox/
 ├── coordinator.py       # (unchanged)
 ├── entity.py            # (unchanged)
 ├── lock.py              # (unchanged)
-├── manifest.json        # + update iot_class for push
+├── manifest.json        # + webhook-related metadata (no iot_class change)
 ├── sanitize.py          # NEW: FR-013 payload sanitization
 ├── services.yaml        # (unchanged)
 ├── strings.json         # + webhook UI strings

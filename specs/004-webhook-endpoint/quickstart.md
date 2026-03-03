@@ -38,8 +38,9 @@ tests/
 
 ### Modified Existing Files
 
-- `custom_components/akuvox/manifest.json` — update `iot_class`
-  (from `local_polling` to `local_push`)
+- `custom_components/akuvox/manifest.json` — add
+  webhook-related metadata if needed (no `iot_class` change;
+  polling always remains active and webhooks are optional)
 
 ## Running Tests
 
