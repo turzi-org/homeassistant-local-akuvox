@@ -76,22 +76,24 @@ uv run mypy custom_components/
 
 1. `const.py` — Add webhook-related constants (config keys, event
    name, action URL key mapping, known event types)
-2. `sanitize.py` — Payload sanitization (FR-013); standalone module
+2. `coordinator.py` — Extend `AkuvoxCoordinatorData` with user
+   cache / PIN→user map for `valid_code_entered` identity lookup
+3. `sanitize.py` — Payload sanitization (FR-013); standalone module
    with no HA dependencies for easy unit testing
-3. `webhook.py` — Webhook handler, registration/unregistration
+4. `webhook.py` — Webhook handler, registration/unregistration
    helpers, action URL construction
-4. `__init__.py` — Wire webhook lifecycle into setup_entry and
+5. `__init__.py` — Wire webhook lifecycle into setup_entry and
    unload_entry
-5. `config_flow.py` — Add webhook step to config flow and webhook
+6. `config_flow.py` — Add webhook step to config flow and webhook
    toggle to options flow
-6. `strings.json` + `translations/en.json` — Webhook UI strings
+7. `strings.json` + `translations/en.json` — Webhook UI strings
 
 ## Config Flow User Experience (Updated)
 
 1. User adds "Akuvox" integration
 2. Enter device IP, toggle "Use SSL"
 3. If SSL → "Verify SSL" checkbox
-4. Select auth mode (None/AllowList/Basic/Digest)
+4. Select auth mode (None/Basic/Digest)
 5. If Basic or Digest → enter username/password
 6. Integration tests connection
 7. **NEW** → "Enable webhook events?" toggle
