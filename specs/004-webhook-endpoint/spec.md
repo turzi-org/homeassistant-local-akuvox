@@ -234,8 +234,11 @@ device configuration is updated accordingly each time.
 - **FR-008**: When webhook support is enabled, the system MUST push
   the webhook URL to the Akuvox device's configuration.
 - **FR-009**: When webhook support is disabled, the system MUST remove
-  the webhook configuration from the Akuvox device and unregister the
-  local endpoint.
+  the webhook configuration from the Akuvox device and ensure the
+  local endpoint is unregistered. The endpoint unregistration may
+  occur via the integration's reload cycle (the options flow triggers
+  a reload, and the unload handler unregisters the endpoint) rather
+  than inline in the options flow itself.
 - **FR-010**: System MUST persist the webhook identifier in the
   integration's config entry so that the endpoint can be re-registered
   after restarts.
@@ -274,8 +277,11 @@ device configuration is updated accordingly each time.
   the owning device reference, and the active/inactive state.
 - **Webhook Event**: An inbound event payload received from the Akuvox
   device. Contains the event type (e.g., doorbell press, door open,
-  call event), a timestamp, and event-specific data fields. Mapped to
-  a Home Assistant event bus event after parsing.
+  call event) and event-specific data fields. The Home Assistant event
+  bus automatically provides a timestamp (`event.time_fired`) when the
+  event is fired; the integration does not need to include a separate
+  timestamp field. Mapped to a Home Assistant event bus event after
+  parsing.
 - **Device Webhook Configuration**: The webhook URL and related
   settings stored on the Akuvox device. Managed by the integration
   during setup, reconfiguration, and teardown.

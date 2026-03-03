@@ -114,7 +114,9 @@ triggers coordinator refresh for relay/code events
   in registry → 200 empty, coordinator missing → 200 empty,
   coordinator refresh scheduled for relay/code events but
   NOT for input/invalid events; verify raw PIN never in
-  event payload
+  event payload; test rapid-fire concurrent deliveries
+  (FR-014) — multiple simultaneous requests processed
+  independently without event loss
 - [ ] T009 [P] [US1] Write webhook lifecycle tests in
   `tests/test_init.py` — test `async_setup_entry()`:
   webhook registered when `webhook_enabled=True`, not
@@ -281,9 +283,11 @@ options; integration removal cleans up device config
 
 **Purpose**: Final validation, edge cases, documentation
 
-- [ ] T021 [P] Update `custom_components/akuvox/manifest.json`
-  — add any webhook-related metadata if needed (no
-  `iot_class` change; polling remains active)
+- [ ] T021 [P] Verify `custom_components/akuvox/manifest.json`
+  — confirm no `iot_class` change needed (polling remains
+  active alongside optional webhooks); no new dependencies
+  or manifest keys expected unless HA requires explicit
+  webhook declaration in a future version
 - [ ] T022 Run full test suite with
   `uv run pytest tests/ -x -q` and verify all tests pass
 - [ ] T023 Run full lint suite with
@@ -330,7 +334,9 @@ options; integration removal cleans up device config
 
 - T003, T004, T005, T006 (Phase 2) can all run in parallel
 - T007, T008, T009 (US1 tests) can all run in parallel
-- T010 can run in parallel with T011 (different files)
+- T010 [P] can run in parallel with T007-T009 (different
+  files); T011 depends on T010 (webhook.py imports
+  sanitize.py)
 - T013 (US2 tests) can run alone (single file)
 - T015, T016 (US2 strings) can run in parallel with each
   other and with T014

@@ -123,6 +123,7 @@ custom_components/akuvox/
 tests/
 ├── conftest.py          # + webhook fixtures
 ├── test_config_flow.py  # + webhook config flow tests
+├── test_coordinator.py  # + coordinator user cache tests
 ├── test_init.py         # + webhook setup/teardown tests
 ├── test_sanitize.py     # NEW: sanitization rule tests
 └── test_webhook.py      # NEW: webhook handler tests
