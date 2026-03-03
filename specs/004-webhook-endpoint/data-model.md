@@ -302,8 +302,11 @@ that entry's webhook registrations:
    `True`, remove the corresponding entry from
    `webhook_registry`:
    `hass.data[DOMAIN]["webhook_registry"].pop(webhook_id, None)`
-4. If `webhook_registry` is now empty, remove the
-   `"webhook_registry"` key from `hass.data[DOMAIN]`.
+4. If `"webhook_registry"` exists in `hass.data[DOMAIN]` and
+   is now empty, remove the `"webhook_registry"` key. This
+   check is unconditional (not gated on `webhook_enabled`)
+   so that non-webhook entries do not leave an empty registry
+   dict that blocks `DOMAIN` key cleanup.
 5. If `hass.data[DOMAIN]` is empty, pop the `DOMAIN` key
    from `hass.data`.
 
