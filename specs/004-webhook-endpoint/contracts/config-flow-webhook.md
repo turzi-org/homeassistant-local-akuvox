@@ -74,8 +74,9 @@ vol.Schema({
 
 **Behavior on Enable** (was disabled → now enabled):
 
-1. Reuse existing `webhook_id` from config entry if present;
-   otherwise generate new `webhook_id = secrets.token_hex(32)`
+1. Reuse existing `webhook_id` from config entry (looked up
+   via `_get_config_value()`) if present; otherwise generate
+   new `webhook_id = secrets.token_hex(32)`
 2. Build action URLs and push all 10 URL keys plus
    `Config.Features.ACTIONURL.Enable='1'` and
    `Config.Features.ACTIONURL.Method=''` in a single

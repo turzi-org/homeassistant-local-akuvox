@@ -107,7 +107,7 @@ custom_components/akuvox/
 ├── __init__.py          # + webhook lifecycle in setup/unload/remove
 ├── config_flow.py       # + webhook setup step + options toggle
 ├── const.py             # + webhook constants, action URL keys
-├── coordinator.py       # (unchanged)
+├── coordinator.py       # + user cache for PIN→user lookup
 ├── entity.py            # (unchanged)
 ├── lock.py              # (unchanged)
 ├── manifest.json        # + webhook-related metadata (no iot_class change)

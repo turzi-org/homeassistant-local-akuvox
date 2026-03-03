@@ -177,7 +177,8 @@ Unknown event type normalization:
 - Replace characters not in `[a-z0-9_]` with `_`.
 - Collapse consecutive `_` into a single `_`.
 - Trim leading and trailing `_`.
-- Truncate to 32 characters.
+- Truncate the normalized portion to 32 characters (the
+  `unknown_` prefix is not counted toward this limit).
 - If empty after normalization, use `event` as the value.
 
 Final event type: `unknown_{normalized}`.

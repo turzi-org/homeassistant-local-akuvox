@@ -75,7 +75,7 @@ uv run mypy custom_components/
 1. User adds "Akuvox" integration
 2. Enter device IP, toggle "Use SSL"
 3. If SSL → "Verify SSL" checkbox
-4. Select auth mode (None/Basic/Digest)
+4. Select auth mode (None/AllowList/Basic/Digest)
 5. If Basic or Digest → enter username/password
 6. Integration tests connection
 7. **NEW** → "Enable webhook events?" toggle
