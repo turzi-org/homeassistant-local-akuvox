@@ -29,10 +29,12 @@ def sanitize_payload(
 
 Applied in order:
 
-1. **Sensitive field masking**: If a key contains any of `token`,
-   `secret`, `password`, `authorization`, `auth`, `key`, `cookie`,
-   or `code` (case-insensitive match), replace the value with
-   `[REDACTED]`.
+1. **Sensitive field masking**: If a key matches any of `token`,
+   `secret`, `password`, `authorization`, `cookie`, or `code`
+   (case-insensitive **exact** match), replace the value with
+   `[REDACTED]`. For `auth` and `key`, match only as a
+   **word-boundary** prefix or suffix (e.g., `auth_token` or
+   `api_key` match, but `reauth` or `monkey` do not).
 
    **Note on `code`**: The raw PIN (`$code` query parameter) is
    NEVER included in HA event payloads. The webhook handler uses

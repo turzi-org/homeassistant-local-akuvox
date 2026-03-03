@@ -293,6 +293,22 @@ This ensures `webhook_registry` does not keep
 `hass.data[DOMAIN]` alive after the last entry is unloaded and
 that no stale webhook routes remain registered in Home Assistant.
 
+### Removal Semantics (FR-012)
+
+`async_remove_entry` is called only when the config entry is
+permanently deleted (not on reload). If the entry had webhooks
+enabled (`webhook_enabled=True` and `webhook_id` is not `None`):
+
+1. Open a device connection
+   (`async with AkuvoxDevice(...) as device:`)
+2. Push the disable payload (all 10 URL keys empty,
+   `Enable='0'`, `Method=''`) via `device.set_device_config()`
+3. If the push fails, log a warning but do not block removal
+
+This is best-effort: the device may be unreachable at removal
+time. The entry data and webhook registrations are cleaned up
+regardless by HA's normal entry deletion process.
+
 ## Payload Sanitization
 
 Sanitization is applied per FR-013 before logging or event

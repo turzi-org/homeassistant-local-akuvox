@@ -25,6 +25,7 @@ async_register(
     webhook_id=entry.data["webhook_id"],    # 64-char hex
     handler=async_handle_webhook,           # Callback
     allowed_methods=["GET"],                # Akuvox sends GET
+    local_only=True,                        # Local network only
 )
 ```
 

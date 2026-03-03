@@ -89,7 +89,9 @@ vol.Schema({
    `Config.Features.ACTIONURL.Enable='0'` in a single
    `set_device_config()` call
 2. Unregister webhook endpoint from HA
-3. Update config entry with `webhook_enabled=False`
+3. Remove the `webhook_id` entry from
+   `hass.data[DOMAIN]["webhook_registry"]`
+4. Update config entry with `webhook_enabled=False`
    (preserve `webhook_id` for potential re-enable)
 
 **Behavior on No Change**:

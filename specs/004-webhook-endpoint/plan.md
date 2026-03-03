@@ -104,7 +104,7 @@ HACS requires the integration at
 
 ```text
 custom_components/akuvox/
-├── __init__.py          # + webhook lifecycle in setup/unload
+├── __init__.py          # + webhook lifecycle in setup/unload/remove
 ├── config_flow.py       # + webhook setup step + options toggle
 ├── const.py             # + webhook constants, action URL keys
 ├── coordinator.py       # (unchanged)
