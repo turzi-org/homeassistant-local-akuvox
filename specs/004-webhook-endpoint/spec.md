@@ -161,7 +161,8 @@ device configuration is updated accordingly each time.
    the stored webhook identifier.
 4. **Given** the user disables webhooks via reconfiguration, **When**
    the device still sends a webhook to the old URL, **Then** the
-   request is rejected since the endpoint is no longer registered.
+   request is dropped and no event is fired, since the endpoint
+   is no longer registered.
 
 ---
 

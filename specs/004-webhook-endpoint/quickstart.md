@@ -24,7 +24,7 @@ custom_components/akuvox/
 ├── sanitize.py          # FR-013 payload sanitization
 ├── const.py             # + new webhook constants
 ├── config_flow.py       # + webhook setup step + options toggle
-├── __init__.py          # + webhook lifecycle in setup/unload
+├── __init__.py          # + webhook lifecycle in setup/unload/remove
 ├── strings.json         # + webhook UI strings
 └── translations/
     └── en.json          # + webhook translations

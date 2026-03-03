@@ -102,10 +102,14 @@ vol.Schema({
 
 - `webhook_push_failed` — Device config push failed; show error
   and allow retry or cancel.
-  - **Enable path** (was disabled → now enabled): If the user
-    cancels, unregister the HA webhook endpoint (if it was
-    registered in step 2) and keep `webhook_enabled=False` in
-    the config entry to avoid an inconsistent state.
+  - **Enable path — retry**: On retry, skip step 2 (webhook
+    registration) if `async_register()` already succeeded in
+    the previous attempt; only re-attempt step 3 (device push).
+    Track registration state with a flow-level flag.
+  - **Enable path — cancel**: If the user cancels, unregister
+    the HA webhook endpoint (if it was registered in step 2)
+    and keep `webhook_enabled=False` in the config entry to
+    avoid an inconsistent state.
   - **Disable path** (was enabled → now disabled): If the user
     cancels, keep the existing HA webhook endpoint registered
     and `webhook_enabled=True` unchanged (preserving the
