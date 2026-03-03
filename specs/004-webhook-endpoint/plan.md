@@ -35,8 +35,8 @@ code changes.
 
 **Language/Version**: Python ≥3.13.2
 **Primary Dependencies**: pylocal-akuvox ≥0.2.3 (device
-communication, `set_device_config()`), homeassistant (webhook
-infrastructure via `homeassistant.components.webhook`)
+communication, `set_device_config()`), homeassistant ≥2026.2.0
+(webhook infrastructure via `homeassistant.components.webhook`)
 **Storage**: Home Assistant config entries (webhook_id and
 webhook_enabled persisted in entry data)
 **Testing**: pytest, pytest-homeassistant-custom-component,
