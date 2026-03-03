@@ -12,10 +12,12 @@ SPDX-License-Identifier: Apache-2.0
 
 ### Register Webhook
 
-Called during `async_setup_entry()` when `webhook_enabled` is True.
-The options flow and config flow do not perform inline registration;
-`async_setup_entry()` handles it after the config entry is created
-or after a reload triggered by options changes.
+Webhook registration is only performed in `async_setup_entry()`
+when `webhook_enabled` is `True`. The config flow and options flow
+do not directly register the webhook; they store `webhook_id` and
+set `webhook_enabled=True`, and `async_setup_entry()` performs
+registration when the config entry is created or after a reload
+triggered by options changes.
 
 ```python
 from homeassistant.components.webhook import async_register
@@ -50,8 +52,10 @@ async_register(
 
 ### Unregister Webhook
 
-Called during `async_unload_entry()` (covers reload, removal, and
-the reload triggered by disabling webhooks in the options flow).
+Called during `async_unload_entry()`, which is invoked on reload
+and removal of the config entry (including reloads triggered by
+options changes such as disabling webhooks). The options flow
+does **not** call `async_unregister()` directly.
 
 ```python
 from homeassistant.components.webhook import async_unregister
