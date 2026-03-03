@@ -165,7 +165,7 @@ async_unregister(hass, webhook_id)
 ### Handler Signature
 
 ```python
-async def handle_webhook(
+async def async_handle_webhook(
     hass: HomeAssistant,
     webhook_id: str,
     request: aiohttp.web.Request,

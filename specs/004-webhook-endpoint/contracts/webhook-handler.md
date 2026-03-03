@@ -81,11 +81,15 @@ async def async_handle_webhook(
    `webhook_registry` (e.g., race during startup or
    registration ordering bug), log a warning and return
    200 OK with an empty body — do not proceed further.
-2. Parse query parameters from `request.query`
-3. Extract `event` parameter → determines `event_type`
-4. Extract additional parameters (`status`, `code`)
-5. Validate event type against known set
-6. **User lookup** (valid code events only): If `code` parameter
+2. Retrieve the `device_id` from the HA device registry
+   using `config_entry_id` (needed for event payload).
+3. Parse query parameters from `request.query`
+4. Extract `event` parameter → determines `event_type`.
+   If `event` is missing, log a warning with a sanitized
+   view of the request, then return 400 Bad Request.
+5. Extract additional parameters (`status`, `code`)
+6. Validate event type against known set
+7. **User lookup** (valid code events only): If `code` parameter
    is present and event is `valid_code_entered`, look up the PIN
    against the coordinator's cached user data (match on
    `private_pin`). On cache miss, fall back to
@@ -96,7 +100,8 @@ async def async_handle_webhook(
    identity fields and perform the lookup asynchronously.
    Resolve `device_user_id`, `user_id`, and `username`. If
    still no match after fallback, set all three to `None`.
-7. Fire Home Assistant event (with user identity, never raw PIN)
+8. Fire Home Assistant event (with user identity, never
+   raw PIN)
 
 ### Response Codes
 

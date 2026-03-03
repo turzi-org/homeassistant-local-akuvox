@@ -41,6 +41,9 @@ tests/
 - `custom_components/akuvox/manifest.json` — add
   webhook-related metadata if needed (no `iot_class` change;
   polling always remains active and webhooks are optional)
+- `custom_components/akuvox/coordinator.py` — extend
+  `AkuvoxCoordinatorData` with a user cache (e.g., `users`
+  field or PIN→user map) for `valid_code_entered` lookup
 
 ## Running Tests
 
