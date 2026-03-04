@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
+from urllib.parse import urlencode
 
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
@@ -23,10 +24,9 @@ from tests.conftest import MOCK_WEBHOOK_ID
 
 def _make_request(query: dict[str, str]) -> web.Request:
     """Build a mocked aiohttp GET request with query parameters."""
-    qs = "&".join(f"{k}={v}" for k, v in query.items())
     path = f"/api/webhook/{MOCK_WEBHOOK_ID}"
-    if qs:
-        path = f"{path}?{qs}"
+    if query:
+        path = f"{path}?{urlencode(query)}"
     return make_mocked_request("GET", path)
 
 

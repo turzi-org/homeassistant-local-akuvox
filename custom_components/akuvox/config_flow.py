@@ -315,13 +315,18 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
                     data=self._data,
                 )
 
+        if user_input is not None and CONF_WEBHOOK_ENABLED in user_input:
+            default_enabled = bool(user_input[CONF_WEBHOOK_ENABLED])
+        else:
+            default_enabled = bool(self._data.get(CONF_WEBHOOK_ENABLED, False))
+
         return self.async_show_form(
             step_id="webhook",
             data_schema=vol.Schema(
                 {
                     vol.Required(
                         CONF_WEBHOOK_ENABLED,
-                        default=False,
+                        default=default_enabled,
                     ): bool,
                 }
             ),

@@ -111,8 +111,8 @@ async def _refresh_user_cache(
     except TimeoutError:
         _LOGGER.debug("User cache refresh timed out")
         return
-    except Exception:
-        _LOGGER.debug("Failed to refresh user cache")
+    except Exception as exc:
+        _LOGGER.debug("Failed to refresh user cache: %s", exc, exc_info=True)
         return
 
     if users is not None:
@@ -204,7 +204,10 @@ async def async_handle_webhook(
         normalized = _normalize_event_type(raw_event)
         event_type = f"unknown_{normalized}"
         sanitized = sanitize_payload(query_params, webhook_id=webhook_id)
-        _LOGGER.warning("Unknown webhook event type: %s", raw_event)
+        safe_event = repr(raw_event)
+        if len(safe_event) > 80:
+            safe_event = safe_event[:77] + "..."
+        _LOGGER.warning("Unknown webhook event type: %s", safe_event)
         hass.bus.async_fire(
             EVENT_WEBHOOK_RECEIVED,
             {
