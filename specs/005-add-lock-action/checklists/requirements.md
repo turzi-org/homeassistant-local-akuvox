@@ -39,7 +39,5 @@ proceeding to planning
 
 - All checklist items pass. Spec is ready for `/speckit.clarify` or
   `/speckit.plan`.
-- The spec references `trigger_relay` and `lock.lock` service names
-  as domain terminology (not implementation details) since they are
-  part of the Home Assistant platform interface that users interact
-  with directly.
+- The spec references `lock.lock` as a Home Assistant platform service
+  name (user-facing terminology, not an implementation detail).
