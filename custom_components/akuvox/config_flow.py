@@ -299,7 +299,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
                         webhook_id,
                         enable=True,
                     )
-                except AkuvoxError:
+                except Exception:
                     errors["base"] = "webhook_push_failed"
                 else:
                     self._data[CONF_WEBHOOK_ID] = webhook_id
@@ -342,6 +342,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
 
         Raises:
             AkuvoxError: If the device config push fails.
+            Exception: If webhook URL generation fails.
 
         """
         enable_payload, disable_payload = build_action_urls(
@@ -498,11 +499,15 @@ class AkuvoxOptionsFlow(OptionsFlow):
         if webhook_id is None:
             return None
 
-        enable_payload, disable_payload = build_action_urls(
-            self.hass,
-            str(webhook_id),
-            warn_http=now_enabled,
-        )
+        try:
+            enable_payload, disable_payload = build_action_urls(
+                self.hass,
+                str(webhook_id),
+                warn_http=now_enabled,
+            )
+        except Exception:
+            return "webhook_push_failed"
+
         payload = enable_payload if now_enabled else disable_payload
 
         # Use merged settings for device connection
@@ -542,7 +547,7 @@ class AkuvoxOptionsFlow(OptionsFlow):
         try:
             async with device:
                 await device.set_device_config(payload)  # type: ignore[attr-defined]
-        except AkuvoxError:
+        except Exception:
             return "webhook_push_failed"
 
         user_input[CONF_WEBHOOK_ID] = str(webhook_id)

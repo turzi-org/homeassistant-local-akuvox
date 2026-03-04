@@ -120,6 +120,7 @@ async def _refresh_user_cache(
 
 
 async def _resolve_user(
+    hass: HomeAssistant,
     coordinator: AkuvoxDataUpdateCoordinator,
     code: str,
 ) -> object | None:
@@ -129,6 +130,7 @@ async def _resolve_user(
     lookups succeed without blocking the webhook response.
 
     Args:
+        hass: The Home Assistant instance.
         coordinator: The data update coordinator.
         code: The PIN code to match.
 
@@ -141,7 +143,7 @@ async def _resolve_user(
         return user
 
     # Schedule background cache refresh (non-blocking)
-    asyncio.ensure_future(_refresh_user_cache(coordinator))
+    hass.async_create_task(_refresh_user_cache(coordinator))
 
     return None
 
@@ -220,7 +222,7 @@ async def async_handle_webhook(
     user = None
     code_value = query_params.get("code")
     if event_type == "valid_code_entered" and code_value:
-        user = await _resolve_user(coordinator, code_value)
+        user = await _resolve_user(hass, coordinator, code_value)
 
     # Step 7: Fire HA event
     hass.bus.async_fire(
