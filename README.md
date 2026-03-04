@@ -136,6 +136,10 @@ automation:
 | `valid_code_entered`   | A valid PIN or card code was entered.    |
 | `invalid_code_entered` | An invalid PIN or card code was entered. |
 
+Unrecognized events from the device are emitted as
+`unknown_<normalized_name>` with the raw query parameters as the
+payload.
+
 ### Event Payload
 
 ```json
@@ -234,8 +238,9 @@ data:
 - Check that webhooks are enabled in the integration options.
 - Verify the device's action URL configuration points to the correct
   Home Assistant webhook URL.
-- HTTPS is recommended for webhook URLs. If using HTTP, ensure no
-  network restrictions block the traffic.
+- Use HTTPS/TLS for webhook URLs. `valid_code_entered` webhooks
+  include the entered PIN in the query string; using HTTP transmits
+  it in plaintext. Only use HTTP on a trusted network for testing.
 
 ### Lock entity shows unknown state
 
