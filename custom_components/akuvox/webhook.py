@@ -115,7 +115,7 @@ async def _refresh_user_cache(
         _LOGGER.debug("Failed to refresh user cache")
         return
 
-    if users:
+    if users is not None:
         coordinator.update_user_cache(users)
 
 
@@ -280,12 +280,20 @@ def async_register_webhook(
         )
     except ValueError:
         _LOGGER.warning(
-            "Webhook %s already registered; skipping",
+            "Webhook %s already registered; re-registering",
             mask_webhook_id(webhook_id),
         )
-        return
+        async_unregister(hass, webhook_id)
+        async_register(
+            hass,
+            domain=DOMAIN,
+            name=name,
+            webhook_id=webhook_id,
+            handler=async_handle_webhook,
+            allowed_methods=["GET"],
+        )
 
-    # Add to registry only after successful registration
+    # Add to registry after successful registration
     hass.data[DOMAIN].setdefault("webhook_registry", {})
     hass.data[DOMAIN]["webhook_registry"][webhook_id] = entry.entry_id
 

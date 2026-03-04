@@ -319,7 +319,6 @@ async def async_setup_entry(
         raise
 
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN].setdefault("webhook_registry", {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     # Register webhook if enabled
