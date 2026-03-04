@@ -18,7 +18,10 @@ from custom_components.akuvox.const import (
     DOMAIN,
     EVENT_WEBHOOK_RECEIVED,
 )
-from custom_components.akuvox.webhook import async_handle_webhook
+from custom_components.akuvox.webhook import (
+    _refresh_in_flight,
+    async_handle_webhook,
+)
 from tests.conftest import MOCK_WEBHOOK_ID
 
 
@@ -245,6 +248,8 @@ async def test_valid_code_cache_miss_schedules_refresh(
     assert payload["username"] is None
     # Background task updated the cache
     coordinator.update_user_cache.assert_called_once()
+    # Guard set was cleared after refresh
+    assert "test_entry_id" not in _refresh_in_flight
 
 
 # ── Valid code event with no match ───────────────────────────

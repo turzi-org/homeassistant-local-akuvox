@@ -95,12 +95,17 @@ def _get_device_id(
     return None
 
 
+_refresh_in_flight: set[str] = set()
+
+
 async def _refresh_user_cache(
     coordinator: AkuvoxDataUpdateCoordinator,
+    entry_id: str,
 ) -> None:
     """Background task to refresh the user cache from the device.
 
     Must not be awaited in the webhook handler path.
+    Uses _refresh_in_flight to deduplicate concurrent calls.
 
     """
     try:
@@ -114,6 +119,8 @@ async def _refresh_user_cache(
     except Exception as exc:
         _LOGGER.debug("Failed to refresh user cache: %s", exc, exc_info=True)
         return
+    finally:
+        _refresh_in_flight.discard(entry_id)
 
     if users is not None:
         coordinator.update_user_cache(users)
@@ -123,16 +130,19 @@ async def _resolve_user(
     hass: HomeAssistant,
     coordinator: AkuvoxDataUpdateCoordinator,
     code: str,
+    entry_id: str,
 ) -> object | None:
     """Resolve a user by PIN from cache only.
 
-    On cache miss, schedules a background refresh so future
-    lookups succeed without blocking the webhook response.
+    On cache miss, schedules a background refresh (guarded against
+    duplicate in-flight requests) so future lookups succeed without
+    blocking the webhook response.
 
     Args:
         hass: The Home Assistant instance.
         coordinator: The data update coordinator.
         code: The PIN code to match.
+        entry_id: The config entry ID for deduplication.
 
     Returns:
         Matching User object or None.
@@ -142,8 +152,10 @@ async def _resolve_user(
     if user is not None:
         return user
 
-    # Schedule background cache refresh (non-blocking)
-    hass.async_create_task(_refresh_user_cache(coordinator))
+    # Schedule background cache refresh (non-blocking, deduplicated)
+    if entry_id not in _refresh_in_flight:
+        _refresh_in_flight.add(entry_id)
+        hass.async_create_task(_refresh_user_cache(coordinator, entry_id))
 
     return None
 
@@ -225,7 +237,7 @@ async def async_handle_webhook(
     user = None
     code_value = query_params.get("code")
     if event_type == "valid_code_entered" and code_value:
-        user = await _resolve_user(hass, coordinator, code_value)
+        user = await _resolve_user(hass, coordinator, code_value, config_entry_id)
 
     # Step 7: Fire HA event
     hass.bus.async_fire(
