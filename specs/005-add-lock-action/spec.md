@@ -119,10 +119,12 @@ successfully.
 - What happens when the lock action is called while an unlock
   operation is still in progress (unlock hold window active)?
   For bistable relays, the lock action should cancel any pending
-  state refresh and proceed with the lock command. For auto-close
-  relays, the lock action should be treated as a state refresh
-  (no command sent) since sending a command could extend the
-  unlock window.
+  state refresh, then refresh the current device state (per FR-009).
+  If the relay is confirmed to still be unlocked, proceed with the
+  lock command. If the refresh shows it is already locked, treat as
+  a no-op. For auto-close relays, the lock action should be treated
+  as a state refresh (no command sent) since sending a command could
+  extend the unlock window.
 - What happens when the lock action is called on a relay that is
   already locked?
   - For **bistable** relays (where the relay toggles on each
@@ -152,32 +154,39 @@ successfully.
 ### Functional Requirements
 
 - **FR-001**: The system MUST provide a lock action on all Akuvox
-  lock entities that sends a lock command to the device only when a
-  transition to the locked state is required.
+  lock entities. For bistable relays, the action sends a lock command
+  only when the relay is currently unlocked. For auto-close relays,
+  the action never sends a command (see FR-008).
 - **FR-002**: The lock action MUST use the same relay command and
   existing relay configuration as the unlock action, so that lock
   and unlock behave consistently for each relay.
-- **FR-003**: The lock action MUST update the entity state to locked
-  immediately after a successful device command, so the UI reflects
-  the change without waiting for a poll cycle.
-- **FR-004**: The lock action MUST schedule a delayed state refresh
-  after the lock command is sent, to synchronize the entity state
-  with the actual device state. The refresh interval should be
-  appropriate for the relay mode.
-- **FR-005**: The lock action MUST cancel any pending state refresh
-  from a previous unlock before proceeding, to avoid stale state
-  updates.
+- **FR-003**: For bistable relays, the lock action MUST update the
+  entity state to locked immediately after a successful device
+  command, so the UI reflects the change without waiting for a poll
+  cycle. For auto-close relays, no immediate state update occurs
+  because no command is sent.
+- **FR-004**: For bistable relays, the lock action MUST schedule a
+  delayed state refresh after the lock command is sent, to synchronize
+  the entity state with the actual device state. The refresh interval
+  should be appropriate for the relay mode. For auto-close relays,
+  the lock action should trigger an immediate state refresh since no
+  command is sent.
+- **FR-005**: For bistable relays, the lock action MUST cancel any
+  pending state refresh from a previous unlock before proceeding, to
+  avoid stale state updates. For auto-close relays, pending state
+  refreshes MUST NOT be cancelled since no new command is sent and
+  the existing refresh is needed to detect when the device
+  auto-closes.
 - **FR-006**: The lock action MUST raise a clear error if the device
   communication fails, without modifying the entity's current state.
 - **FR-007**: The lock action MUST work on relays in both bistable
   (manual) and auto-close (monostable) modes.
-- **FR-008**: The lock action MUST be a no-op when the relay is
-  already in the locked state, to prevent unintentionally toggling
-  a bistable relay to unlocked or starting a new unlock window on
-  an auto-close relay. For auto-close relays, the lock action MUST
-  also not send a command when the relay is unlocked (since sending
-  a command could extend the unlock window); instead it should
-  treat the action as a state refresh.
+- **FR-008**: For bistable relays, the lock action MUST be a no-op
+  when the relay is already in the locked state, to prevent
+  unintentionally toggling the relay to unlocked. For auto-close
+  relays, the lock action MUST NOT send a command in any state
+  (locked or unlocked); it should always be treated as a state
+  refresh to avoid initiating or extending an unlock window.
 - **FR-009**: Before sending a lock command, the lock action MUST
   confirm the current device state is not stale (for example, by
   refreshing from the device) to avoid acting on outdated local
@@ -194,9 +203,11 @@ successfully.
 - **SC-001**: Users can re-lock any Akuvox relay entity through the
   standard Home Assistant lock interface (UI, service call, or
   automation) without errors.
-- **SC-002**: After triggering the lock action on an unlocked relay,
-  the entity state updates to "locked" within a few seconds in the
-  Home Assistant UI (accounting for any required state validation).
+- **SC-002**: After triggering the lock action on an unlocked bistable
+  relay, the entity state updates to "locked" within a few seconds
+  (accounting for any required state validation). For auto-close
+  relays, the entity state remains unlocked until the device's hold
+  delay expires and a state refresh confirms the locked state.
 - **SC-003**: The lock action completes successfully on both bistable
   and auto-close relay configurations.
 - **SC-004**: When the device is unreachable, the lock action fails
@@ -222,6 +233,8 @@ successfully.
 - The existing relay configuration (hold delay, relay type, relay
   mode) is sufficient for the lock action; no additional device
   configuration is needed.
-- State management for the lock action mirrors the unlock action
-  pattern: update the entity state immediately, then schedule a
-  state refresh after the hold delay to reconcile with device truth.
+- State management for the lock action on bistable relays mirrors the
+  unlock action pattern: update the entity state immediately, then
+  schedule a state refresh after the hold delay to reconcile with
+  device truth. For auto-close relays, the lock action performs only
+  a state refresh without updating state or sending commands.
