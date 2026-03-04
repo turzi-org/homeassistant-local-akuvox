@@ -167,16 +167,20 @@ successfully.
   because no command is sent.
 - **FR-004**: For bistable relays, the lock action MUST schedule a
   delayed state refresh after the lock command is sent, to synchronize
-  the entity state with the actual device state. The refresh interval
-  should be appropriate for the relay mode. For auto-close relays,
-  the lock action should trigger an immediate state refresh since no
-  command is sent.
+  the entity state with the actual device state. The delay should be
+  short enough for responsive feedback (comparable to the unlock
+  pattern) and the implementation should define a sensible default.
+  For auto-close relays, the lock action MUST perform a synchronous
+  state refresh before returning, since no command is sent.
 - **FR-005**: For bistable relays, the lock action MUST cancel any
   pending state refresh from a previous unlock before proceeding, to
-  avoid stale state updates. For auto-close relays, pending state
-  refreshes MUST NOT be cancelled since no new command is sent and
-  the existing refresh is needed to detect when the device
-  auto-closes.
+  avoid stale state updates. When canceling such a refresh, the lock
+  action MUST also clear any associated optimistic-unlock override
+  (as described in `specs/004-webhook-endpoint/data-model.md`) to
+  ensure that stale optimistic state cannot persist after the lock
+  action completes. For auto-close relays, pending state refreshes
+  MUST NOT be cancelled since no new command is sent and the existing
+  refresh is needed to detect when the device auto-closes.
 - **FR-006**: The lock action MUST raise a clear error if the device
   communication fails, without modifying the entity's current state.
 - **FR-007**: The lock action MUST work on relays in both bistable
@@ -204,7 +208,7 @@ successfully.
   standard Home Assistant lock interface (UI, service call, or
   automation) without errors.
 - **SC-002**: After triggering the lock action on an unlocked bistable
-  relay, the entity state updates to "locked" within a few seconds
+  relay, the entity state updates to "locked" within 5 seconds
   (accounting for any required state validation). For auto-close
   relays, the entity state remains unlocked until the device's hold
   delay expires and a state refresh confirms the locked state.
