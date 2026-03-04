@@ -124,8 +124,8 @@ successfully.
     current state is already locked, to avoid unintentionally
     unlocking the door. The action is a no-op.
   - For **auto-close** relays, the lock action MUST also be a
-    no-op when already locked, to avoid momentarily unlocking the
-    door for the hold window duration.
+    no-op when already locked, to avoid starting a new unlock
+    window on a relay that has already returned to locked state.
 - What happens when rapid lock/unlock commands are issued? Only
   state-changing commands should be sent to the device; idempotent
   calls that would not change the current state (for example,
@@ -135,9 +135,11 @@ successfully.
   The integration should raise a clear error and leave the entity
   state unchanged.
 - What happens when the locally known state is stale or unknown
-  (for example, the device was toggled externally)? For bistable
-  relays, the integration should refresh the device state before
-  sending a lock command, to avoid acting on stale information.
+  (for example, the device was toggled externally or the auto-close
+  timer expired without a state refresh)? The integration should
+  refresh the device state before sending a lock command, to avoid
+  acting on stale information. This applies to both bistable and
+  auto-close relays.
 
 ## Requirements *(mandatory)*
 
@@ -166,10 +168,14 @@ successfully.
   already in the locked state, to prevent unintentionally toggling
   a bistable relay to unlocked or momentarily unlocking an
   auto-close relay.
-- **FR-009**: For bistable relays, before sending a lock command,
-  the lock action MUST confirm the current device state is not
-  stale (for example, by refreshing from the device) to avoid
-  acting on outdated local state.
+- **FR-009**: Before sending a lock command, the lock action MUST
+  confirm the current device state is not stale (for example, by
+  refreshing from the device) to avoid acting on outdated local
+  state. This is critical for bistable relays (where a command on
+  a stale-unlocked relay that is actually locked would toggle it
+  to unlocked) and also applies to auto-close relays (where a
+  command on a relay that has already auto-closed would start a
+  new unlock window).
 
 ## Success Criteria *(mandatory)*
 
