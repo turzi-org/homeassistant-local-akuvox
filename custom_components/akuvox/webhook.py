@@ -5,19 +5,20 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from typing import TYPE_CHECKING, Final
 
 from aiohttp import web
 from homeassistant.components.webhook import (
+    async_generate_url,
     async_register,
     async_unregister,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.network import get_url
 
 from .const import (
     ACTIONURL_ENABLE_KEY,
@@ -112,9 +113,12 @@ async def _resolve_user(
     if user is not None:
         return user
 
-    # Fallback: fetch fresh user list from device
+    # Fallback: fetch fresh user list from device (with timeout)
     try:
-        users = await coordinator.device.list_users(page=None)
+        users = await asyncio.wait_for(
+            coordinator.device.list_users(page=None),
+            timeout=5.0,
+        )
         if users:
             for u in users:
                 if getattr(u, "private_pin", None) == code:
@@ -122,6 +126,8 @@ async def _resolve_user(
                     break
             # Update cache for future lookups
             coordinator.update_user_cache(users)
+    except TimeoutError:
+        _LOGGER.debug("User lookup timed out for code fallback")
     except Exception:
         _LOGGER.debug("Failed to fetch users for code lookup fallback")
 
@@ -249,14 +255,21 @@ def async_register_webhook(
         return
 
     name = f"Akuvox {device_name}" if device_name else "Akuvox Webhook"
-    async_register(
-        hass,
-        domain=DOMAIN,
-        name=name,
-        webhook_id=webhook_id,
-        handler=async_handle_webhook,
-        allowed_methods=["GET"],
-    )
+    try:
+        async_register(
+            hass,
+            domain=DOMAIN,
+            name=name,
+            webhook_id=webhook_id,
+            handler=async_handle_webhook,
+            allowed_methods=["GET"],
+        )
+    except ValueError:
+        _LOGGER.warning(
+            "Webhook %s already registered; skipping",
+            mask_webhook_id(webhook_id),
+        )
+        return
 
     # Add to registry only after successful registration
     hass.data[DOMAIN].setdefault("webhook_registry", {})
@@ -302,23 +315,29 @@ def async_unregister_webhook(
 def build_action_urls(
     hass: HomeAssistant,
     webhook_id: str,
+    *,
+    warn_http: bool = True,
 ) -> tuple[dict[str, str], dict[str, str]]:
     """Build enable and disable payloads for device action URLs.
 
     Args:
         hass: The Home Assistant instance.
         webhook_id: The webhook ID for URL generation.
+        warn_http: Log HTTPS warning (set False for disables).
 
     Returns:
         Tuple of (enable_payload, disable_payload) dicts.
 
     """
     try:
-        base_url = get_url(hass)
+        webhook_url = async_generate_url(
+            hass,
+            webhook_id,
+            allow_external=True,
+            allow_internal=True,
+        )
     except Exception:
-        base_url = "http://homeassistant.local:8123"
-
-    webhook_url = f"{base_url}/api/webhook/{webhook_id}"
+        webhook_url = f"http://homeassistant.local:8123/api/webhook/{webhook_id}"
 
     action_urls: dict[str, str] = {}
     for name, config_key in ACTIONURL_KEYS.items():
@@ -337,12 +356,11 @@ def build_action_urls(
         **{key: "" for key in action_urls},
     }
 
-    # Log HTTPS warning
-    if not webhook_url.startswith("https://"):
+    if warn_http and not webhook_url.startswith("https://"):
         _LOGGER.warning(
             "Webhook URL uses HTTP (not HTTPS). PINs may be "
-            "transmitted in plaintext. Configure an external URL "
-            "with TLS for security.",
+            "transmitted in plaintext. Configure an external "
+            "URL with TLS for security.",
         )
 
     return enable_payload, disable_payload

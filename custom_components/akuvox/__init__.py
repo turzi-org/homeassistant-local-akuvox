@@ -430,6 +430,7 @@ async def async_remove_entry(
         _, disable_payload = build_action_urls(
             hass,
             str(webhook_id),
+            warn_http=False,
         )
         device = _create_device(entry)
         async with device:
@@ -439,4 +440,5 @@ async def async_remove_entry(
             "Failed to push webhook disable config to %s "
             "during removal; device may retain stale URLs",
             entry.title,
+            exc_info=True,
         )

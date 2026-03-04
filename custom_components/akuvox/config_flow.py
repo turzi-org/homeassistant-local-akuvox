@@ -347,6 +347,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         enable_payload, disable_payload = build_action_urls(
             self.hass,
             webhook_id,
+            warn_http=enable,
         )
         payload = enable_payload if enable else disable_payload
 
@@ -486,8 +487,7 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 user_input[CONF_WEBHOOK_ID] = current.get(
                     CONF_WEBHOOK_ID,
                 )
-            if CONF_WEBHOOK_ENABLED not in user_input:
-                user_input[CONF_WEBHOOK_ENABLED] = was_enabled
+            user_input[CONF_WEBHOOK_ENABLED] = was_enabled
             return None
 
         # Resolve or generate webhook_id
@@ -501,10 +501,16 @@ class AkuvoxOptionsFlow(OptionsFlow):
         enable_payload, disable_payload = build_action_urls(
             self.hass,
             str(webhook_id),
+            warn_http=now_enabled,
         )
         payload = enable_payload if now_enabled else disable_payload
 
-        auth_method_str = current.get(CONF_AUTH_METHOD, AUTH_NONE)
+        # Use merged settings for device connection
+        effective = {**current, **user_input}
+        auth_method_str = effective.get(
+            CONF_AUTH_METHOD,
+            AUTH_NONE,
+        )
         auth_method = get_auth_method_map().get(
             auth_method_str,
             AuthMethod.NONE,
@@ -514,17 +520,23 @@ class AkuvoxOptionsFlow(OptionsFlow):
         if auth_method in (AuthMethod.BASIC, AuthMethod.DIGEST):
             auth_config = AuthConfig(
                 method=auth_method,
-                username=str(current.get(CONF_USERNAME, "")),
-                password=str(current.get(CONF_PASSWORD, "")),
+                username=str(
+                    effective.get(CONF_USERNAME, ""),
+                ),
+                password=str(
+                    effective.get(CONF_PASSWORD, ""),
+                ),
             )
         else:
             auth_config = AuthConfig(method=auth_method)
 
         device = AkuvoxDevice(
-            host=str(current.get(CONF_HOST, "")),
+            host=str(effective.get(CONF_HOST, "")),
             auth=auth_config,
-            use_ssl=bool(current.get(CONF_USE_SSL, False)),
-            verify_ssl=bool(current.get(CONF_VERIFY_SSL, True)),
+            use_ssl=bool(effective.get(CONF_USE_SSL, False)),
+            verify_ssl=bool(
+                effective.get(CONF_VERIFY_SSL, True),
+            ),
         )
 
         try:
