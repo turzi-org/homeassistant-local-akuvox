@@ -24,6 +24,8 @@ from .const import (
     CONF_USE_SSL,
     CONF_USERNAME,
     CONF_VERIFY_SSL,
+    CONF_WEBHOOK_ENABLED,
+    CONF_WEBHOOK_ID,
     DOMAIN,
     PLATFORMS,
     SERVICE_ADD_SCHEDULE,
@@ -40,6 +42,11 @@ from .const import (
     get_auth_method_map,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
+from .webhook import (
+    async_register_webhook,
+    async_unregister_webhook,
+    build_action_urls,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -314,9 +321,19 @@ async def async_setup_entry(
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
+    # Register webhook if enabled
+    webhook_enabled = bool(_get_config_value(entry, CONF_WEBHOOK_ENABLED, False))
+    webhook_id = _get_config_value(entry, CONF_WEBHOOK_ID)
+    if webhook_enabled and webhook_id is not None:
+        device_name = ""
+        if coordinator.data:
+            device_name = coordinator.data.device_name
+        async_register_webhook(hass, entry, device_name=device_name)
+
     try:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except Exception:
+        async_unregister_webhook(hass, entry)
         hass.data[DOMAIN].pop(entry.entry_id, None)
         if not hass.data[DOMAIN]:
             hass.data.pop(DOMAIN, None)
@@ -359,11 +376,54 @@ async def async_unload_entry(
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
+        # Unregister webhook (also cleans registry)
+        async_unregister_webhook(hass, entry)
+
         coordinator: AkuvoxDataUpdateCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
         await coordinator.device.__aexit__(None, None, None)
         _LOGGER.debug("Closed device session for %s", entry.title)
 
-        if not hass.data[DOMAIN]:
-            hass.data.pop(DOMAIN)
+        if not hass.data.get(DOMAIN):
+            hass.data.pop(DOMAIN, None)
 
     return unload_ok
+
+
+async def async_remove_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> None:
+    """Clean up device webhook config on permanent entry removal.
+
+    Called after async_unload_entry during deletion. Pushes the
+    disable payload to the device on a best-effort basis.
+
+    Args:
+        hass: The Home Assistant instance.
+        entry: The config entry being removed.
+
+    """
+    webhook_enabled = bool(
+        _get_config_value(entry, CONF_WEBHOOK_ENABLED, False),
+    )
+    webhook_id = _get_config_value(entry, CONF_WEBHOOK_ID)
+
+    if not webhook_enabled or webhook_id is None:
+        return
+
+    try:
+        _, disable_payload = build_action_urls(
+            hass,
+            str(webhook_id),
+            warn_http=False,
+        )
+        device = _create_device(entry)
+        async with device:
+            await device.set_device_config(disable_payload)  # type: ignore[attr-defined]
+    except Exception:
+        _LOGGER.warning(
+            "Failed to push webhook disable config to %s "
+            "during removal; device may retain stale URLs",
+            entry.title,
+            exc_info=True,
+        )

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 from typing import Any
 
 import voluptuous as vol
@@ -30,9 +31,12 @@ from .const import (
     CONF_USE_SSL,
     CONF_USERNAME,
     CONF_VERIFY_SSL,
+    CONF_WEBHOOK_ENABLED,
+    CONF_WEBHOOK_ID,
     DOMAIN,
     get_auth_method_map,
 )
+from .webhook import build_action_urls
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -269,10 +273,117 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(mac_clean)
         self._abort_if_unique_id_configured()
 
-        return self.async_create_entry(
-            title=f"Akuvox {info.model}",
-            data=self._data,
+        self._data["_device_model"] = info.model
+        return await self.async_step_webhook()
+
+    async def async_step_webhook(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> Any:
+        """Handle the webhook configuration step.
+
+        Args:
+            user_input: User input from the form.
+
+        Returns:
+            Flow result for entry creation or form with errors.
+
+        """
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            if user_input.get(CONF_WEBHOOK_ENABLED):
+                webhook_id = secrets.token_hex(32)
+                try:
+                    await self._async_push_webhook_config(
+                        webhook_id,
+                        enable=True,
+                    )
+                except Exception:
+                    errors["base"] = "webhook_push_failed"
+                else:
+                    self._data[CONF_WEBHOOK_ID] = webhook_id
+                    self._data[CONF_WEBHOOK_ENABLED] = True
+            else:
+                self._data[CONF_WEBHOOK_ID] = None
+                self._data[CONF_WEBHOOK_ENABLED] = False
+
+            if not errors:
+                model = self._data.pop("_device_model", "Device")
+                return self.async_create_entry(
+                    title=f"Akuvox {model}",
+                    data=self._data,
+                )
+
+        if user_input is not None and CONF_WEBHOOK_ENABLED in user_input:
+            default_enabled = bool(user_input[CONF_WEBHOOK_ENABLED])
+        else:
+            default_enabled = bool(self._data.get(CONF_WEBHOOK_ENABLED, False))
+
+        return self.async_show_form(
+            step_id="webhook",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_WEBHOOK_ENABLED,
+                        default=default_enabled,
+                    ): bool,
+                }
+            ),
+            errors=errors or {},
         )
+
+    async def _async_push_webhook_config(
+        self,
+        webhook_id: str,
+        *,
+        enable: bool,
+    ) -> None:
+        """Push webhook action URL config to the device.
+
+        Args:
+            webhook_id: The webhook ID for URL generation.
+            enable: Whether to enable or disable webhooks.
+
+        Raises:
+            AkuvoxError: If the device config push fails.
+            Exception: If webhook URL generation fails.
+
+        """
+        enable_payload, disable_payload = build_action_urls(
+            self.hass,
+            webhook_id,
+            warn_http=enable,
+        )
+        payload = enable_payload if enable else disable_payload
+
+        auth_method_str = self._data.get(
+            CONF_AUTH_METHOD,
+            AUTH_NONE,
+        )
+        auth_method = get_auth_method_map().get(
+            auth_method_str,
+            AuthMethod.NONE,
+        )
+
+        auth_config: AuthConfig | None = None
+        if auth_method in (AuthMethod.BASIC, AuthMethod.DIGEST):
+            auth_config = AuthConfig(
+                method=auth_method,
+                username=self._data.get(CONF_USERNAME, ""),
+                password=self._data.get(CONF_PASSWORD, ""),
+            )
+        else:
+            auth_config = AuthConfig(method=auth_method)
+
+        device = AkuvoxDevice(
+            host=self._data[CONF_HOST],
+            auth=auth_config,
+            use_ssl=self._data.get(CONF_USE_SSL, False),
+            verify_ssl=self._data.get(CONF_VERIFY_SSL, True),
+        )
+        async with device:
+            await device.set_device_config(payload)  # type: ignore[attr-defined]
 
 
 class AkuvoxOptionsFlow(OptionsFlow):
@@ -320,6 +431,13 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 if not username or not password:
                     errors.setdefault("base", "invalid_auth")
 
+            if not errors:
+                webhook_err = await self._async_handle_webhook_change(
+                    user_input,
+                )
+                if webhook_err:
+                    errors["base"] = webhook_err
+
             if errors:
                 current = {
                     **self._config_entry.data,
@@ -346,6 +464,100 @@ class AkuvoxOptionsFlow(OptionsFlow):
             step_id="init",
             data_schema=self._build_schema(current),
         )
+
+    async def _async_handle_webhook_change(
+        self,
+        user_input: dict[str, Any],
+    ) -> str | None:
+        """Handle webhook enable/disable changes in options flow.
+
+        Pushes action URL config to device when webhook state changes.
+
+        Args:
+            user_input: User input from the options form.
+
+        Returns:
+            Error string if push failed, None on success.
+
+        """
+        current = {
+            **self._config_entry.data,
+            **self._config_entry.options,
+        }
+        was_enabled = current.get(CONF_WEBHOOK_ENABLED, False)
+        now_enabled = user_input.get(CONF_WEBHOOK_ENABLED, False)
+
+        if was_enabled == now_enabled:
+            # Preserve existing webhook fields unchanged
+            if CONF_WEBHOOK_ID not in user_input:
+                user_input[CONF_WEBHOOK_ID] = current.get(
+                    CONF_WEBHOOK_ID,
+                )
+            user_input[CONF_WEBHOOK_ENABLED] = was_enabled
+            return None
+
+        # Resolve or generate webhook_id
+        webhook_id = current.get(CONF_WEBHOOK_ID)
+        if now_enabled and webhook_id is None:
+            webhook_id = secrets.token_hex(32)
+
+        if webhook_id is None:
+            return None
+
+        try:
+            enable_payload, disable_payload = build_action_urls(
+                self.hass,
+                str(webhook_id),
+                warn_http=now_enabled,
+            )
+        except Exception:
+            return "webhook_push_failed"
+
+        payload = enable_payload if now_enabled else disable_payload
+
+        # Use merged settings for device connection
+        effective = {**current, **user_input}
+        auth_method_str = effective.get(
+            CONF_AUTH_METHOD,
+            AUTH_NONE,
+        )
+        auth_method = get_auth_method_map().get(
+            auth_method_str,
+            AuthMethod.NONE,
+        )
+
+        auth_config: AuthConfig | None = None
+        if auth_method in (AuthMethod.BASIC, AuthMethod.DIGEST):
+            auth_config = AuthConfig(
+                method=auth_method,
+                username=str(
+                    effective.get(CONF_USERNAME, ""),
+                ),
+                password=str(
+                    effective.get(CONF_PASSWORD, ""),
+                ),
+            )
+        else:
+            auth_config = AuthConfig(method=auth_method)
+
+        device = AkuvoxDevice(
+            host=str(effective.get(CONF_HOST, "")),
+            auth=auth_config,
+            use_ssl=bool(effective.get(CONF_USE_SSL, False)),
+            verify_ssl=bool(
+                effective.get(CONF_VERIFY_SSL, True),
+            ),
+        )
+
+        try:
+            async with device:
+                await device.set_device_config(payload)  # type: ignore[attr-defined]
+        except Exception:
+            return "webhook_push_failed"
+
+        user_input[CONF_WEBHOOK_ID] = str(webhook_id)
+        user_input[CONF_WEBHOOK_ENABLED] = now_enabled
+        return None
 
     @staticmethod
     def _build_schema(
@@ -386,5 +598,9 @@ class AkuvoxOptionsFlow(OptionsFlow):
                     CONF_PASSWORD,
                     default=current.get(CONF_PASSWORD, ""),
                 ): str,
+                vol.Required(
+                    CONF_WEBHOOK_ENABLED,
+                    default=current.get(CONF_WEBHOOK_ENABLED, False),
+                ): bool,
             }
         )

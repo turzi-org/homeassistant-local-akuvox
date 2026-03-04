@@ -218,3 +218,322 @@ async def test_config_fetched_on_reload(
 
     # get_device_config should have been awaited again on reload
     assert mock_akuvox_device.get_device_config.await_count > initial_config_calls
+
+
+# ── Webhook lifecycle tests (T009) ──────────────────────────
+
+
+async def test_webhook_registered_when_enabled(
+    hass: HomeAssistant,
+    mock_config_entry_data_webhook: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test webhook endpoint registered during setup when enabled."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_webhook,
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.akuvox.webhook.async_register",
+    ) as mock_register:
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert entry.state is ConfigEntryState.LOADED
+        mock_register.assert_called_once()
+        # Verify webhook_registry populated
+        registry = hass.data[DOMAIN].get("webhook_registry", {})
+        from tests.conftest import MOCK_WEBHOOK_ID
+
+        assert MOCK_WEBHOOK_ID in registry
+        assert registry[MOCK_WEBHOOK_ID] == entry.entry_id
+
+
+async def test_webhook_not_registered_when_disabled(
+    hass: HomeAssistant,
+    mock_config_entry_data_webhook_disabled: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test webhook not registered when webhook_enabled=False."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_webhook_disabled,
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.akuvox.webhook.async_register",
+    ) as mock_register:
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert entry.state is ConfigEntryState.LOADED
+        mock_register.assert_not_called()
+
+
+async def test_webhook_not_registered_when_no_webhook_fields(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test webhook not registered for entries without webhook fields."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.akuvox.webhook.async_register",
+    ) as mock_register:
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert entry.state is ConfigEntryState.LOADED
+        mock_register.assert_not_called()
+
+
+async def test_webhook_unregistered_on_unload(
+    hass: HomeAssistant,
+    mock_config_entry_data_webhook: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test webhook unregistered during unload when in registry."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_webhook,
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.akuvox.webhook.async_register",
+    ):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state is ConfigEntryState.LOADED
+
+    with patch(
+        "custom_components.akuvox.webhook.async_unregister",
+    ) as mock_unregister:
+        await hass.config_entries.async_unload(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert entry.state is ConfigEntryState.NOT_LOADED  # type: ignore[comparison-overlap]
+        mock_unregister.assert_called_once()
+
+    # Registry entry cleaned up
+    registry = hass.data.get(DOMAIN, {}).get("webhook_registry", {})
+    from tests.conftest import MOCK_WEBHOOK_ID
+
+    assert MOCK_WEBHOOK_ID not in registry
+
+
+async def test_webhook_unload_safe_noop_when_not_in_registry(
+    hass: HomeAssistant,
+    mock_config_entry_data_webhook_disabled: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test unload with webhook_id but not in registry is safe."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_webhook_disabled,
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+
+    with patch(
+        "custom_components.akuvox.webhook.async_unregister",
+    ) as mock_unregister:
+        await hass.config_entries.async_unload(entry.entry_id)
+        await hass.async_block_till_done()
+
+        # Not called since webhook was never registered
+        mock_unregister.assert_not_called()
+
+
+async def test_unload_cleans_up_empty_registry(
+    hass: HomeAssistant,
+    mock_config_entry_data_webhook: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test unload removes empty webhook_registry and DOMAIN keys."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_webhook,
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.akuvox.webhook.async_register",
+    ):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.akuvox.webhook.async_unregister",
+    ):
+        await hass.config_entries.async_unload(entry.entry_id)
+        await hass.async_block_till_done()
+
+    # DOMAIN key should be cleaned up when last entry unloads
+    assert DOMAIN not in hass.data
+
+
+# --- async_remove_entry tests ---
+
+
+async def test_remove_entry_pushes_disable_when_enabled(
+    hass: HomeAssistant,
+    mock_config_entry_data_webhook: dict[str, Any],
+    mock_relay_status: dict[str, Any],
+    mock_device_info: Any,
+    mock_device_config: Any,
+) -> None:
+    """Test removal pushes disable payload when webhook was enabled."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_webhook,
+        unique_id=MOCK_MAC.lower().replace(":", ""),
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+        device.get_relay_status = AsyncMock(
+            return_value=mock_relay_status,
+        )
+        device.get_info = AsyncMock(return_value=mock_device_info)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
+        device.set_device_config = AsyncMock(return_value=None)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_remove_cls:
+        remove_dev = mock_remove_cls.return_value
+        remove_dev.__aenter__ = AsyncMock(return_value=remove_dev)
+        remove_dev.__aexit__ = AsyncMock(return_value=None)
+        remove_dev.set_device_config = AsyncMock(return_value=None)
+
+        await hass.config_entries.async_remove(entry.entry_id)
+        await hass.async_block_till_done()
+
+    remove_dev.set_device_config.assert_awaited_once()
+
+
+async def test_remove_entry_skips_when_disabled(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_relay_status: dict[str, Any],
+    mock_device_info: Any,
+    mock_device_config: Any,
+) -> None:
+    """Test removal does not push when webhook was disabled."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC.lower().replace(":", ""),
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+        device.get_relay_status = AsyncMock(
+            return_value=mock_relay_status,
+        )
+        device.get_info = AsyncMock(return_value=mock_device_info)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_remove_cls:
+        remove_dev = mock_remove_cls.return_value
+        remove_dev.__aenter__ = AsyncMock(return_value=remove_dev)
+        remove_dev.__aexit__ = AsyncMock(return_value=None)
+        remove_dev.set_device_config = AsyncMock(return_value=None)
+
+        await hass.config_entries.async_remove(entry.entry_id)
+        await hass.async_block_till_done()
+
+    remove_dev.set_device_config.assert_not_awaited()
+
+
+async def test_remove_entry_handles_push_failure(
+    hass: HomeAssistant,
+    mock_config_entry_data_webhook: dict[str, Any],
+    mock_relay_status: dict[str, Any],
+    mock_device_info: Any,
+    mock_device_config: Any,
+) -> None:
+    """Test removal logs warning on push failure, does not block."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_webhook,
+        unique_id=MOCK_MAC.lower().replace(":", ""),
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+        device.get_relay_status = AsyncMock(
+            return_value=mock_relay_status,
+        )
+        device.get_info = AsyncMock(return_value=mock_device_info)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_remove_cls:
+        remove_dev = mock_remove_cls.return_value
+        remove_dev.__aenter__ = AsyncMock(return_value=remove_dev)
+        remove_dev.__aexit__ = AsyncMock(return_value=None)
+        remove_dev.set_device_config = AsyncMock(
+            side_effect=Exception("Device offline"),
+        )
+
+        # Should not raise — best-effort
+        await hass.config_entries.async_remove(entry.entry_id)
+        await hass.async_block_till_done()

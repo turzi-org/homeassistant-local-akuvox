@@ -29,6 +29,8 @@ from custom_components.akuvox.const import (
     CONF_USE_SSL,
     CONF_USERNAME,
     CONF_VERIFY_SSL,
+    CONF_WEBHOOK_ENABLED,
+    CONF_WEBHOOK_ID,
     DOMAIN,
 )
 from tests.conftest import MOCK_HOST, MOCK_MAC
@@ -181,6 +183,13 @@ async def test_credentials_step_skipped_for_none(
             result["flow_id"],
             {CONF_AUTH_METHOD: AUTH_NONE},
         )
+        # Now at webhook step
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "webhook"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_WEBHOOK_ENABLED: False},
+        )
         assert result["type"] is FlowResultType.CREATE_ENTRY
 
 
@@ -216,6 +225,13 @@ async def test_successful_connection_creates_entry(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {CONF_USERNAME: "admin", CONF_PASSWORD: "password"},
+        )
+        # Now at webhook step
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "webhook"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_WEBHOOK_ENABLED: False},
         )
 
         assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -730,3 +746,428 @@ async def test_options_flow_host_error_takes_precedence(
     )
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "invalid_host"}
+
+
+# --- Config Flow Webhook Step Tests ---
+
+
+async def test_webhook_step_shows_form(
+    hass: HomeAssistant,
+) -> None:
+    """Test webhook step shows form after connection test."""
+    with patch(
+        "custom_components.akuvox.config_flow.AkuvoxDevice",
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": config_entries.SOURCE_USER},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_HOST: MOCK_HOST, CONF_USE_SSL: False},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_AUTH_METHOD: AUTH_NONE},
+        )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "webhook"
+
+
+async def test_webhook_disabled_creates_entry(
+    hass: HomeAssistant,
+) -> None:
+    """Test disabling webhook creates entry with no webhook config."""
+    with patch(
+        "custom_components.akuvox.config_flow.AkuvoxDevice",
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": config_entries.SOURCE_USER},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_HOST: MOCK_HOST, CONF_USE_SSL: False},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_AUTH_METHOD: AUTH_NONE},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_WEBHOOK_ENABLED: False},
+        )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_WEBHOOK_ID] is None
+    assert result["data"][CONF_WEBHOOK_ENABLED] is False
+
+
+async def test_webhook_enabled_pushes_config(
+    hass: HomeAssistant,
+) -> None:
+    """Test enabling webhook pushes action URLs to device."""
+    with patch(
+        "custom_components.akuvox.config_flow.AkuvoxDevice",
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.set_device_config = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": config_entries.SOURCE_USER},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_HOST: MOCK_HOST, CONF_USE_SSL: False},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_AUTH_METHOD: AUTH_NONE},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_WEBHOOK_ENABLED: True},
+        )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_WEBHOOK_ENABLED] is True
+    assert result["data"][CONF_WEBHOOK_ID] is not None
+    assert len(result["data"][CONF_WEBHOOK_ID]) == 64
+    device.set_device_config.assert_awaited_once()
+
+
+async def test_webhook_push_fails_shows_error(
+    hass: HomeAssistant,
+) -> None:
+    """Test failed webhook push shows error and allows retry."""
+    with patch(
+        "custom_components.akuvox.config_flow.AkuvoxDevice",
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.set_device_config = AsyncMock(
+            side_effect=AkuvoxError("Push failed"),
+        )
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": config_entries.SOURCE_USER},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_HOST: MOCK_HOST, CONF_USE_SSL: False},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_AUTH_METHOD: AUTH_NONE},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_WEBHOOK_ENABLED: True},
+        )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "webhook"
+    assert result["errors"] == {"base": "webhook_push_failed"}
+
+
+async def test_webhook_push_fails_then_skip(
+    hass: HomeAssistant,
+) -> None:
+    """Test user can skip webhook after push failure."""
+    with patch(
+        "custom_components.akuvox.config_flow.AkuvoxDevice",
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.set_device_config = AsyncMock(
+            side_effect=AkuvoxError("Push failed"),
+        )
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": config_entries.SOURCE_USER},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_HOST: MOCK_HOST, CONF_USE_SSL: False},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_AUTH_METHOD: AUTH_NONE},
+        )
+        # First attempt fails
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_WEBHOOK_ENABLED: True},
+        )
+        assert result["errors"] == {"base": "webhook_push_failed"}
+
+        # User skips
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_WEBHOOK_ENABLED: False},
+        )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_WEBHOOK_ENABLED] is False
+    assert result["data"][CONF_WEBHOOK_ID] is None
+
+
+# --- Options Flow Webhook Tests ---
+
+
+async def test_options_webhook_enable(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test options flow enables webhook and pushes config."""
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": 0},
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
+        device.set_device_config = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC.lower().replace(":", ""),
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.akuvox.config_flow.AkuvoxDevice",
+    ) as mock_flow_cls:
+        flow_dev = mock_flow_cls.return_value
+        flow_dev.set_device_config = AsyncMock(return_value=None)
+        flow_dev.__aenter__ = AsyncMock(return_value=flow_dev)
+        flow_dev.__aexit__ = AsyncMock(return_value=None)
+
+        result = await hass.config_entries.options.async_init(
+            entry.entry_id,
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_HOST: MOCK_HOST,
+                CONF_USE_SSL: False,
+                CONF_VERIFY_SSL: True,
+                CONF_AUTH_METHOD: AUTH_NONE,
+                CONF_USERNAME: "",
+                CONF_PASSWORD: "",
+                CONF_WEBHOOK_ENABLED: True,
+            },
+        )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options[CONF_WEBHOOK_ENABLED] is True
+    assert entry.options[CONF_WEBHOOK_ID] is not None
+
+
+async def test_options_webhook_disable(
+    hass: HomeAssistant,
+    mock_config_entry_data_webhook: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test options flow disables webhook and pushes clear config."""
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": 0},
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
+        device.set_device_config = AsyncMock(return_value=None)
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_webhook,
+            unique_id=MOCK_MAC.lower().replace(":", ""),
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.akuvox.config_flow.AkuvoxDevice",
+    ) as mock_flow_cls:
+        flow_dev = mock_flow_cls.return_value
+        flow_dev.set_device_config = AsyncMock(return_value=None)
+        flow_dev.__aenter__ = AsyncMock(return_value=flow_dev)
+        flow_dev.__aexit__ = AsyncMock(return_value=None)
+
+        result = await hass.config_entries.options.async_init(
+            entry.entry_id,
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_HOST: MOCK_HOST,
+                CONF_USE_SSL: False,
+                CONF_VERIFY_SSL: True,
+                CONF_AUTH_METHOD: AUTH_NONE,
+                CONF_USERNAME: "",
+                CONF_PASSWORD: "",
+                CONF_WEBHOOK_ENABLED: False,
+            },
+        )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options[CONF_WEBHOOK_ENABLED] is False
+
+
+async def test_options_webhook_push_fails(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Test options flow shows error on webhook push failure."""
+    with patch(
+        "custom_components.akuvox.AkuvoxDevice",
+        autospec=True,
+    ) as mock_cls:
+        device = mock_cls.return_value
+        device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        device.get_relay_status = AsyncMock(
+            return_value={"RelayA": 0},
+        )
+        device.trigger_relay = AsyncMock(return_value=None)
+        device.get_device_config = AsyncMock(
+            return_value=mock_device_config,
+        )
+        device.__aenter__ = AsyncMock(return_value=device)
+        device.__aexit__ = AsyncMock(return_value=None)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=mock_config_entry_data_none,
+            unique_id=MOCK_MAC.lower().replace(":", ""),
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.akuvox.config_flow.AkuvoxDevice",
+    ) as mock_flow_cls:
+        flow_dev = mock_flow_cls.return_value
+        flow_dev.set_device_config = AsyncMock(
+            side_effect=AkuvoxError("Push failed"),
+        )
+        flow_dev.__aenter__ = AsyncMock(return_value=flow_dev)
+        flow_dev.__aexit__ = AsyncMock(return_value=None)
+
+        result = await hass.config_entries.options.async_init(
+            entry.entry_id,
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_HOST: MOCK_HOST,
+                CONF_USE_SSL: False,
+                CONF_VERIFY_SSL: True,
+                CONF_AUTH_METHOD: AUTH_NONE,
+                CONF_USERNAME: "",
+                CONF_PASSWORD: "",
+                CONF_WEBHOOK_ENABLED: True,
+            },
+        )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "webhook_push_failed"}

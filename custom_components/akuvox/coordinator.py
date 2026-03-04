@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import timedelta
+from time import monotonic
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -21,8 +22,10 @@ from pylocal_akuvox import (
     AkuvoxConnectionError,
     AkuvoxDevice,
     AkuvoxDeviceError,
+    AkuvoxError,
     AkuvoxParseError,
     DeviceInfo,
+    User,
 )
 
 from .const import (
@@ -41,6 +44,8 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+_USER_CACHE_TTL_SECONDS = 300  # 5 minutes
 
 
 @dataclass(frozen=True)
@@ -186,6 +191,7 @@ class AkuvoxCoordinatorData:
     relay_status: dict[str, Any]
     device_name: str = ""
     relay_configs: dict[str, RelayConfig] = field(default_factory=dict)
+    users: list[User] = field(default_factory=list)
 
 
 class AkuvoxDataUpdateCoordinator(
@@ -215,7 +221,34 @@ class AkuvoxDataUpdateCoordinator(
         self._cached_device_info: DeviceInfo | None = None
         self._cached_device_name: str | None = None
         self._cached_relay_configs: dict[str, RelayConfig] | None = None
+        self._cached_users: list[User] = []
+        self._last_user_fetch: float | None = None
         self._was_unavailable: bool = False
+
+    def get_user_by_pin(self, pin: str) -> User | None:
+        """Look up a user by their private PIN from the cache.
+
+        Args:
+            pin: The PIN code to match against cached users.
+
+        Returns:
+            The matching User, or None if not found.
+
+        """
+        for user in self._cached_users:
+            if user.private_pin == pin:
+                return user
+        return None
+
+    def update_user_cache(self, users: list[User]) -> None:
+        """Replace the cached user list.
+
+        Args:
+            users: Fresh user list from the device.
+
+        """
+        self._cached_users = list(users)
+        self._last_user_fetch = monotonic()
 
     def _should_fetch_config(self) -> bool:
         """Determine whether device config should be fetched.
@@ -341,6 +374,38 @@ class AkuvoxDataUpdateCoordinator(
             )
         self._was_unavailable = False
 
+    async def _async_fetch_users(self) -> None:
+        """Fetch and cache user list from the device.
+
+        Skips the fetch if the cache was populated within the TTL
+        window.  Non-fatal: logs a warning on failure and keeps the
+        previous cache intact.
+
+        """
+        if (
+            self._last_user_fetch is not None
+            and monotonic() - self._last_user_fetch < _USER_CACHE_TTL_SECONDS
+        ):
+            return
+
+        list_users = getattr(self.device, "list_users", None)
+        if not callable(list_users):
+            return
+
+        try:
+            users = await list_users(page=None)
+            self._cached_users = users if users is not None else []
+            self._last_user_fetch = monotonic()
+        except AkuvoxError as err:
+            _LOGGER.warning(
+                "Failed to fetch users from Akuvox device; keeping cache: %s",
+                err,
+            )
+        except Exception:
+            _LOGGER.exception(
+                "Unexpected error while fetching users; keeping cache",
+            )
+
     async def _async_update_data(self) -> AkuvoxCoordinatorData:
         """Fetch data from the Akuvox device.
 
@@ -394,9 +459,12 @@ class AkuvoxDataUpdateCoordinator(
 
         await self._async_fetch_device_config(relay_status)
 
+        await self._async_fetch_users()
+
         return AkuvoxCoordinatorData(
             device_info=self._cached_device_info,
             relay_status=relay_status,
             device_name=self._cached_device_name or "",
             relay_configs=self._cached_relay_configs or {},
+            users=list(self._cached_users),
         )

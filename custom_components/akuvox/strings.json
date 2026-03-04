@@ -33,6 +33,16 @@
           "username": "Username",
           "password": "Password"
         }
+      },
+      "webhook": {
+        "title": "Webhook Events",
+        "description": "Enable webhook event delivery from this device to Home Assistant.",
+        "data": {
+          "webhook_enabled": "Enable Webhooks"
+        },
+        "data_description": {
+          "webhook_enabled": "When enabled, the integration will configure the device to send event notifications (relay triggers, code entry) to Home Assistant."
+        }
       }
     },
     "error": {
@@ -40,7 +50,8 @@
       "invalid_auth": "Invalid authentication credentials.",
       "invalid_host": "Invalid host address.",
       "already_configured": "This device is already configured.",
-      "unknown": "An unexpected error occurred."
+      "unknown": "An unexpected error occurred.",
+      "webhook_push_failed": "Failed to push webhook configuration to the device."
     },
     "abort": {
       "already_configured": "This device is already configured."
@@ -57,7 +68,8 @@
           "verify_ssl": "Verify SSL Certificate",
           "auth_method": "Authentication Method",
           "username": "Username",
-          "password": "Password"
+          "password": "Password",
+          "webhook_enabled": "Enable Webhooks"
         }
       }
     }

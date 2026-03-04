@@ -35,9 +35,9 @@ independent implementation and testing.
 
 **Purpose**: Verify baseline and prepare for feature work
 
-- [ ] T001 Verify all existing tests pass with
+- [x] T001 Verify all existing tests pass with
   `uv run pytest tests/ -x -q`
-- [ ] T002 Verify linting passes with
+- [x] T002 Verify linting passes with
   `uv run ruff check custom_components/ tests/` and
   `uv run ruff format --check custom_components/ tests/`
 
@@ -53,7 +53,7 @@ phase is complete
 
 ### Tests for Foundational
 
-- [ ] T003 [P] Extend tests for coordinator user cache in
+- [x] T003 [P] Extend tests for coordinator user cache in
   `tests/test_coordinator.py` — add tests that
   `AkuvoxCoordinatorData` includes a `users` field populated
   from `device.list_users(page=None)` during
@@ -62,19 +62,19 @@ phase is complete
 
 ### Implementation for Foundational
 
-- [ ] T004 [P] Add webhook constants to
+- [x] T004 [P] Add webhook constants to
   `custom_components/akuvox/const.py` — add
   `CONF_WEBHOOK_ID`, `CONF_WEBHOOK_ENABLED`,
   `EVENT_WEBHOOK_RECEIVED` (`akuvox_webhook_received`),
   `ACTIONURL_KEYS` dict mapping all 10 action URL config
   key names, `KNOWN_EVENT_TYPES` frozenset, and
   `REFRESH_EVENT_TYPES` frozenset (relay + valid_code events)
-- [ ] T005 [P] Extend coordinator user cache in
+- [x] T005 [P] Extend coordinator user cache in
   `custom_components/akuvox/coordinator.py` — add a `users`
   field (or PIN→user map keyed by `private_pin`) to
   `AkuvoxCoordinatorData`, populate it from
   `device.list_users(page=None)` in `_async_update_data()`
-- [ ] T006 [P] Add webhook test fixtures to
+- [x] T006 [P] Add webhook test fixtures to
   `tests/conftest.py` — add fixtures for mock webhook
   requests (aiohttp test requests with query params),
   mock coordinator with user cache, sample webhook_id,
@@ -101,7 +101,7 @@ triggers coordinator refresh for relay/code events
 > **NOTE**: Write these tests FIRST, ensure they FAIL
 > before implementation
 
-- [ ] T007 [P] [US1] Write sanitization unit tests in
+- [x] T007 [P] [US1] Write sanitization unit tests in
   `tests/test_sanitize.py` — test
   `sanitize_payload(payload, webhook_id=None)`:
   sensitive key masking (contains-match for token, secret,
@@ -109,7 +109,7 @@ triggers coordinator refresh for relay/code events
   webhook ID substring replacement (64-char and ≤8-char
   cases), field truncation at 1024 chars, original dict
   not mutated; test `mask_webhook_id()` output format
-- [ ] T008 [P] [US1] Write webhook handler tests in
+- [x] T008 [P] [US1] Write webhook handler tests in
   `tests/test_webhook.py` — test `async_handle_webhook()`:
   valid known event (relay_a_triggered with status), valid
   code event (user lookup from cache hit, cache miss with
@@ -122,7 +122,7 @@ triggers coordinator refresh for relay/code events
   event payload; test rapid-fire concurrent deliveries
   (FR-014) — multiple simultaneous requests processed
   independently without event loss
-- [ ] T009 [P] [US1] Write webhook lifecycle tests in
+- [x] T009 [P] [US1] Write webhook lifecycle tests in
   `tests/test_init.py` — test `async_setup_entry()`:
   webhook registered when `webhook_enabled=True`, not
   registered when `False`; test `async_unload_entry()`:
@@ -133,14 +133,14 @@ triggers coordinator refresh for relay/code events
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Create `sanitize.py` module at
+- [x] T010 [US1] Create `sanitize.py` module at
   `custom_components/akuvox/sanitize.py` — implement
   `sanitize_payload(payload, webhook_id=None)` per
   contracts/payload-sanitization.md: sensitive field
   masking with contains-match, webhook ID substring
   replacement, field truncation at 1024 chars, returns
   new dict; implement `mask_webhook_id(webhook_id)` helper
-- [ ] T011 [US1] Create `webhook.py` module at
+- [x] T011 [US1] Create `webhook.py` module at
   `custom_components/akuvox/webhook.py` — implement:
   (a) `async_handle_webhook(hass, webhook_id, request)`
   per contracts/webhook-handler.md 8-step processing;
@@ -154,7 +154,7 @@ triggers coordinator refresh for relay/code events
   contracts/config-flow-webhook.md;
   (e) unknown event normalization (lowercase, replace
   non-alnum with `_`, collapse, trim, truncate 32 chars)
-- [ ] T012 [US1] Wire webhook lifecycle into
+- [x] T012 [US1] Wire webhook lifecycle into
   `custom_components/akuvox/__init__.py` — in
   `async_setup_entry()`: init webhook_registry via
   `hass.data.setdefault()`, call
@@ -187,7 +187,7 @@ config entry contains `webhook_id` + `webhook_enabled=True`
 > **NOTE**: Write these tests FIRST, ensure they FAIL
 > before implementation
 
-- [ ] T013 [P] [US2] Write config flow webhook step tests in
+- [x] T013 [P] [US2] Write config flow webhook step tests in
   `tests/test_config_flow.py` — test new webhook step:
   enable path (generates webhook_id, pushes 10 URLs +
   Enable + Method to device, stores in entry data), skip
@@ -198,7 +198,7 @@ config entry contains `webhook_id` + `webhook_enabled=True`
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Add webhook step to config flow in
+- [x] T014 [US2] Add webhook step to config flow in
   `custom_components/akuvox/config_flow.py` — add
   `async_step_webhook()` after connection test step: show
   `CONF_WEBHOOK_ENABLED` toggle (default False), if
@@ -210,12 +210,12 @@ config entry contains `webhook_id` + `webhook_enabled=True`
   None/False; handle `webhook_push_failed` error with
   retry/skip; log HTTPS warning per
   contracts/config-flow-webhook.md
-- [ ] T015 [P] [US2] Add webhook UI strings to
+- [x] T015 [P] [US2] Add webhook UI strings to
   `custom_components/akuvox/strings.json` — add
   `step.webhook.title`, `step.webhook.description`,
   `step.webhook.data.webhook_enabled` label, and
   `error.webhook_push_failed` message
-- [ ] T016 [P] [US2] Add webhook translations to
+- [x] T016 [P] [US2] Add webhook translations to
   `custom_components/akuvox/translations/en.json` —
   mirror all webhook strings from `strings.json`
 
@@ -243,7 +243,7 @@ webhook config entry data)
 > **NOTE**: Write these tests FIRST, ensure they FAIL
 > before implementation
 
-- [ ] T017 [P] [US3] Write options flow webhook toggle tests
+- [x] T017 [P] [US3] Write options flow webhook toggle tests
   in `tests/test_config_flow.py` — test enable path: reuse
   existing webhook_id if present, generate new if None,
   push 10 URLs + Enable=1 + Method='', update entry
@@ -252,7 +252,7 @@ webhook config entry data)
   path: no device push; test push failure: error shown,
   cancel preserves previous state; verify options flow does
   NOT inline-register/unregister webhook
-- [ ] T018 [P] [US3] Write async_remove_entry tests in
+- [x] T018 [P] [US3] Write async_remove_entry tests in
   `tests/test_init.py` — test removal with webhooks enabled:
   pushes disable payload to device (best-effort); test
   removal with webhooks disabled: no device push; test
@@ -261,7 +261,7 @@ webhook config entry data)
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] Add webhook toggle to options flow in
+- [x] T019 [US3] Add webhook toggle to options flow in
   `custom_components/akuvox/config_flow.py` — add
   `CONF_WEBHOOK_ENABLED` to options schema with current
   value as default; on enable: reuse webhook_id via
@@ -271,7 +271,7 @@ webhook config entry data)
   `webhook_enabled=False` (preserve webhook_id); handle
   `webhook_push_failed` per
   contracts/config-flow-webhook.md error semantics
-- [ ] T020 [US3] Add `async_remove_entry()` hook to
+- [x] T020 [US3] Add `async_remove_entry()` hook to
   `custom_components/akuvox/__init__.py` — if
   `webhook_enabled=True` and `webhook_id` not None:
   open `AkuvoxDevice` connection, push disable payload
@@ -288,18 +288,18 @@ options; integration removal cleans up device config
 
 **Purpose**: Final validation, edge cases, documentation
 
-- [ ] T021 [P] Verify `custom_components/akuvox/manifest.json`
+- [x] T021 [P] Verify `custom_components/akuvox/manifest.json`
   — confirm no `iot_class` change needed (polling remains
   active alongside optional webhooks); no new dependencies
   or manifest keys expected unless HA requires explicit
   webhook declaration in a future version
-- [ ] T022 Run full test suite with
+- [x] T022 Run full test suite with
   `uv run pytest tests/ -x -q` and verify all tests pass
-- [ ] T023 Run full lint suite with
+- [x] T023 Run full lint suite with
   `uv run ruff check custom_components/ tests/`,
   `uv run ruff format --check custom_components/ tests/`,
   and `uv run mypy custom_components/` and verify clean
-- [ ] T024 Run quickstart.md validation: verify all files
+- [x] T024 Run quickstart.md validation: verify all files
   listed in New Files and Modified Existing Files exist
   and match the documented purpose
 
