@@ -70,7 +70,8 @@ pre-commit run --all-files
 ### Style and Quality
 
 - All code must pass **ruff** linting and formatting.
-- All public functions and classes must have **docstrings**.
+- All functions and classes must have **docstrings** (CI enforces
+  100% coverage via `interrogate`).
 - All function signatures must have **type annotations**.
 - Cyclomatic complexity must not exceed 10 per function.
 - All new source files must include **SPDX license headers**:
