@@ -42,7 +42,11 @@ from .const import (
     get_auth_method_map,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
-from .webhook import async_register_webhook, async_unregister_webhook
+from .webhook import (
+    async_register_webhook,
+    async_unregister_webhook,
+    build_action_urls,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -398,3 +402,41 @@ async def async_unload_entry(
             hass.data.pop(DOMAIN, None)
 
     return unload_ok
+
+
+async def async_remove_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> None:
+    """Clean up device webhook config on permanent entry removal.
+
+    Called after async_unload_entry during deletion. Pushes the
+    disable payload to the device on a best-effort basis.
+
+    Args:
+        hass: The Home Assistant instance.
+        entry: The config entry being removed.
+
+    """
+    webhook_enabled = bool(
+        _get_config_value(entry, CONF_WEBHOOK_ENABLED, False),
+    )
+    webhook_id = _get_config_value(entry, CONF_WEBHOOK_ID)
+
+    if not webhook_enabled or webhook_id is None:
+        return
+
+    try:
+        _, disable_payload = build_action_urls(
+            hass,
+            str(webhook_id),
+        )
+        device = _create_device(entry)
+        async with device:
+            await device.set_device_config(disable_payload)  # type: ignore[attr-defined]
+    except Exception:
+        _LOGGER.warning(
+            "Failed to push webhook disable config to %s "
+            "during removal; device may retain stale URLs",
+            entry.title,
+        )
