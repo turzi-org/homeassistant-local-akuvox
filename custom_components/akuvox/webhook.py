@@ -179,7 +179,7 @@ async def async_handle_webhook(
 
     device_id = _get_device_id(hass, config_entry_id)
 
-    # Step 6: Determine event type
+    # Step 5: Determine event type
     if raw_event not in KNOWN_EVENT_TYPES:
         normalized = _normalize_event_type(raw_event)
         event_type = f"unknown_{normalized}"
@@ -198,13 +198,13 @@ async def async_handle_webhook(
 
     event_type = raw_event
 
-    # Step 7: User lookup for valid code events
+    # Step 6: User lookup for valid code events
     user = None
     code_value = query_params.get("code")
     if event_type == "valid_code_entered" and code_value:
         user = await _resolve_user(coordinator, code_value)
 
-    # Step 8: Fire HA event
+    # Step 7: Fire HA event
     hass.bus.async_fire(
         EVENT_WEBHOOK_RECEIVED,
         {
