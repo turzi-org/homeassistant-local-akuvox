@@ -186,19 +186,21 @@ successfully.
 - **FR-007**: The lock action MUST work on relays in both bistable
   (manual) and auto-close (monostable) modes.
 - **FR-008**: For bistable relays, the lock action MUST be a no-op
-  when the relay is already in the locked state, to prevent
-  unintentionally toggling the relay to unlocked. For auto-close
-  relays, the lock action MUST NOT send a command in any state
-  (locked or unlocked); it should always be treated as a state
-  refresh to avoid initiating or extending an unlock window.
-- **FR-009**: Before sending a lock command, the lock action MUST
-  confirm the current device state is not stale (for example, by
-  refreshing from the device) to avoid acting on outdated local
-  state. This is critical for bistable relays (where a command on
-  a stale-unlocked relay that is actually locked would toggle it
-  to unlocked) and also applies to auto-close relays (where a
-  command on a relay that has already auto-closed would start a
-  new unlock window).
+  when, after satisfying FR-009 (that is, using confirmed device
+  state rather than stale local state), the relay is already in the
+  locked state, to prevent unintentionally toggling the relay to
+  unlocked. For auto-close relays, the lock action MUST NOT send a
+  command in any state (locked or unlocked); it should always be
+  treated as a state refresh to avoid initiating or extending an
+  unlock window.
+- **FR-009**: Before deciding whether to send a lock command or treat
+  the request as a no-op, the lock action MUST confirm that the
+  current device state is not stale (for example, by refreshing from
+  the device) to avoid acting on outdated local state. This is
+  critical for bistable relays (where a command on a stale-unlocked
+  relay that is actually locked would toggle it to unlocked) and
+  also applies to auto-close relays (where a command on a relay that
+  has already auto-closed would start a new unlock window).
 
 ## Success Criteria *(mandatory)*
 
@@ -239,6 +241,8 @@ successfully.
   configuration is needed.
 - State management for the lock action on bistable relays mirrors the
   unlock action pattern: update the entity state immediately, then
-  schedule a state refresh after the hold delay to reconcile with
-  device truth. For auto-close relays, the lock action performs only
-  a state refresh without updating state or sending commands.
+  schedule a state refresh after a short, implementation-defined
+  delay (see FR-004) to reconcile with device truth, independent of
+  the device's hold delay. For auto-close relays, the lock action
+  performs only a state refresh without updating state or sending
+  commands.
