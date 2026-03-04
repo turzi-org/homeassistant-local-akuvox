@@ -32,7 +32,7 @@ cloud services required.
 
 ## Requirements
 
-- Home Assistant 2024.12 or later
+- Home Assistant 2026.2.0 or later
 - An Akuvox intercom or access control device with HTTP API access
   (e.g., E21V, R29, or similar models)
 - Network connectivity between Home Assistant and the device
@@ -159,7 +159,7 @@ automation:
 | `config_entry_id`        | Home Assistant config entry ID.          |
 | `event_type`             | Normalized event type string.            |
 | `payload.event`          | Raw event name from the device.          |
-| `payload.status`         | Relay status at time of event.           |
+| `payload.status`         | Relay status (null for code events).     |
 | `payload.device_user_id` | Device-internal user ID (code events).   |
 | `payload.user_id`        | External user identifier (code events).  |
 | `payload.username`       | Display name of the user (code events).  |
