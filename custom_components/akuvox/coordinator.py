@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import timedelta
+from time import monotonic
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -43,6 +44,8 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+_USER_CACHE_TTL_SECONDS = 300  # 5 minutes
 
 
 @dataclass(frozen=True)
@@ -219,6 +222,7 @@ class AkuvoxDataUpdateCoordinator(
         self._cached_device_name: str | None = None
         self._cached_relay_configs: dict[str, RelayConfig] | None = None
         self._cached_users: list[User] = []
+        self._last_user_fetch: float = 0.0
         self._was_unavailable: bool = False
 
     def get_user_by_pin(self, pin: str) -> User | None:
@@ -244,6 +248,7 @@ class AkuvoxDataUpdateCoordinator(
 
         """
         self._cached_users = list(users)
+        self._last_user_fetch = monotonic()
 
     def _should_fetch_config(self) -> bool:
         """Determine whether device config should be fetched.
@@ -372,10 +377,14 @@ class AkuvoxDataUpdateCoordinator(
     async def _async_fetch_users(self) -> None:
         """Fetch and cache user list from the device.
 
-        Non-fatal: logs a warning on failure and keeps the
+        Skips the fetch if the cache was populated within the TTL
+        window.  Non-fatal: logs a warning on failure and keeps the
         previous cache intact.
 
         """
+        if monotonic() - self._last_user_fetch < _USER_CACHE_TTL_SECONDS:
+            return
+
         list_users = getattr(self.device, "list_users", None)
         if not callable(list_users):
             return
@@ -383,6 +392,7 @@ class AkuvoxDataUpdateCoordinator(
         try:
             users = await list_users(page=None)
             self._cached_users = users if users is not None else []
+            self._last_user_fetch = monotonic()
         except AkuvoxError as err:
             _LOGGER.warning(
                 "Failed to fetch users from Akuvox device; keeping cache: %s",

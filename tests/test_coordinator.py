@@ -823,7 +823,8 @@ async def test_coordinator_user_cache_survives_fetch_failure(
     data1 = await coordinator._async_update_data()
     assert len(data1.users) == 2
 
-    # Second fetch fails
+    # Second fetch fails — reset TTL to force re-fetch
+    coordinator._last_user_fetch = 0.0
     device.list_users = AsyncMock(
         side_effect=AkuvoxConnectionError("timeout"),
     )
