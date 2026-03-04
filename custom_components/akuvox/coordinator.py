@@ -383,8 +383,15 @@ class AkuvoxDataUpdateCoordinator(
         try:
             users = await list_users(page=None)
             self._cached_users = users if users is not None else []
-        except AkuvoxError:
-            _LOGGER.warning("Failed to fetch users; keeping cache")
+        except AkuvoxError as err:
+            _LOGGER.warning(
+                "Failed to fetch users from Akuvox device; keeping cache: %s",
+                err,
+            )
+        except Exception:
+            _LOGGER.exception(
+                "Unexpected error while fetching users; keeping cache",
+            )
 
     async def _async_update_data(self) -> AkuvoxCoordinatorData:
         """Fetch data from the Akuvox device.
