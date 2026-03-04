@@ -121,7 +121,7 @@ async def _resolve_user(
                     user = u
                     break
             # Update cache for future lookups
-            coordinator._cached_users = users
+            coordinator.update_user_cache(users)
     except Exception:
         _LOGGER.debug("Failed to fetch users for code lookup fallback")
 

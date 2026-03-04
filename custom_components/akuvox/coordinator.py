@@ -236,6 +236,15 @@ class AkuvoxDataUpdateCoordinator(
                 return user
         return None
 
+    def update_user_cache(self, users: list[User]) -> None:
+        """Replace the cached user list.
+
+        Args:
+            users: Fresh user list from the device.
+
+        """
+        self._cached_users = list(users)
+
     def _should_fetch_config(self) -> bool:
         """Determine whether device config should be fetched.
 
