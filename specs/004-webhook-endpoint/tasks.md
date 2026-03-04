@@ -187,7 +187,7 @@ config entry contains `webhook_id` + `webhook_enabled=True`
 > **NOTE**: Write these tests FIRST, ensure they FAIL
 > before implementation
 
-- [ ] T013 [P] [US2] Write config flow webhook step tests in
+- [x] T013 [P] [US2] Write config flow webhook step tests in
   `tests/test_config_flow.py` — test new webhook step:
   enable path (generates webhook_id, pushes 10 URLs +
   Enable + Method to device, stores in entry data), skip
@@ -198,7 +198,7 @@ config entry contains `webhook_id` + `webhook_enabled=True`
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Add webhook step to config flow in
+- [x] T014 [US2] Add webhook step to config flow in
   `custom_components/akuvox/config_flow.py` — add
   `async_step_webhook()` after connection test step: show
   `CONF_WEBHOOK_ENABLED` toggle (default False), if
@@ -210,12 +210,12 @@ config entry contains `webhook_id` + `webhook_enabled=True`
   None/False; handle `webhook_push_failed` error with
   retry/skip; log HTTPS warning per
   contracts/config-flow-webhook.md
-- [ ] T015 [P] [US2] Add webhook UI strings to
+- [x] T015 [P] [US2] Add webhook UI strings to
   `custom_components/akuvox/strings.json` — add
   `step.webhook.title`, `step.webhook.description`,
   `step.webhook.data.webhook_enabled` label, and
   `error.webhook_push_failed` message
-- [ ] T016 [P] [US2] Add webhook translations to
+- [x] T016 [P] [US2] Add webhook translations to
   `custom_components/akuvox/translations/en.json` —
   mirror all webhook strings from `strings.json`
 
@@ -243,7 +243,7 @@ webhook config entry data)
 > **NOTE**: Write these tests FIRST, ensure they FAIL
 > before implementation
 
-- [ ] T017 [P] [US3] Write options flow webhook toggle tests
+- [x] T017 [P] [US3] Write options flow webhook toggle tests
   in `tests/test_config_flow.py` — test enable path: reuse
   existing webhook_id if present, generate new if None,
   push 10 URLs + Enable=1 + Method='', update entry
@@ -252,7 +252,7 @@ webhook config entry data)
   path: no device push; test push failure: error shown,
   cancel preserves previous state; verify options flow does
   NOT inline-register/unregister webhook
-- [ ] T018 [P] [US3] Write async_remove_entry tests in
+- [x] T018 [P] [US3] Write async_remove_entry tests in
   `tests/test_init.py` — test removal with webhooks enabled:
   pushes disable payload to device (best-effort); test
   removal with webhooks disabled: no device push; test
@@ -261,7 +261,7 @@ webhook config entry data)
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] Add webhook toggle to options flow in
+- [x] T019 [US3] Add webhook toggle to options flow in
   `custom_components/akuvox/config_flow.py` — add
   `CONF_WEBHOOK_ENABLED` to options schema with current
   value as default; on enable: reuse webhook_id via
@@ -271,7 +271,7 @@ webhook config entry data)
   `webhook_enabled=False` (preserve webhook_id); handle
   `webhook_push_failed` per
   contracts/config-flow-webhook.md error semantics
-- [ ] T020 [US3] Add `async_remove_entry()` hook to
+- [x] T020 [US3] Add `async_remove_entry()` hook to
   `custom_components/akuvox/__init__.py` — if
   `webhook_enabled=True` and `webhook_id` not None:
   open `AkuvoxDevice` connection, push disable payload
