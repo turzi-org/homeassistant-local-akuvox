@@ -69,7 +69,7 @@ cloud services required.
 | ---------------------- | ----------------------------------------------- |
 | **Device Connection**  | Enter the IP/hostname and whether to use SSL.   |
 | **SSL Options**        | Choose whether to verify the SSL certificate.   |
-| **Authentication**     | Select: None/AllowList, Basic, or Digest.       |
+| **Authentication**     | Select: None / AllowList, Basic, or Digest.     |
 | **Credentials**        | Enter username and password (if required).      |
 | **Webhook Events**     | Optionally enable webhook event delivery.       |
 
@@ -155,7 +155,7 @@ automation:
 
 | Field                    | Description                              |
 | ------------------------ | ---------------------------------------- |
-| `device_id`              | Home Assistant device registry ID.       |
+| `device_id`              | HA device registry ID (may be null).     |
 | `config_entry_id`        | Home Assistant config entry ID.          |
 | `event_type`             | Normalized event type string.            |
 | `payload.event`          | Event name from webhook query param.     |

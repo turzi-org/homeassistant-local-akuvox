@@ -45,10 +45,11 @@ to set up your development environment, run tests, and submit changes.
 uv run pytest tests/ -x -q
 ```
 
-### Running Linting
+### Running Linting and Formatting
 
 ```bash
 uv run ruff check custom_components/ tests/
+uv run ruff format --check custom_components/ tests/
 ```
 
 ### Running Type Checks
@@ -110,8 +111,6 @@ Signed-off-by: Your Name <your-email@example.com>
 - Never bypass pre-commit hooks with `--no-verify`.
 
 ### Pre-Commit Hooks
-
-The following hooks run automatically on every commit:
 
 The following hooks are among those that run automatically on commit
 (see `.pre-commit-config.yaml` for the full list):
