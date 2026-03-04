@@ -191,12 +191,17 @@ successfully.
 ## Assumptions
 
 - The Akuvox device uses the same relay command for both locking and
-  unlocking; the relay toggles its state on each command. For bistable
-  relays, a second command returns the relay to its previous state
-  (locked). For auto-close relays, the behavior of a command during
-  the hold window is device-specific (some devices may reset
-  immediately, others may extend or restart the hold window); the
-  implementation must validate actual behavior.
+  unlocking.
+  - For **bistable (manual) relays**, the relay toggles its state on
+    each command; a second command returns the relay to its previous
+    state (locked).
+  - For **auto-close (monostable) relays**, a command initiates an
+    unlock window for the configured hold delay period rather than
+    performing a simple toggle. The behavior of repeated commands
+    during this window is device-specific (some devices may reset
+    immediately, others may extend or restart the hold window), so
+    the implementation must validate actual behavior for the target
+    device.
 - The existing relay configuration (hold delay, relay type, relay
   mode) is sufficient for the lock action; no additional device
   configuration is needed.
