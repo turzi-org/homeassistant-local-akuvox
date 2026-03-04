@@ -222,7 +222,7 @@ class AkuvoxDataUpdateCoordinator(
         self._cached_device_name: str | None = None
         self._cached_relay_configs: dict[str, RelayConfig] | None = None
         self._cached_users: list[User] = []
-        self._last_user_fetch: float = 0.0
+        self._last_user_fetch: float | None = None
         self._was_unavailable: bool = False
 
     def get_user_by_pin(self, pin: str) -> User | None:
@@ -382,7 +382,10 @@ class AkuvoxDataUpdateCoordinator(
         previous cache intact.
 
         """
-        if monotonic() - self._last_user_fetch < _USER_CACHE_TTL_SECONDS:
+        if (
+            self._last_user_fetch is not None
+            and monotonic() - self._last_user_fetch < _USER_CACHE_TTL_SECONDS
+        ):
             return
 
         list_users = getattr(self.device, "list_users", None)
