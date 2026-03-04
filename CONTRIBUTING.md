@@ -31,10 +31,11 @@ to set up your development environment, run tests, and submit changes.
    uv sync
    ```
 
-3. Install pre-commit hooks:
+3. Install pre-commit hooks (including commit message checks):
 
    ```bash
    uv run pre-commit install
+   uv run pre-commit install --hook-type commit-msg
    ```
 
 ## Development Workflow
@@ -108,6 +109,8 @@ Signed-off-by: Your Name <your-email@example.com>
 - Subject line must not exceed 50 characters.
 - Body lines must not exceed 80 characters.
 - Each commit must represent exactly one logical change.
+- For single-commit PRs, the commit message must match
+  the PR title.
 - Never bypass pre-commit hooks with `--no-verify`.
 
 ### Pre-Commit Hooks

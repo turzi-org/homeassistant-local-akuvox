@@ -89,7 +89,7 @@ A, Relay B). Each lock entity supports:
 | Action     | Description                                              |
 | ---------- | -------------------------------------------------------- |
 | **Unlock** | Triggers the relay for the configured hold duration.     |
-| **Lock**   | Not supported — hardware auto-locks after hold delay.    |
+| **Lock**   | Not supported — relay closure depends on device config.  |
 
 Entity names are derived from the device configuration. If a relay has
 a custom name configured on the device, that name is used.
