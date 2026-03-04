@@ -158,7 +158,7 @@ automation:
 | `device_id`              | Home Assistant device registry ID.       |
 | `config_entry_id`        | Home Assistant config entry ID.          |
 | `event_type`             | Normalized event type string.            |
-| `payload.event`          | Raw event name from the device.          |
+| `payload.event`          | Event name from webhook query param.     |
 | `payload.status`         | Relay status (null for code events).     |
 | `payload.device_user_id` | Device-internal user ID (code events).   |
 | `payload.user_id`        | External user identifier (code events).  |
@@ -186,11 +186,11 @@ scripts.
 | `akuvox.modify_schedule`   | Update an existing schedule.        |
 | `akuvox.delete_schedule`   | Remove a schedule.                  |
 
-**Schedule types:**
+**Schedule types** (`schedule_type` must be a string):
 
-- `0` — Date Range (specific start/end dates)
-- `1` — Weekly (selected days of the week)
-- `2` — Daily (every day)
+- `"0"` — Date Range (specific start/end dates)
+- `"1"` — Weekly (selected days of the week)
+- `"2"` — Daily (every day)
 
 ### User Management
 

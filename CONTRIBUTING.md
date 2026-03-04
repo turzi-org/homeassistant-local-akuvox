@@ -113,6 +113,9 @@ Signed-off-by: Your Name <your-email@example.com>
 
 The following hooks run automatically on every commit:
 
+The following hooks are among those that run automatically on commit
+(see `.pre-commit-config.yaml` for the full list):
+
 | Hook              | Purpose                             |
 | ----------------- | ----------------------------------- |
 | **ruff**          | Python linting and formatting       |
@@ -121,6 +124,8 @@ The following hooks run automatically on every commit:
 | **reuse**         | SPDX license header compliance      |
 | **yamllint**      | YAML file validation                |
 | **gitlint**       | Commit message format               |
+| **markdownlint**  | Markdown style enforcement          |
+| **codespell**     | Spell checking                      |
 | **actionlint**    | GitHub Actions workflow validation  |
 
 If a hook fails:
