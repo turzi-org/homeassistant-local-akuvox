@@ -288,18 +288,18 @@ options; integration removal cleans up device config
 
 **Purpose**: Final validation, edge cases, documentation
 
-- [ ] T021 [P] Verify `custom_components/akuvox/manifest.json`
+- [x] T021 [P] Verify `custom_components/akuvox/manifest.json`
   — confirm no `iot_class` change needed (polling remains
   active alongside optional webhooks); no new dependencies
   or manifest keys expected unless HA requires explicit
   webhook declaration in a future version
-- [ ] T022 Run full test suite with
+- [x] T022 Run full test suite with
   `uv run pytest tests/ -x -q` and verify all tests pass
-- [ ] T023 Run full lint suite with
+- [x] T023 Run full lint suite with
   `uv run ruff check custom_components/ tests/`,
   `uv run ruff format --check custom_components/ tests/`,
   and `uv run mypy custom_components/` and verify clean
-- [ ] T024 Run quickstart.md validation: verify all files
+- [x] T024 Run quickstart.md validation: verify all files
   listed in New Files and Modified Existing Files exist
   and match the documented purpose
 
