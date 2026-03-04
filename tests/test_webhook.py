@@ -194,11 +194,11 @@ async def test_valid_code_cache_hit(
 # ── Valid code event with cache miss and fallback ────────────
 
 
-async def test_valid_code_cache_miss_fallback(
+async def test_valid_code_cache_miss_schedules_refresh(
     hass: HomeAssistant,
     mock_user_list_with_pins: list[Any],
 ) -> None:
-    """Test valid_code_entered falls back to device on cache miss."""
+    """Test cache miss returns None and schedules background refresh."""
     coordinator = MagicMock()
     coordinator.async_refresh = AsyncMock()
     coordinator.get_user_by_pin = MagicMock(return_value=None)
@@ -239,10 +239,12 @@ async def test_valid_code_cache_miss_fallback(
     assert response is not None
     assert response.status == 200
     assert len(events) == 1
-    # Fallback found the user
+    # Cache miss: user fields are None (refresh is background)
     payload = events[0].data["payload"]
-    assert payload["device_user_id"] == "42"
-    assert payload["username"] == "John Doe"
+    assert payload["device_user_id"] is None
+    assert payload["username"] is None
+    # Background task updated the cache
+    coordinator.update_user_cache.assert_called_once()
 
 
 # ── Valid code event with no match ───────────────────────────

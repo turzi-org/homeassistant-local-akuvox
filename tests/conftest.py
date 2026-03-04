@@ -42,6 +42,7 @@ MOCK_MODEL = "E21V"
 MOCK_FW_VERSION = "1.0.0"
 MOCK_HW_VERSION = "2.0.0"
 MOCK_WEBHOOK_ID = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a190"
+MOCK_WEBHOOK_BASE = "http://homeassistant.local:8123/api/webhook"
 
 
 @pytest.fixture(autouse=True)
@@ -49,6 +50,16 @@ def auto_enable_custom_integrations(
     enable_custom_integrations: None,
 ) -> None:
     """Enable custom integrations for all tests."""
+
+
+@pytest.fixture(autouse=True)
+def mock_webhook_url() -> Generator[None]:
+    """Mock async_generate_url for all tests."""
+    with patch(
+        "custom_components.akuvox.webhook.async_generate_url",
+        side_effect=lambda _hass, wid, **kw: f"{MOCK_WEBHOOK_BASE}/{wid}",
+    ):
+        yield
 
 
 @pytest.fixture

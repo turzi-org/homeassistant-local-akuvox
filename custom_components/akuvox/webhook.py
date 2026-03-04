@@ -95,11 +95,38 @@ def _get_device_id(
     return None
 
 
+async def _refresh_user_cache(
+    coordinator: AkuvoxDataUpdateCoordinator,
+) -> None:
+    """Background task to refresh the user cache from the device.
+
+    Must not be awaited in the webhook handler path.
+
+    """
+    try:
+        users = await asyncio.wait_for(
+            coordinator.device.list_users(page=None),
+            timeout=5.0,
+        )
+    except TimeoutError:
+        _LOGGER.debug("User cache refresh timed out")
+        return
+    except Exception:
+        _LOGGER.debug("Failed to refresh user cache")
+        return
+
+    if users:
+        coordinator.update_user_cache(users)
+
+
 async def _resolve_user(
     coordinator: AkuvoxDataUpdateCoordinator,
     code: str,
 ) -> object | None:
-    """Resolve a user by PIN from cache, with device fallback.
+    """Resolve a user by PIN from cache only.
+
+    On cache miss, schedules a background refresh so future
+    lookups succeed without blocking the webhook response.
 
     Args:
         coordinator: The data update coordinator.
@@ -113,25 +140,10 @@ async def _resolve_user(
     if user is not None:
         return user
 
-    # Fallback: fetch fresh user list from device (with timeout)
-    try:
-        users = await asyncio.wait_for(
-            coordinator.device.list_users(page=None),
-            timeout=5.0,
-        )
-        if users:
-            for u in users:
-                if getattr(u, "private_pin", None) == code:
-                    user = u
-                    break
-            # Update cache for future lookups
-            coordinator.update_user_cache(users)
-    except TimeoutError:
-        _LOGGER.debug("User lookup timed out for code fallback")
-    except Exception:
-        _LOGGER.debug("Failed to fetch users for code lookup fallback")
+    # Schedule background cache refresh (non-blocking)
+    asyncio.ensure_future(_refresh_user_cache(coordinator))
 
-    return user
+    return None
 
 
 async def async_handle_webhook(
@@ -305,6 +317,17 @@ def async_unregister_webhook(
         return
 
     async_unregister(hass, webhook_id)
+
+    # Remove from integration registry
+    registry.pop(webhook_id, None)
+
+    # Clean up empty webhook_registry
+    if (
+        "webhook_registry" in hass.data.get(DOMAIN, {})
+        and not hass.data[DOMAIN]["webhook_registry"]
+    ):
+        hass.data[DOMAIN].pop("webhook_registry", None)
+
     _LOGGER.debug(
         "Unregistered webhook %s for %s",
         mask_webhook_id(webhook_id),
@@ -337,7 +360,11 @@ def build_action_urls(
             allow_internal=True,
         )
     except Exception:
-        webhook_url = f"http://homeassistant.local:8123/api/webhook/{webhook_id}"
+        _LOGGER.exception(
+            "Failed to generate webhook URL for %s",
+            mask_webhook_id(webhook_id),
+        )
+        raise
 
     action_urls: dict[str, str] = {}
     for name, config_key in ACTIONURL_KEYS.items():

@@ -376,23 +376,8 @@ async def async_unload_entry(
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        # Unregister webhook if in registry
+        # Unregister webhook (also cleans registry)
         async_unregister_webhook(hass, entry)
-
-        # Clean up webhook registry entry before removing coordinator
-        webhook_id = _get_config_value(entry, CONF_WEBHOOK_ID)
-        if webhook_id is not None:
-            hass.data[DOMAIN].get("webhook_registry", {}).pop(
-                str(webhook_id),
-                None,
-            )
-
-        # Clean up empty webhook_registry
-        if (
-            "webhook_registry" in hass.data.get(DOMAIN, {})
-            and not hass.data[DOMAIN]["webhook_registry"]
-        ):
-            hass.data[DOMAIN].pop("webhook_registry", None)
 
         coordinator: AkuvoxDataUpdateCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
         await coordinator.device.__aexit__(None, None, None)
