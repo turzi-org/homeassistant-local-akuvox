@@ -41,8 +41,8 @@ to the locked state and the physical relay toggles.
    device and the lock entity state updates to locked.
 2. **Given** a relay is configured in bistable mode and is currently
    locked, **When** the user triggers the lock action, **Then** the
-   integration sends the trigger command (the relay toggles) and
-   uses optimistic state to reflect the expected locked result.
+   integration MUST NOT send a relay trigger command and the lock
+   entity state remains locked.
 3. **Given** a relay is configured in bistable mode, **When** the
    lock action fails due to a device communication error, **Then**
    the integration raises an error and the entity state remains
@@ -77,8 +77,9 @@ delay.
    and the lock entity state updates to locked.
 2. **Given** a relay is configured in auto-close mode and is
    currently locked (hold delay already expired), **When** the user
-   triggers the lock action, **Then** the action still succeeds
-   (sends the trigger) and the entity state reflects locked.
+   triggers the lock action, **Then** the action succeeds as a no-op
+   without sending a new relay trigger, and the entity state remains
+   locked.
 
 ---
 
@@ -113,9 +114,14 @@ successfully.
   The lock action should cancel any pending unlock refresh timer
   and proceed with the lock command.
 - What happens when the lock action is called on a relay that is
-  already locked? The action should still send the trigger command
-  (since the hardware is the source of truth) and update state
-  accordingly.
+  already locked?
+  - For **bistable** relays (where `trigger_relay` toggles the
+    relay state), the lock action MUST NOT send a trigger when
+    the current state is already locked, to avoid unintentionally
+    unlocking the door. The action is a no-op.
+  - For **auto-close** relays, the lock action MUST also be a
+    no-op when already locked, to avoid momentarily unlocking the
+    door for the hold window duration.
 - What happens when rapid lock/unlock commands are issued? Each
   command should be sent to the device; the most recent optimistic
   state should be reflected in the entity.
@@ -146,6 +152,10 @@ successfully.
   communication fails, without modifying the entity's current state.
 - **FR-007**: The lock action MUST work on relays in both bistable
   (manual) and auto-close (monostable) modes.
+- **FR-008**: The lock action MUST be a no-op when the relay is
+  already in the locked state, to prevent unintentionally toggling
+  a bistable relay to unlocked or momentarily unlocking an
+  auto-close relay.
 
 ## Success Criteria *(mandatory)*
 
