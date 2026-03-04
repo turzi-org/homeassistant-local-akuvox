@@ -137,8 +137,8 @@ automation:
 | `invalid_code_entered` | An invalid PIN or card code was entered. |
 
 Unrecognized events from the device are emitted as
-`unknown_<normalized_name>` with the raw query parameters as the
-payload.
+`unknown_<normalized_name>` with sanitized query parameters (sensitive
+fields such as `code` are redacted) as the payload.
 
 ### Event Payload
 

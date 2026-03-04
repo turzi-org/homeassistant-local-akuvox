@@ -34,8 +34,8 @@ to set up your development environment, run tests, and submit changes.
 3. Install pre-commit hooks (including commit message checks):
 
    ```bash
-   uv run pre-commit install
-   uv run pre-commit install --hook-type commit-msg
+   pre-commit install
+   pre-commit install --hook-type commit-msg
    ```
 
 ## Development Workflow
@@ -62,7 +62,7 @@ uv run mypy custom_components/
 ### Running All Pre-Commit Hooks
 
 ```bash
-uv run pre-commit run --all-files
+pre-commit run --all-files
 ```
 
 ## Code Standards
