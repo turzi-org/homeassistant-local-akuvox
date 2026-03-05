@@ -1,0 +1,16 @@
+Files and images referenced in this project as using the SPDX license
+identifier "NOASSERTION" are wholly owned by their respective rightsholders
+(for example, Akuvox for its trademarks, logos, and related brand assets).
+This notice is NOT a license and does not grant any rights to use, modify, or
+redistribute those files. It exists solely to document that the maintainer has
+not been able to determine or reproduce the actual license terms for these
+third-party assets.
+
+Until explicit written license terms are obtained from the relevant
+rightsholder, all such assets MUST be treated as having SPDX license
+identifier "NOASSERTION" and MUST NOT be redistributed or used beyond what is
+permitted by applicable law (for example, fair use) or by a separate written
+agreement with the rightsholder.
+
+This file is intended for use with the REUSE specification as a
+LicenseRef-typed SPDX identifier (LicenseRef-NOASSERTION).
