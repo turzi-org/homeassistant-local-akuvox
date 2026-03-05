@@ -331,7 +331,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
     def _schedule_delayed_refresh(
         self,
-        hold_delay: int,
+        relay_delay: int,
         finish_callback: Callable[[], Coroutine[Any, Any, None]] | None = None,
     ) -> None:
         """Schedule a coordinator refresh after the relay delay expires.
@@ -341,7 +341,9 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         window is tracked.
 
         Args:
-            hold_delay: The hold delay in seconds from relay config.
+            relay_delay: Seconds to wait before refreshing (typically
+                the relay hold delay from device config, or ``0`` for
+                immediate refresh after the buffer).
             finish_callback: Async callback invoked when the timer
                 fires. Defaults to ``_async_finish_optimistic_unlock``
                 for backward compatibility.
@@ -350,7 +352,11 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if self._delayed_refresh_cancel is not None:
             self._delayed_refresh_cancel()
 
-        cb = finish_callback or self._async_finish_optimistic_unlock
+        cb = (
+            self._async_finish_optimistic_unlock
+            if finish_callback is None
+            else finish_callback
+        )
 
         @callback
         def _refresh(_now: Any) -> None:
@@ -360,7 +366,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         self._delayed_refresh_cancel = async_call_later(
             self.hass,
-            hold_delay + _RELAY_REFRESH_BUFFER_SECONDS,
+            relay_delay + _RELAY_REFRESH_BUFFER_SECONDS,
             _refresh,
         )
 
