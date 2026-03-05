@@ -22,3 +22,11 @@ path = [
 ]
 SPDX-License-Identifier = "Apache-2.0"
 SPDX-FileCopyrightText = "2026 Andrew Grimberg <tykeal@bardicgrove.org>"
+
+# Branding
+[[annotations]]
+path = [
+    "custom_components/akuvox/brand/**",
+]
+SPDX-License-Identifier = "LicenseRef-NOASSERTION"
+SPDX-FileCopyrightText = "Trademark and logos are owned by Akuvox."
