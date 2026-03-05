@@ -19,6 +19,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-02
 - Python ≥3.13.2 + pylocal-akuvox ≥0.2.3 schedule/user services (003-schedule-user-services)
 - Python ≥3.13.2 + pylocal-akuvox ≥0.2.3, HA webhook infra (004-webhook-endpoint)
 - HA config entries with webhook_id, webhook_enabled (004-webhook-endpoint)
+- Python ≥3.13.2 + pylocal-akuvox ≥0.2.3 device communication (005-add-lock-action)
+- N/A storage, uses existing coordinator data and entity state (005-add-lock-action)
 
 ## Project Structure
 
@@ -41,15 +43,14 @@ uv run mypy custom_components/
 Python ≥3.13.2: Follow standard HA integration conventions
 
 ## Recent Changes
+- 005-add-lock-action: Added Python ≥3.13.2 + pylocal-akuvox ≥0.2.3 (device
 - 004-webhook-endpoint: Planned (design phase) Python ≥3.13.2 +
   pylocal-akuvox ≥0.2.3 (device communication)
 - 004-webhook-endpoint: Planned (design phase) webhook handler,
   sanitize module, config/options flow webhook step, action URL
   push to device, coordinator refresh on relay/valid-code events
-- 003-schedule-user-services: Implemented all 10 schedule/user CRUD
   services (list, add, modify, delete for schedules and users, plus
   add/remove user schedule_relay pair convenience services)
-- 002-device-config-discovery: Added relay naming, hold delay,
   NO/NC relay type awareness, edge case tests, reload coverage,
   pylocal-akuvox-based device communication
 
