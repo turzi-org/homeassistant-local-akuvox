@@ -289,16 +289,18 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the relay using mode-aware logic.
 
-        Cancels any pending delayed refresh timer and clears optimistic
-        state before proceeding with mode-specific logic.
+        Clears optimistic state before proceeding with mode-specific
+        logic.
 
         For **bistable** relays (relay_mode=1): refreshes coordinator
         state, then sends a ``trigger_relay`` command if the relay is
         confirmed unlocked.  Sets optimistic locked state and schedules
-        a delayed refresh.
+        a delayed refresh (which cancels any pending unlock timer).
 
         For **auto-close** relays (relay_mode=0): performs a coordinator
-        refresh and writes the updated state (no command sent).
+        refresh and writes the updated state (no command sent).  Any
+        pending unlock timer is preserved so it can re-sync state after
+        the relay hold-delay window.
 
         Args:
             **kwargs: Service call keyword arguments (unused).
@@ -311,14 +313,13 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         relay_cfg = self.coordinator.data.relay_configs.get(letter)
         relay_mode = relay_cfg.relay_mode if relay_cfg else DEFAULT_RELAY_MODE
 
-        # Cancel any pending delayed refresh and clear optimistic state
-        if self._delayed_refresh_cancel is not None:
-            self._delayed_refresh_cancel()
-            self._delayed_refresh_cancel = None
+        # Clear optimistic state so coordinator data drives is_locked
         self._optimistic_locked = None
 
         if relay_mode == 0:
-            # Auto-close: refresh only, no command
+            # Auto-close: refresh only, no command.
+            # Any pending unlock refresh timer is preserved so it can
+            # re-sync state after the relay hold-delay window.
             await self.coordinator.async_refresh()
             self.async_write_ha_state()
             return
