@@ -99,7 +99,7 @@ custom_components/akuvox/
 └── (no other files modified)
 
 tests/
-└── test_lock.py         # Modified: add new lock tests
+└── test_lock.py         # Modified: replace stub and add lock tests
 ```
 
 **Structure Decision**: No new files needed. The lock action is

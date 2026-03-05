@@ -96,9 +96,15 @@ device state during the pre-action validation.
 refresh on bistable relays?
 
 **Decision**: Reuse `_RELAY_REFRESH_BUFFER_SECONDS` (currently 1
-second) as the delay for the post-lock refresh by calling
-`_schedule_delayed_refresh(hold_delay=0,
-finish_callback=self._async_finish_optimistic_lock)`.
+second) as the delay for the post-lock refresh by calling:
+
+```python
+_schedule_delayed_refresh(
+    hold_delay=0,
+    finish_callback=self._async_finish_optimistic_lock,
+)
+```
+
 The existing method computes `hold_delay + _RELAY_REFRESH_BUFFER_SECONDS`,
 so passing 0 yields a 1-second delay. The method must be refactored
 to accept a `finish_callback` parameter because it is currently

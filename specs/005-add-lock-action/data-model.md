@@ -57,10 +57,11 @@ User calls lock.lock
   │         │    ├─ Success:
   │         │    │    ├─ _optimistic_locked = True
   │         │    │    ├─ async_write_ha_state()
-  │         │    │    └─ schedule_delayed_refresh(0,
-  │         │    │         finish_optimistic_lock)
+  │         │    │    └─ _schedule_delayed_refresh(0,
+  │         │    │         finish_callback=
+  │         │    │         self._async_finish_optimistic_lock)
   │         │    │         └─ Timer fires after 1s:
-  │         │    │              ├─ async_refresh()
+  │         │    │              ├─ coordinator.async_refresh()
   │         │    │              └─ _optimistic_locked
   │         │    │                   = None
   │         │    │
