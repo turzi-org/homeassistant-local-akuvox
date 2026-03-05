@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # local-akuvox Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-02
+Auto-generated from all feature plans. Last updated: 2026-03-05
 
 ## Active Technologies
 - Python ≥3.13.2 with pylocal-akuvox (001-akuvox-lock-integration)
