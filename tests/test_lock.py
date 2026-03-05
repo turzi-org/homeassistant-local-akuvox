@@ -1052,7 +1052,6 @@ async def test_schedule_delayed_refresh_default_callback(
     T001 refactor).  A spy on the method proves it was dispatched.
     """
     import datetime
-    from unittest.mock import patch
 
     from homeassistant.helpers.entity_component import EntityComponent
     from homeassistant.util import dt as dt_util
@@ -1127,7 +1126,6 @@ async def test_schedule_delayed_refresh_explicit_callback(
     callback instead of the default unlock finish callback.
     """
     import datetime
-    from unittest.mock import patch
 
     from homeassistant.util import dt as dt_util
     from pytest_homeassistant_custom_component.common import (
@@ -1159,10 +1157,11 @@ async def test_schedule_delayed_refresh_explicit_callback(
     # Instrument default callback to prove it is NOT dispatched
     default_spy = AsyncMock()
 
-    start = dt_util.utcnow()
-
     with patch.object(lock_entity, "_async_finish_optimistic_unlock", default_spy):
-        lock_entity._schedule_delayed_refresh(0, explicit_cb)
+        lock_entity._schedule_delayed_refresh(0, finish_callback=explicit_cb)
+
+        # Capture baseline after the timer is scheduled
+        start = dt_util.utcnow()
 
         # Timer fires after 0 + buffer seconds
         async_fire_time_changed(
