@@ -29,4 +29,4 @@ path = [
     "custom_components/akuvox/brand/**",
 ]
 SPDX-License-Identifier = "LicenseRef-NOASSERTION"
-SPDX-FileCopyrightText = "Trademark and logos are owned by Akuvox."
+SPDX-FileCopyrightText = "2026 Akuvox"
