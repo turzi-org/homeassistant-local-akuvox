@@ -9,7 +9,7 @@ SPDX-License-Identifier: Apache-2.0
 
 This feature does not introduce new entities, fields, or data
 structures. It modifies the behavior of the existing
-`AkuvoxRelayLock` entity class.
+`AkuvoxLockEntity` entity class.
 
 ### RelayConfig (unchanged)
 
@@ -27,14 +27,14 @@ class RelayConfig:
 - `relay_mode = 1`: Manual (bistable) — relay stays toggled until
   explicitly toggled again
 
-### AkuvoxRelayLock State Fields (unchanged)
+### AkuvoxLockEntity State Fields (unchanged)
 
-| Field                    | Type                 | Purpose                  |
-| ------------------------ | -------------------- | ------------------------ |
-| `_optimistic_locked`     | `bool \| None`       | Optimistic override      |
-| `_delayed_refresh_cancel`| `CALLBACK_TYPE/None` | Pending refresh cancel   |
-| `_relay_number`          | `int`                | 1-based relay number     |
-| `_relay_key`             | `str`                | Relay status key         |
+| Field                     | Type                    | Purpose                |
+| ------------------------- | ----------------------- | ---------------------- |
+| `_optimistic_locked`      | `bool \| None`          | Optimistic override    |
+| `_delayed_refresh_cancel` | `CALLBACK_TYPE \| None` | Pending refresh cancel |
+| `_relay_number`           | `int`                   | 1-based relay number   |
+| `_relay_key`              | `str`                   | Relay status key       |
 
 ## State Transitions
 

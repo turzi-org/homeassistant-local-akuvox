@@ -86,7 +86,8 @@ specs/005-add-lock-action/
 ├── research.md          # Phase 0 output
 ├── data-model.md        # Phase 1 output
 ├── quickstart.md        # Phase 1 output
-├── contracts/           # Phase 1 output (none needed — no new external interfaces)
+├── contracts/           # Phase 1 output
+│   └── lock-service.md  # Lock service interface contract
 └── tasks.md             # Phase 2 output (/speckit.tasks command)
 ```
 
@@ -102,5 +103,5 @@ tests/
 ```
 
 **Structure Decision**: No new files needed. The lock action is
-implemented entirely within the existing `AkuvoxRelayLock` class
+implemented entirely within the existing `AkuvoxLockEntity` class
 in `lock.py`. Tests extend the existing `test_lock.py` file.
