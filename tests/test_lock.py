@@ -1079,8 +1079,6 @@ async def test_schedule_delayed_refresh_default_callback(
     original = lock_entity._async_finish_optimistic_unlock
     spy = AsyncMock(wraps=original)
 
-    start = dt_util.utcnow()
-
     with patch.object(lock_entity, "_async_finish_optimistic_unlock", spy):
         # Unlock uses default callback (no finish_callback arg)
         await hass.services.async_call(
@@ -1089,6 +1087,9 @@ async def test_schedule_delayed_refresh_default_callback(
             {"entity_id": "lock.testlab_intercom_front_gate"},
             blocking=True,
         )
+
+        # Capture baseline after the timer is scheduled
+        start = dt_util.utcnow()
 
         # Device returns locked after delay
         mock_akuvox_device.get_relay_status.return_value = {"RelayA": 0}
@@ -1145,13 +1146,8 @@ async def test_schedule_delayed_refresh_explicit_callback(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    # Use a tracking callback to verify it gets called
-    callback_called = False
-
-    async def _tracking_callback() -> None:
-        """Track whether the callback was invoked."""
-        nonlocal callback_called
-        callback_called = True
+    # AsyncMock as explicit callback; spy on default to prove exclusion
+    explicit_cb = AsyncMock()
 
     # Access the lock entity directly from the platform
     from homeassistant.helpers.entity_component import EntityComponent
@@ -1166,8 +1162,7 @@ async def test_schedule_delayed_refresh_explicit_callback(
     start = dt_util.utcnow()
 
     with patch.object(lock_entity, "_async_finish_optimistic_unlock", default_spy):
-        # Manually call _schedule_delayed_refresh with explicit callback
-        lock_entity._schedule_delayed_refresh(0, _tracking_callback)
+        lock_entity._schedule_delayed_refresh(0, explicit_cb)
 
         # Timer fires after 0 + buffer seconds
         async_fire_time_changed(
@@ -1179,7 +1174,7 @@ async def test_schedule_delayed_refresh_explicit_callback(
         )
         await hass.async_block_till_done()
 
-    assert callback_called, "Explicit finish_callback was not invoked"
+    explicit_cb.assert_awaited_once()
     default_spy.assert_not_awaited()
 
 
