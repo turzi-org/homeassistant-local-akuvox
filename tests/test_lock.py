@@ -1049,10 +1049,12 @@ async def test_schedule_delayed_refresh_default_callback(
 
     When no finish_callback is provided, the timer must call
     _async_finish_optimistic_unlock (backward compatibility after
-    T001 refactor).
+    T001 refactor).  A spy on the method proves it was dispatched.
     """
     import datetime
+    from unittest.mock import patch
 
+    from homeassistant.helpers.entity_component import EntityComponent
     from homeassistant.util import dt as dt_util
     from pytest_homeassistant_custom_component.common import (
         async_fire_time_changed,
@@ -1070,33 +1072,39 @@ async def test_schedule_delayed_refresh_default_callback(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
+    comp: EntityComponent[Any] = hass.data["lock"]
+    lock_entity = comp.get_entity("lock.testlab_intercom_front_gate")
+    assert lock_entity is not None
+
+    original = lock_entity._async_finish_optimistic_unlock
+    spy = AsyncMock(wraps=original)
+
     start = dt_util.utcnow()
 
-    # Unlock uses default callback (no finish_callback arg)
-    await hass.services.async_call(
-        "lock",
-        "unlock",
-        {"entity_id": "lock.testlab_intercom_front_gate"},
-        blocking=True,
-    )
+    with patch.object(lock_entity, "_async_finish_optimistic_unlock", spy):
+        # Unlock uses default callback (no finish_callback arg)
+        await hass.services.async_call(
+            "lock",
+            "unlock",
+            {"entity_id": "lock.testlab_intercom_front_gate"},
+            blocking=True,
+        )
 
-    # State is optimistically unlocked
-    state = hass.states.get("lock.testlab_intercom_front_gate")
-    assert state is not None
-    assert state.state == "unlocked"
+        # Device returns locked after delay
+        mock_akuvox_device.get_relay_status.return_value = {"RelayA": 0}
 
-    # Device returns locked after delay
-    mock_akuvox_device.get_relay_status.return_value = {"RelayA": 0}
+        # Fire timer past relay_delay + buffer
+        async_fire_time_changed(
+            hass,
+            start
+            + datetime.timedelta(
+                seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+            ),
+        )
+        await hass.async_block_till_done()
 
-    # Fire timer past hold_delay + buffer
-    async_fire_time_changed(
-        hass,
-        start
-        + datetime.timedelta(
-            seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
-        ),
-    )
-    await hass.async_block_till_done()
+    # Default callback was dispatched by the timer
+    spy.assert_awaited_once()
 
     # Optimistic override cleared → real state (locked)
     state = hass.states.get("lock.testlab_intercom_front_gate")
@@ -1118,6 +1126,7 @@ async def test_schedule_delayed_refresh_explicit_callback(
     callback instead of the default unlock finish callback.
     """
     import datetime
+    from unittest.mock import patch
 
     from homeassistant.util import dt as dt_util
     from pytest_homeassistant_custom_component.common import (
@@ -1151,22 +1160,27 @@ async def test_schedule_delayed_refresh_explicit_callback(
     lock_entity = comp.get_entity("lock.testlab_intercom_front_gate")
     assert lock_entity is not None
 
+    # Instrument default callback to prove it is NOT dispatched
+    default_spy = AsyncMock()
+
     start = dt_util.utcnow()
 
-    # Manually call _schedule_delayed_refresh with explicit callback
-    lock_entity._schedule_delayed_refresh(0, _tracking_callback)
+    with patch.object(lock_entity, "_async_finish_optimistic_unlock", default_spy):
+        # Manually call _schedule_delayed_refresh with explicit callback
+        lock_entity._schedule_delayed_refresh(0, _tracking_callback)
 
-    # Timer fires after 0 + buffer seconds
-    async_fire_time_changed(
-        hass,
-        start
-        + datetime.timedelta(
-            seconds=_RELAY_REFRESH_BUFFER_SECONDS + 1,
-        ),
-    )
-    await hass.async_block_till_done()
+        # Timer fires after 0 + buffer seconds
+        async_fire_time_changed(
+            hass,
+            start
+            + datetime.timedelta(
+                seconds=_RELAY_REFRESH_BUFFER_SECONDS + 1,
+            ),
+        )
+        await hass.async_block_till_done()
 
     assert callback_called, "Explicit finish_callback was not invoked"
+    default_spy.assert_not_awaited()
 
 
 async def test_entity_removal_cancels_delayed_refresh(
