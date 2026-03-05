@@ -9,6 +9,7 @@ import datetime as dt
 import logging
 import re
 import time
+from collections.abc import Callable, Coroutine
 from typing import Any, cast
 
 from homeassistant.components.lock import LockEntity
@@ -328,31 +329,44 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         self.async_write_ha_state()
         self._schedule_delayed_refresh(hold_delay)
 
-    def _schedule_delayed_refresh(self, hold_delay: int) -> None:
-        """Schedule a coordinator refresh after the unlock delay expires.
+    def _schedule_delayed_refresh(
+        self,
+        relay_delay: int,
+        finish_callback: Callable[[], Coroutine[Any, Any, None]] | None = None,
+    ) -> None:
+        """Schedule a coordinator refresh after the relay delay expires.
 
         If called while a previous timer is pending (e.g. rapid unlock
         calls), the earlier timer is cancelled and only the latest
-        unlock window is tracked.
+        window is tracked.
 
         Args:
-            hold_delay: The hold delay in seconds from relay config.
+            relay_delay: Seconds to wait before refreshing (typically
+                the relay hold delay from device config, or ``0`` for
+                immediate refresh after the buffer).
+            finish_callback: Async callback invoked when the timer
+                fires. Defaults to ``_async_finish_optimistic_unlock``
+                for backward compatibility.
 
         """
         if self._delayed_refresh_cancel is not None:
             self._delayed_refresh_cancel()
 
+        cb = (
+            self._async_finish_optimistic_unlock
+            if finish_callback is None
+            else finish_callback
+        )
+
         @callback
         def _refresh(_now: Any) -> None:
-            """Kick off async refresh after unlock window expires."""
+            """Kick off async refresh after relay window expires."""
             self._delayed_refresh_cancel = None
-            self.hass.async_create_task(
-                self._async_finish_optimistic_unlock(),
-            )
+            self.hass.async_create_task(cb())
 
         self._delayed_refresh_cancel = async_call_later(
             self.hass,
-            hold_delay + _RELAY_REFRESH_BUFFER_SECONDS,
+            relay_delay + _RELAY_REFRESH_BUFFER_SECONDS,
             _refresh,
         )
 
@@ -370,6 +384,24 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         except Exception:  # noqa: BLE001
             _LOGGER.exception(
                 "Error refreshing coordinator after optimistic unlock for relay %s",
+                self._relay_key,
+            )
+        finally:
+            self._optimistic_locked = None
+            self.async_write_ha_state()
+
+    async def _async_finish_optimistic_lock(self) -> None:
+        """Refresh coordinator then clear optimistic lock state.
+
+        Mirrors ``_async_finish_optimistic_unlock`` but logs a
+        lock-specific message. The optimistic override is kept until
+        the refresh completes; a finally block ensures cleanup.
+        """
+        try:
+            await self.coordinator.async_refresh()
+        except Exception:  # noqa: BLE001
+            _LOGGER.exception(
+                "Error refreshing coordinator after optimistic lock for relay %s",
                 self._relay_key,
             )
         finally:

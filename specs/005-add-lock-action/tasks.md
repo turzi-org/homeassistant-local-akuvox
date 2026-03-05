@@ -31,13 +31,13 @@ independent implementation and testing of each story.
 **Purpose**: Refactor existing code to support both lock and unlock
 actions without changing any behavior (SC-005).
 
-- [ ] T001 Refactor `_schedule_delayed_refresh` to accept a
+- [x] T001 Refactor `_schedule_delayed_refresh` to accept a
   `finish_callback` parameter in
   `custom_components/akuvox/lock.py` (R-004, data-model.md
   §Refactored Method). Default the callback to
   `self._async_finish_optimistic_unlock` for backward
   compatibility. Update docstring accordingly.
-- [ ] T002 Add `_async_finish_optimistic_lock` method to
+- [x] T002 Add `_async_finish_optimistic_lock` method to
   `AkuvoxLockEntity` in `custom_components/akuvox/lock.py`
   (data-model.md §_async_finish_optimistic_lock). Mirrors
   `_async_finish_optimistic_unlock` but with lock-specific log
