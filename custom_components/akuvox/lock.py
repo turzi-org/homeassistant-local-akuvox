@@ -292,10 +292,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         Clears optimistic state before proceeding with mode-specific
         logic.
 
-        For **bistable** relays (relay_mode=1): refreshes coordinator
-        state, then sends a ``trigger_relay`` command if the relay is
-        confirmed unlocked.  Sets optimistic locked state and schedules
-        a delayed refresh (which cancels any pending unlock timer).
+        For **bistable** relays (relay_mode=1): cancels any pending
+        unlock timer (FR-005), refreshes coordinator state, then sends
+        a ``trigger_relay`` command if the relay is confirmed unlocked.
+        Sets optimistic locked state and schedules a delayed refresh.
 
         For **auto-close** relays (relay_mode=0): performs a coordinator
         refresh and writes the updated state (no command sent).  Any
@@ -324,11 +324,17 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             self.async_write_ha_state()
             return
 
-        # Bistable: refresh coordinator to get current state
+        # Bistable: cancel any pending unlock timer (FR-005)
+        if self._delayed_refresh_cancel is not None:
+            self._delayed_refresh_cancel()
+            self._delayed_refresh_cancel = None
+
+        # Refresh coordinator to get current state
         await self.coordinator.async_refresh()
 
         # R-001: None (unknown after refresh) treated as unlocked — proceed
         if self.is_locked:
+            self.async_write_ha_state()
             return
 
         hold_delay = relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS
