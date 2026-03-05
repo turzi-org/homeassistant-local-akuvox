@@ -83,44 +83,44 @@ verify entity returns to locked state and relay command was sent.
 
 ### Tests for User Story 1 (TDD red phase)
 
-- [ ] T005 [P] [US1] Add test: bistable relay lock sends
+- [x] T005 [P] [US1] Add test: bistable relay lock sends
   `trigger_relay` when confirmed unlocked in
   `tests/test_lock.py` (AS-1.1, FR-001, FR-002). Mock
   coordinator refresh to return unlocked state, call
   `lock.lock`, assert `trigger_relay` called with correct
   relay config params.
-- [ ] T006 [P] [US1] Add test: bistable relay lock sets
+- [x] T006 [P] [US1] Add test: bistable relay lock sets
   `_optimistic_locked = True` and calls
   `async_write_ha_state` in `tests/test_lock.py` (FR-003,
   R-002). After successful `trigger_relay`, verify optimistic
   state and HA state write.
-- [ ] T007 [P] [US1] Add test: bistable relay lock schedules
+- [x] T007 [P] [US1] Add test: bistable relay lock schedules
   delayed refresh with `hold_delay=0` and
   `_async_finish_optimistic_lock` callback in
   `tests/test_lock.py` (FR-004, R-004). Verify
   `_schedule_delayed_refresh` called with `(0, callback)`.
-- [ ] T008 [P] [US1] Add test: bistable relay lock is no-op when
+- [x] T008 [P] [US1] Add test: bistable relay lock is no-op when
   already locked in `tests/test_lock.py` (AS-1.2, FR-008).
   Mock coordinator refresh to return locked state, call
   `lock.lock`, assert `trigger_relay` NOT called, state
   unchanged.
-- [ ] T009 [P] [US1] Add test: bistable relay lock raises
+- [x] T009 [P] [US1] Add test: bistable relay lock raises
   `HomeAssistantError` on device error in
   `tests/test_lock.py` (AS-1.3, FR-006). Mock `trigger_relay`
   to raise `AkuvoxError`, verify `HomeAssistantError` raised,
   state unchanged.
-- [ ] T010 [P] [US1] Add test: bistable relay lock refreshes
+- [x] T010 [P] [US1] Add test: bistable relay lock refreshes
   coordinator before state check in `tests/test_lock.py`
   (AS-1.4, FR-009, R-001). Verify
   `coordinator.async_refresh()` called before `is_locked`
   evaluation.
-- [ ] T011 [P] [US1] Add test: bistable relay lock cancels
+- [x] T011 [P] [US1] Add test: bistable relay lock cancels
   pending unlock refresh and clears optimistic override in
   `tests/test_lock.py` (FR-005, R-003). Set up pending unlock
   timer, call `lock.lock`, verify timer cancelled and
   `_optimistic_locked` set to `None` before coordinator
   refresh.
-- [ ] T012 [P] [US1] Replace `test_async_lock_raises_error` with
+- [x] T012 [P] [US1] Replace `test_async_lock_raises_error` with
   test verifying `lock.lock` no longer raises
   `HomeAssistantError` unconditionally in `tests/test_lock.py`.
   The old stub test must be removed since the lock action now
@@ -128,7 +128,7 @@ verify entity returns to locked state and relay command was sent.
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement `async_lock` for bistable relays in
+- [x] T013 [US1] Implement `async_lock` for bistable relays in
   `custom_components/akuvox/lock.py` (FR-001, FR-002, FR-003,
   FR-004, FR-005, FR-006, FR-008, FR-009). Replace the stub
   with mode-aware logic per data-model.md §Bistable Relay Lock
