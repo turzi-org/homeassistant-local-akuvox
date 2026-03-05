@@ -59,7 +59,7 @@ design.*
 | III. UX          | ✅ PASS | Standard HA lock interface      |
 | IV. Performance  | ✅ PASS | Async; ≤5s; no blocking calls   |
 | V. Atomic Cmts   | ✅ PASS | Pre-commit; DCO sign-off        |
-| VI. Phased Dev   | ✅ PASS | Single phase sufficient         |
+| VI. Phased Dev   | ✅ PASS | Multi-phase TDD per tasks.md    |
 
 No violations. Complexity tracking not needed.
 
@@ -72,7 +72,7 @@ No violations. Complexity tracking not needed.
 | III. UX          | ✅ PASS | Standard HA lock; clear errors  |
 | IV. Performance  | ✅ PASS | Async; ≤5s update (SC-002)      |
 | V. Atomic Cmts   | ✅ PASS | Pre-commit; DCO; SPDX           |
-| VI. Phased Dev   | ✅ PASS | Single phase; tests in phase    |
+| VI. Phased Dev   | ✅ PASS | Six phases; tests before impl   |
 
 No new violations introduced by design.
 
@@ -99,7 +99,7 @@ custom_components/akuvox/
 └── (no other files modified)
 
 tests/
-└── test_lock.py         # Modified: replace error-raising test + add new lock tests
+└── test_lock.py         # Modified: replace stub and add lock tests
 ```
 
 **Structure Decision**: No new files needed. The lock action is

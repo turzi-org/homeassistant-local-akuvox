@@ -57,11 +57,13 @@ User calls lock.lock
   │         │    ├─ Success:
   │         │    │    ├─ _optimistic_locked = True
   │         │    │    ├─ async_write_ha_state()
-  │         │    │    └─ _schedule_delayed_refresh(0, _async_finish_optimistic_lock)
-  │         │    │         └─ Timer fires after 0 + 1s buffer:
-  │         │    │              └─ _async_finish_optimistic_lock()
-  │         │    │                   ├─ coordinator.async_refresh()
-  │         │    │                   └─ _optimistic_locked = None
+  │         │    │    └─ _schedule_delayed_refresh(0,
+  │         │    │         finish_callback=
+  │         │    │         self._async_finish_optimistic_lock)
+  │         │    │         └─ Timer fires after 1s:
+  │         │    │              ├─ coordinator.async_refresh()
+  │         │    │              └─ _optimistic_locked
+  │         │    │                   = None
   │         │    │
   │         │    └─ AkuvoxError:
   │         │         └─ raise HomeAssistantError (FR-006)
