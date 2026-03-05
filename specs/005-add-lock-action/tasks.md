@@ -58,12 +58,12 @@ written and confirmed failing.
 
 ### Tests for Refactored Infrastructure
 
-- [ ] T003 [P] Add test for `_schedule_delayed_refresh` backward
+- [x] T003 [P] Add test for `_schedule_delayed_refresh` backward
   compatibility (default callback calls
   `_async_finish_optimistic_unlock`) in `tests/test_lock.py`.
   Verify existing unlock + delayed refresh behavior is unchanged
   after T001 refactor.
-- [ ] T004 [P] Add test for `_schedule_delayed_refresh` with
+- [x] T004 [P] Add test for `_schedule_delayed_refresh` with
   explicit `finish_callback` parameter in `tests/test_lock.py`.
   Verify the provided callback is invoked instead of the default.
 
