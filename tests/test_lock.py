@@ -3109,13 +3109,17 @@ async def test_unlock_nc_relay_sends_level_1(
     )
 
 
-async def test_unlock_manual_mode_sends_mode_1(
+async def test_unlock_manual_mode_sends_mode_0(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
     mock_device_config_factory: Any,
 ) -> None:
-    """Test manual mode relay (mode=1): trigger_relay mode=1."""
+    """Test manual mode relay (mode=1): unlock sends API mode=0.
+
+    The API mode parameter controls command direction (0=open/toggle,
+    1=close-only). Bistable unlock must send mode=0 with delay=0.
+    """
     cfg = mock_device_config_factory(
         **{
             f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_TYPE_SUFFIX}": "0",
@@ -3143,9 +3147,9 @@ async def test_unlock_manual_mode_sends_mode_1(
 
     mock_akuvox_device.trigger_relay.assert_called_once_with(
         num=1,
-        delay=DEFAULT_HOLD_DELAY_SECONDS,
+        delay=0,
         level=0,
-        mode=1,
+        mode=0,
     )
 
 

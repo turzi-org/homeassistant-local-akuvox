@@ -358,12 +358,25 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         )
 
     async def async_unlock(self, **kwargs: Any) -> None:
-        """Unlock the door by triggering the relay.
+        """Unlock the door using mode-aware relay logic.
 
-        If trigger_relay fails, the optimistic state and timer are not
-        touched.  Any pending timer from a previous successful unlock
-        is left in place so it can still clear the earlier optimistic
-        override as expected.
+        Clears optimistic state before proceeding with mode-specific
+        logic.
+
+        For **bistable** relays (relay_mode=1): cancels any pending
+        lock timer, refreshes coordinator state, then sends a
+        ``trigger_relay`` command with ``mode=0`` (toggle) and
+        ``delay=0`` if the relay is confirmed locked.  The API
+        ``mode`` parameter controls command direction: ``0`` means
+        open/toggle, ``1`` means close-only.
+
+        For **auto-close** relays (relay_mode=0): sends
+        ``trigger_relay`` with ``mode=0`` and the configured hold
+        delay, then sets optimistic unlocked state and schedules a
+        delayed refresh.
+
+        Args:
+            **kwargs: Service call keyword arguments (unused).
 
         Raises:
             HomeAssistantError: If the device communication fails.
@@ -371,15 +384,51 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         """
         letter = chr(ord("A") + self._relay_number - 1)
         relay_cfg = self.coordinator.data.relay_configs.get(letter)
+        relay_mode = relay_cfg.relay_mode if relay_cfg else DEFAULT_RELAY_MODE
+
+        # Clear optimistic state so coordinator data drives is_locked
+        self._optimistic_locked = None
+
+        if relay_mode == 1:
+            # Bistable: cancel any pending lock timer
+            if self._delayed_refresh_cancel is not None:
+                self._delayed_refresh_cancel()
+                self._delayed_refresh_cancel = None
+
+            # Refresh coordinator to get current state
+            await self.coordinator.async_refresh()
+
+            # mode=0 is a toggle — skip if already unlocked
+            if self.is_locked is False:
+                self.async_write_ha_state()
+                return
+
+            relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
+            try:
+                await self.coordinator.device.trigger_relay(
+                    num=self._relay_number,
+                    delay=0,
+                    level=relay_type,
+                    mode=0,
+                )
+            except AkuvoxError as err:
+                raise HomeAssistantError(
+                    f"Failed to unlock relay {self._relay_number}: {err}"
+                ) from err
+            self._optimistic_locked = False
+            self.async_write_ha_state()
+            self._schedule_delayed_refresh(0)
+            return
+
+        # Auto-close: trigger with configured hold delay
         hold_delay = relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS
         relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
-        relay_mode = relay_cfg.relay_mode if relay_cfg else DEFAULT_RELAY_MODE
         try:
             await self.coordinator.device.trigger_relay(
                 num=self._relay_number,
                 delay=hold_delay,
                 level=relay_type,
-                mode=relay_mode,
+                mode=0,
             )
         except AkuvoxError as err:
             raise HomeAssistantError(
