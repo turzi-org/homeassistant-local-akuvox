@@ -2077,6 +2077,101 @@ async def test_autoclose_lock_no_optimistic_state(
     assert entity._optimistic_locked is None
 
 
+# ── T020–T021: Service-call integration tests (Phase 5) ─────────
+
+
+async def test_service_call_lock_bistable(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test lock.lock service call succeeds on bistable relay.
+
+    T020: Use hass.services.async_call("lock", "lock", ...) with
+    blocking=True, verify no exception and state updated to locked.
+    """
+    cfg = mock_device_config_factory(
+        **{
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_MODE_SUFFIX}": "1",
+        },
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 1},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "unlocked"
+
+    await hass.services.async_call(
+        "lock",
+        "lock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "locked"
+
+
+async def test_service_call_lock_autoclose(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test lock.lock service call succeeds on auto-close relay.
+
+    T021: Use hass.services.async_call("lock", "lock", ...) with
+    blocking=True, verify no exception. State reflects device state
+    from coordinator refresh.
+    """
+    cfg = mock_device_config_factory()
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 1},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "unlocked"
+
+    await hass.services.async_call(
+        "lock",
+        "lock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    # No exception raised; state reflects device state from refresh
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "unlocked"
+
+
 async def test_relay_entity_name_from_config(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
