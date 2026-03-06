@@ -14,6 +14,7 @@ without cloud dependencies.
 
 ## Quick Links
 
+- [Device Setup](Device-Setup) — Prepare your Akuvox device
 - [Installation](Installation)
 - [Configuration](Configuration)
 - [Webhook Events](Webhook-Events)
