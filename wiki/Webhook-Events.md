@@ -33,25 +33,26 @@ automation:
         event_data:
           event_type: relay_a_triggered
     action:
-      - service: notify.mobile_app
+      - service: persistent_notification.create
         data:
-          message: "Front door was unlocked!"
+          title: "Door unlocked"
+          message: "Front door relay was triggered!"
 ```
 
 ## Known Event Types
 
-| Event Type             | Description                              |
-| ---------------------- | ---------------------------------------- |
-| `relay_a_triggered`    | Relay A was activated (door opened).     |
-| `relay_a_closed`       | Relay A returned to closed state.        |
-| `relay_b_triggered`    | Relay B was activated.                   |
-| `relay_b_closed`       | Relay B returned to closed state.        |
-| `input_a_triggered`    | Input A was triggered.                   |
-| `input_a_closed`       | Input A returned to closed state.        |
-| `input_b_triggered`    | Input B was triggered.                   |
-| `input_b_closed`       | Input B returned to closed state.        |
-| `valid_code_entered`   | A valid PIN or card code was entered.    |
-| `invalid_code_entered` | An invalid PIN or card code was entered. |
+| Event Type             | Description                                |
+| ---------------------- | ------------------------------------------ |
+| `relay_a_triggered`    | Relay A activated (unlock requested).      |
+| `relay_a_closed`       | Relay A returned to closed state.          |
+| `relay_b_triggered`    | Relay B was activated.                     |
+| `relay_b_closed`       | Relay B returned to closed state.          |
+| `input_a_triggered`    | Input A was triggered.                     |
+| `input_a_closed`       | Input A returned to closed state.          |
+| `input_b_triggered`    | Input B was triggered.                     |
+| `input_b_closed`       | Input B returned to closed state.          |
+| `valid_code_entered`   | A valid PIN or card code was entered.      |
+| `invalid_code_entered` | An invalid PIN or card code was entered.   |
 
 Unrecognized events from the device are emitted as
 `unknown_<normalized_name>` with sanitized query parameters
