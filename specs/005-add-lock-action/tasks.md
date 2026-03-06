@@ -272,38 +272,38 @@ is a toggle that could re-lock an already-unlocked relay.
 
 ### Tests (TDD red phase)
 
-- [ ] T029 [P] Add test: bistable unlock sends `trigger_relay`
+- [x] T029 [P] Add test: bistable unlock sends `trigger_relay`
   with `mode=0` (not `relay_mode`) and `delay=0` in
   `tests/test_lock.py`. Verify correct API parameters when
   relay is confirmed locked.
-- [ ] T030 [P] Add test: bistable unlock refreshes coordinator
+- [x] T030 [P] Add test: bistable unlock refreshes coordinator
   before state check in `tests/test_lock.py`. Verify
   `coordinator.async_refresh()` called before `is_locked`
   evaluation.
-- [ ] T031 [P] Add test: bistable unlock is no-op when already
+- [x] T031 [P] Add test: bistable unlock is no-op when already
   unlocked in `tests/test_lock.py`. Mock coordinator refresh
   to return unlocked state, verify `trigger_relay` NOT called.
-- [ ] T032 [P] Add test: bistable unlock cancels pending lock
+- [x] T032 [P] Add test: bistable unlock cancels pending lock
   timer in `tests/test_lock.py`. Set up pending lock timer,
   call unlock, verify timer cancelled and lock callback never
   fires.
-- [ ] T033 [P] Add test: bistable unlock schedules delayed
+- [x] T033 [P] Add test: bistable unlock schedules delayed
   refresh with `relay_delay=0` in `tests/test_lock.py`.
   Verify `_schedule_delayed_refresh(0)` called.
-- [ ] T034 [P] Add test: bistable unlock proceeds when state is
+- [x] T034 [P] Add test: bistable unlock proceeds when state is
   unknown (None) after coordinator refresh in
   `tests/test_lock.py`. Verify `trigger_relay` is called
   (treats unknown as locked).
-- [ ] T035 [P] Add test: bistable unlock raises
+- [x] T035 [P] Add test: bistable unlock raises
   `HomeAssistantError` on device error in `tests/test_lock.py`.
   Verify error raised and state unchanged.
-- [ ] T036 [P] Add test: auto-close unlock behavior unchanged
+- [x] T036 [P] Add test: auto-close unlock behavior unchanged
   (regression) in `tests/test_lock.py`. Verify `trigger_relay`
   still called with `mode=0`, `delay=hold_delay`.
 
 ### Implementation
 
-- [ ] T037 Implement mode-aware `async_unlock` in
+- [x] T037 Implement mode-aware `async_unlock` in
   `custom_components/akuvox/lock.py`. For bistable: clear
   optimistic state → cancel pending timer → coordinator refresh
   → check `is_locked` → if unlocked: no-op → send
@@ -313,7 +313,7 @@ is a toggle that could re-lock an already-unlocked relay.
 
 ### Verification
 
-- [ ] T038 All tests pass and linting clean.
+- [x] T038 All tests pass and linting clean.
 - [ ] T039 Live device verification against 192.168.30.50.
 
 ---
