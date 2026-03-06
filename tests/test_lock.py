@@ -2347,57 +2347,46 @@ async def test_rapid_lock_lock_idempotent_bistable(
 async def test_async_lock_completes_within_5s(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],
-    mock_device_config: Any,
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
 ) -> None:
     """Test async_lock completes within 5 seconds (SC-002).
 
-    T024: With a mock device, the lock action should complete
-    near-instantly, well under the 5-second budget.
+    T024: With a mock device in bistable mode, the lock action
+    should complete near-instantly, well under the 5-second budget.
     """
-    with patch(
-        "custom_components.akuvox.AkuvoxDevice",
-        autospec=True,
-    ) as mock_cls:
-        from pylocal_akuvox import DeviceInfo
+    cfg = mock_device_config_factory(
+        **{
+            f"{CONFIG_KEY_RELAY_PREFIX}A{CONFIG_KEY_RELAY_MODE_SUFFIX}": "1",
+        },
+    )
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 1},
+    )
 
-        device = mock_cls.return_value
-        device.get_info = AsyncMock(
-            return_value=DeviceInfo(
-                model="E21V",
-                mac_address=MOCK_MAC,
-                firmware_version="1.0.0",
-                hardware_version="2.0.0",
-            ),
-        )
-        device.get_relay_status = AsyncMock(
-            return_value={"RelayA": 1},
-        )
-        device.trigger_relay = AsyncMock(return_value=None)
-        device.get_device_config = AsyncMock(
-            return_value=mock_device_config,
-        )
-        device.__aenter__ = AsyncMock(return_value=device)
-        device.__aexit__ = AsyncMock(return_value=None)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
 
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            data=mock_config_entry_data_none,
-            unique_id=MOCK_MAC,
-        )
-        entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
 
-        await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
+    start = time.monotonic()
+    await hass.services.async_call(
+        "lock",
+        "lock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+    elapsed = time.monotonic() - start
+    assert elapsed < 5.0, f"Lock took {elapsed:.2f}s, exceeds 5s budget"
 
-        start = time.monotonic()
-        await hass.services.async_call(
-            "lock",
-            "lock",
-            {"entity_id": "lock.testlab_intercom_front_gate"},
-            blocking=True,
-        )
-        elapsed = time.monotonic() - start
-        assert elapsed < 5.0, f"Lock took {elapsed:.2f}s, exceeds 5s budget"
+    # Verify bistable path was exercised
+    mock_akuvox_device.trigger_relay.assert_called_once()
 
 
 async def test_existing_unlock_behavior_unchanged(
