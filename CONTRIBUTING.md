@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 Andrew Grimberg <tykeal@bardicgrove.org>
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Contributing to Akuvox Local Integration
+# Contributing to Local Akuvox Integration
 
 Thank you for your interest in contributing! This document explains how
 to set up your development environment, run tests, and submit changes.

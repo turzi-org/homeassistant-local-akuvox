@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 Andrew Grimberg <tykeal@bardicgrove.org>
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Akuvox Local Integration for Home Assistant
+# Local Akuvox Integration for Home Assistant
 
 [![HACS][hacs-badge]][hacs-url]
 [![GitHub Release][release-badge]][release-url]
@@ -62,7 +62,7 @@ cloud services required.
 ### Adding the Integration
 
 1. Go to **Settings** → **Devices & Services** → **Add Integration**.
-2. Search for **Akuvox**.
+2. Search for **Local Akuvox**.
 3. Follow the setup wizard:
 
 | Step                   | Description                                     |
@@ -75,7 +75,8 @@ cloud services required.
 
 ### Reconfiguration
 
-Go to **Settings** → **Devices & Services** → **Akuvox** → **Configure**
+Go to **Settings** → **Devices & Services** → **Local Akuvox** →
+**Configure**
 to update connection settings, authentication, or webhook configuration
 at any time.
 
