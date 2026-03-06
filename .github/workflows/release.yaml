@@ -309,7 +309,8 @@ jobs:
           cd "${{ github.workspace }}/custom_components/local_akuvox"
           zip -r \
             "${{ github.workspace }}/local_akuvox.zip" \
-            ./
+            ./ \
+            -x '*__pycache__/*' '*.pyc'
 
       - name: 'Upload ZIP artifact'
         # yamllint disable-line rule:line-length
