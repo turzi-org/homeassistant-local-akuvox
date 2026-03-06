@@ -1832,6 +1832,251 @@ async def test_bistable_lock_cancels_pending_unlock_refresh(
         unlock_spy.assert_not_called()
 
 
+# ── T014–T018: Auto-close relay lock tests (Phase 4) ────────────
+
+
+async def test_autoclose_lock_no_trigger_relay(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test auto-close relay lock does NOT send trigger_relay.
+
+    T014: Mock coordinator refresh, call lock.lock on auto-close relay,
+    assert trigger_relay NOT called.
+    """
+    cfg = mock_device_config_factory()
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 1},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "unlocked"
+
+    await hass.services.async_call(
+        "lock",
+        "lock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    mock_akuvox_device.trigger_relay.assert_not_called()
+
+
+async def test_autoclose_lock_performs_coordinator_refresh(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test auto-close relay lock performs coordinator refresh.
+
+    T015: Verify coordinator.async_refresh() called during lock
+    by checking get_relay_status call count increases.
+    """
+    cfg = mock_device_config_factory()
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 1},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    calls_before = mock_akuvox_device.get_relay_status.call_count
+
+    await hass.services.async_call(
+        "lock",
+        "lock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    assert mock_akuvox_device.get_relay_status.call_count > calls_before
+
+
+async def test_autoclose_lock_preserves_pending_unlock_timer(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test auto-close relay lock does NOT cancel pending unlock refresh.
+
+    T016: Set up pending unlock timer, call lock.lock, verify the
+    unlock callback still fires after advancing time.
+    """
+    import datetime
+    from unittest.mock import patch as mock_patch
+
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import (
+        async_fire_time_changed,
+    )
+
+    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+
+    cfg = mock_device_config_factory()
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 0},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    comp = hass.data["lock"]
+    entity = comp.get_entity("lock.testlab_intercom_front_gate")
+
+    with mock_patch.object(
+        entity,
+        "_async_finish_optimistic_unlock",
+        wraps=entity._async_finish_optimistic_unlock,
+    ) as unlock_spy:
+        # Unlock to set up pending timer
+        await hass.services.async_call(
+            "lock",
+            "unlock",
+            {"entity_id": "lock.testlab_intercom_front_gate"},
+            blocking=True,
+        )
+
+        # Now call lock on auto-close relay — should preserve timer
+        await hass.services.async_call(
+            "lock",
+            "lock",
+            {"entity_id": "lock.testlab_intercom_front_gate"},
+            blocking=True,
+        )
+
+        start = dt_util.utcnow()
+
+        # Advance past the unlock timer deadline
+        async_fire_time_changed(
+            hass,
+            start
+            + datetime.timedelta(
+                seconds=DEFAULT_HOLD_DELAY_SECONDS + _RELAY_REFRESH_BUFFER_SECONDS + 1,
+            ),
+        )
+        await hass.async_block_till_done()
+
+        # Unlock callback DID fire (timer was preserved)
+        unlock_spy.assert_called_once()
+
+
+async def test_autoclose_lock_noop_when_already_locked(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test auto-close relay lock when already locked is a no-op.
+
+    T017: Mock coordinator refresh returning locked state, assert no
+    command sent, no state change.
+    """
+    cfg = mock_device_config_factory()
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 0},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "locked"
+
+    await hass.services.async_call(
+        "lock",
+        "lock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    mock_akuvox_device.trigger_relay.assert_not_called()
+
+    state = hass.states.get("lock.testlab_intercom_front_gate")
+    assert state is not None
+    assert state.state == "locked"
+
+
+async def test_autoclose_lock_no_optimistic_state(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+    mock_device_config_factory: Any,
+) -> None:
+    """Test auto-close relay lock does NOT set optimistic state.
+
+    T018: Verify _optimistic_locked remains None after lock call
+    (no optimistic override for auto-close).
+    """
+    cfg = mock_device_config_factory()
+    mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
+    mock_akuvox_device.get_relay_status = AsyncMock(
+        return_value={"RelayA": 1},
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        unique_id=MOCK_MAC,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    comp = hass.data["lock"]
+    entity = comp.get_entity("lock.testlab_intercom_front_gate")
+
+    await hass.services.async_call(
+        "lock",
+        "lock",
+        {"entity_id": "lock.testlab_intercom_front_gate"},
+        blocking=True,
+    )
+
+    assert entity._optimistic_locked is None
+
+
 async def test_relay_entity_name_from_config(
     hass: HomeAssistant,
     mock_config_entry_data_none: dict[str, Any],

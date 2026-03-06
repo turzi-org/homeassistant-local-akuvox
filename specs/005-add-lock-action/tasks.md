@@ -156,28 +156,28 @@ refresh.
 
 ### Tests for User Story 2 (TDD red phase)
 
-- [ ] T014 [P] [US2] Add test: auto-close relay lock does NOT
+- [x] T014 [P] [US2] Add test: auto-close relay lock does NOT
   send `trigger_relay` in `tests/test_lock.py` (AS-2.1,
   FR-008, R-005). Mock coordinator refresh, call `lock.lock`,
   assert `trigger_relay` NOT called.
-- [ ] T015 [P] [US2] Add test: auto-close relay lock performs
+- [x] T015 [P] [US2] Add test: auto-close relay lock performs
   coordinator refresh in `tests/test_lock.py` (FR-004,
   FR-009). Verify `coordinator.async_refresh()` called.
-- [ ] T016 [P] [US2] Add test: auto-close relay lock does NOT
+- [x] T016 [P] [US2] Add test: auto-close relay lock does NOT
   cancel pending unlock refresh in `tests/test_lock.py`
   (FR-005). Set up pending unlock timer, call `lock.lock`,
   verify timer NOT cancelled.
-- [ ] T017 [P] [US2] Add test: auto-close relay lock when already
+- [x] T017 [P] [US2] Add test: auto-close relay lock when already
   locked is a no-op in `tests/test_lock.py` (AS-2.2). Mock
   coordinator refresh returning locked state, assert no command,
   no state change.
-- [ ] T018 [P] [US2] Add test: auto-close relay lock does NOT
+- [x] T018 [P] [US2] Add test: auto-close relay lock does NOT
   set optimistic state in `tests/test_lock.py` (R-002). Verify
   `_optimistic_locked` remains unchanged after lock call.
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] Add auto-close early-return branch to
+- [x] T019 [US2] Add auto-close early-return branch to
   `async_lock` in `custom_components/akuvox/lock.py` (FR-007,
   FR-008, R-005, R-006). Per data-model.md §Auto-Close Relay
   Lock Flow: skip timer cancellation → coordinator refresh →
