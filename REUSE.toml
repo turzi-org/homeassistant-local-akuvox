@@ -26,7 +26,7 @@ SPDX-FileCopyrightText = "2026 Andrew Grimberg <tykeal@bardicgrove.org>"
 # Branding
 [[annotations]]
 path = [
-    "custom_components/akuvox/brand/**",
+    "custom_components/local_akuvox/brand/**",
 ]
 SPDX-License-Identifier = "LicenseRef-NOASSERTION"
 SPDX-FileCopyrightText = "2026 Akuvox"

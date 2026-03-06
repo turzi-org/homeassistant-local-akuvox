@@ -14,11 +14,11 @@ from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from homeassistant.core import HomeAssistant
 
-from custom_components.akuvox.const import (
+from custom_components.local_akuvox.const import (
     DOMAIN,
     EVENT_WEBHOOK_RECEIVED,
 )
-from custom_components.akuvox.webhook import (
+from custom_components.local_akuvox.webhook import (
     _refresh_in_flight,
     async_handle_webhook,
 )
@@ -109,7 +109,7 @@ async def test_relay_event_fires_ha_event(
 
     # Mock device registry
     with patch(
-        "custom_components.akuvox.webhook.dr.async_entries_for_config_entry",
+        "custom_components.local_akuvox.webhook.dr.async_entries_for_config_entry",
         return_value=[MagicMock(id="device_123")],
     ):
         events: list[Any] = []
@@ -161,7 +161,7 @@ async def test_valid_code_cache_hit(
     hass.data[DOMAIN]["test_entry_id"] = coordinator
 
     with patch(
-        "custom_components.akuvox.webhook.dr.async_entries_for_config_entry",
+        "custom_components.local_akuvox.webhook.dr.async_entries_for_config_entry",
         return_value=[MagicMock(id="device_123")],
     ):
         events: list[Any] = []
@@ -217,7 +217,7 @@ async def test_valid_code_cache_miss_schedules_refresh(
     hass.data[DOMAIN]["test_entry_id"] = coordinator
 
     with patch(
-        "custom_components.akuvox.webhook.dr.async_entries_for_config_entry",
+        "custom_components.local_akuvox.webhook.dr.async_entries_for_config_entry",
         return_value=[MagicMock(id="device_123")],
     ):
         events: list[Any] = []
@@ -272,7 +272,7 @@ async def test_valid_code_no_match(
     hass.data[DOMAIN]["test_entry_id"] = coordinator
 
     with patch(
-        "custom_components.akuvox.webhook.dr.async_entries_for_config_entry",
+        "custom_components.local_akuvox.webhook.dr.async_entries_for_config_entry",
         return_value=[MagicMock(id="device_123")],
     ):
         events: list[Any] = []
@@ -320,7 +320,7 @@ async def test_invalid_code_event(
     hass.data[DOMAIN]["test_entry_id"] = coordinator
 
     with patch(
-        "custom_components.akuvox.webhook.dr.async_entries_for_config_entry",
+        "custom_components.local_akuvox.webhook.dr.async_entries_for_config_entry",
         return_value=[MagicMock(id="device_123")],
     ):
         events: list[Any] = []
@@ -364,7 +364,7 @@ async def test_unknown_event_sanitized(
     hass.data[DOMAIN]["test_entry_id"] = coordinator
 
     with patch(
-        "custom_components.akuvox.webhook.dr.async_entries_for_config_entry",
+        "custom_components.local_akuvox.webhook.dr.async_entries_for_config_entry",
         return_value=[MagicMock(id="device_123")],
     ):
         events: list[Any] = []
@@ -413,7 +413,7 @@ async def test_input_event_no_refresh(
     hass.data[DOMAIN]["test_entry_id"] = coordinator
 
     with patch(
-        "custom_components.akuvox.webhook.dr.async_entries_for_config_entry",
+        "custom_components.local_akuvox.webhook.dr.async_entries_for_config_entry",
         return_value=[MagicMock(id="device_123")],
     ):
         request = _make_request(
@@ -452,7 +452,7 @@ async def test_concurrent_webhooks_no_event_loss(
     hass.data[DOMAIN]["test_entry_id"] = coordinator
 
     with patch(
-        "custom_components.akuvox.webhook.dr.async_entries_for_config_entry",
+        "custom_components.local_akuvox.webhook.dr.async_entries_for_config_entry",
         return_value=[MagicMock(id="device_123")],
     ):
         events: list[Any] = []
@@ -502,7 +502,7 @@ async def test_raw_pin_never_in_payload(
     hass.data[DOMAIN]["test_entry_id"] = coordinator
 
     with patch(
-        "custom_components.akuvox.webhook.dr.async_entries_for_config_entry",
+        "custom_components.local_akuvox.webhook.dr.async_entries_for_config_entry",
         return_value=[MagicMock(id="device_123")],
     ):
         events: list[Any] = []

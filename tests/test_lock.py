@@ -15,7 +15,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.akuvox.const import (
+from custom_components.local_akuvox.const import (
     CONFIG_KEY_LOCATION,
     CONFIG_KEY_RELAY_HOLD_DELAY,
     CONFIG_KEY_RELAY_MODE_SUFFIX,
@@ -116,7 +116,7 @@ async def test_is_locked_true(
 ) -> None:
     """Test is_locked returns True for closed/inactive/0 states."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -168,7 +168,7 @@ async def test_is_locked_false(
 ) -> None:
     """Test is_locked returns False for open/active/1 states."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -216,7 +216,7 @@ async def test_is_locked_unknown_for_unexpected_int(
 ) -> None:
     """Test is_locked returns None for unexpected integer states."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -264,7 +264,7 @@ async def test_is_locked_unknown_for_unexpected_str(
 ) -> None:
     """Test is_locked returns None for unrecognized string states."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -314,7 +314,7 @@ async def test_is_locked_none_for_missing_relay_key(
     is_locked must return None so HA reports the entity as unknown.
     """
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -378,7 +378,7 @@ async def test_is_locked_handles_dict_int_state(
 ) -> None:
     """Test is_locked handles dict-wrapped integer states."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -426,7 +426,7 @@ async def test_entity_unavailable_when_coordinator_fails(
     from pylocal_akuvox import AkuvoxConnectionError, DeviceInfo
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -483,7 +483,7 @@ async def test_multi_relay_entities_created(
 ) -> None:
     """Test multiple relay entities are created with correct IDs."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -543,7 +543,7 @@ async def test_multi_relay_distinct_names(
 ) -> None:
     """Test multi-relay entities have distinct friendly names."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -601,7 +601,7 @@ async def test_unlock_relay_a_does_not_change_relay_b(
     When relay A is unlocked, relay B must remain locked.
     """
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -678,7 +678,7 @@ async def test_is_locked_handles_dict_state_format(
 ) -> None:
     """Test is_locked handles legacy dict state format defensively."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -724,7 +724,7 @@ async def test_unrecognized_relay_keys_skipped(
 ) -> None:
     """Test that unrecognized relay keys are skipped."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -905,7 +905,7 @@ async def test_rapid_unlock_resets_optimistic_window(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -997,7 +997,7 @@ async def test_delayed_refresh_clears_optimistic_state(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -1059,7 +1059,7 @@ async def test_schedule_delayed_refresh_default_callback(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -1132,7 +1132,7 @@ async def test_schedule_delayed_refresh_explicit_callback(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -1195,7 +1195,7 @@ async def test_entity_removal_cancels_delayed_refresh(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -1257,7 +1257,7 @@ async def test_async_unlock_raises_on_device_error(
     from homeassistant.exceptions import HomeAssistantError
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -1357,7 +1357,7 @@ async def test_async_unlock_completes_within_5s(
     near-instantly, well under the 5-second budget.
     """
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -1519,7 +1519,7 @@ async def test_bistable_lock_schedules_delayed_refresh(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     cfg = mock_device_config_factory(
         **{
@@ -1755,7 +1755,7 @@ async def test_bistable_lock_cancels_pending_unlock_refresh(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     cfg = mock_device_config_factory(
         **{
@@ -1934,7 +1934,7 @@ async def test_autoclose_lock_preserves_pending_unlock_timer(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     cfg = mock_device_config_factory()
     mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
@@ -2195,7 +2195,7 @@ async def test_lock_during_active_unlock_window_bistable(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     cfg = mock_device_config_factory(
         **{
@@ -2414,7 +2414,7 @@ async def test_existing_unlock_behavior_unchanged(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     cfg = mock_device_config_factory()
     mock_akuvox_device.get_device_config = AsyncMock(return_value=cfg)
@@ -2710,7 +2710,7 @@ async def test_refresh_timer_uses_config_hold_delay(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     cfg = mock_device_config_factory(
         **{f"{CONFIG_KEY_RELAY_HOLD_DELAY}A": "7"},
@@ -2784,8 +2784,8 @@ async def test_unlock_fallback_delay_when_relay_not_in_configs(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.coordinator import AkuvoxCoordinatorData
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.coordinator import AkuvoxCoordinatorData
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -3166,7 +3166,7 @@ async def test_state_fallback_no_when_relay_not_in_configs(
     When relay_configs does not have the relay letter, state parsing
     must fall back to NO (0=locked, 1=unlocked).
     """
-    from custom_components.akuvox.coordinator import AkuvoxCoordinatorData
+    from custom_components.local_akuvox.coordinator import AkuvoxCoordinatorData
 
     mock_akuvox_device.get_relay_status = AsyncMock(
         return_value={"RelayA": 0},
@@ -3208,7 +3208,7 @@ async def test_unlock_fallback_level_0_when_relay_not_in_configs(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test trigger_relay uses level=0 when relay_configs is empty."""
-    from custom_components.akuvox.coordinator import AkuvoxCoordinatorData
+    from custom_components.local_akuvox.coordinator import AkuvoxCoordinatorData
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -3261,7 +3261,7 @@ async def test_relay_defaults_when_no_config_entry(
     the entity should fall back to default hold delay, NO state
     interpretation, and default level/mode in trigger_relay.
     """
-    from custom_components.akuvox.coordinator import (
+    from custom_components.local_akuvox.coordinator import (
         AkuvoxCoordinatorData,
         RelayConfig,
     )
@@ -3494,7 +3494,7 @@ async def test_bistable_unlock_cancels_pending_lock_timer(
         async_fire_time_changed,
     )
 
-    from custom_components.akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
+    from custom_components.local_akuvox.lock import _RELAY_REFRESH_BUFFER_SECONDS
 
     cfg = mock_device_config_factory(
         **{

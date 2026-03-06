@@ -1,5 +1,5 @@
 {
-  "domain": "akuvox",
+  "domain": "local_akuvox",
   "name": "Akuvox",
   "version": "0.1.0",
   "codeowners": ["@tykeal"],

@@ -46,14 +46,14 @@ cloud services required.
    repositories**.
 3. Add `https://github.com/tykeal/homeassistant-local-akuvox` with
    category **Integration**.
-4. Search for "Akuvox" and install it.
+4. Search for "Local Akuvox" and install it.
 5. Restart Home Assistant.
 
 ### Manual
 
 1. Download the latest release from the
    [releases page][release-url].
-2. Copy the `custom_components/akuvox` directory into your Home
+2. Copy the `custom_components/local_akuvox` directory into your Home
    Assistant `config/custom_components/` directory.
 3. Restart Home Assistant.
 
@@ -98,12 +98,12 @@ a custom name configured on the device, that name is used.
 
 When webhooks are enabled, the integration configures your Akuvox device
 to send event notifications to Home Assistant. Events are fired on the
-Home Assistant event bus as `akuvox_webhook_received`.
+Home Assistant event bus as `local_akuvox_webhook_received`.
 
 ### Listening for Events
 
 Use **Developer Tools** → **Events** → **Listen to events** and enter
-`akuvox_webhook_received` to monitor incoming webhooks.
+`local_akuvox_webhook_received` to monitor incoming webhooks.
 
 You can also use these events in automations:
 
@@ -112,7 +112,7 @@ automation:
   - alias: "Notify on door unlock"
     trigger:
       - platform: event
-        event_type: akuvox_webhook_received
+        event_type: local_akuvox_webhook_received
         event_data:
           event_type: relay_a_triggered
     action:
@@ -183,12 +183,12 @@ scripts.
 
 ### Schedule Management
 
-| Service                    | Description                         |
-| -------------------------- | ----------------------------------- |
-| `akuvox.list_schedules`    | Retrieve all access schedules.      |
-| `akuvox.add_schedule`      | Create a new access schedule.       |
-| `akuvox.modify_schedule`   | Update an existing schedule.        |
-| `akuvox.delete_schedule`   | Remove a schedule.                  |
+| Service                            | Description                    |
+| ---------------------------------- | ------------------------------ |
+| `local_akuvox.list_schedules`      | Retrieve all access schedules. |
+| `local_akuvox.add_schedule`        | Create a new access schedule.  |
+| `local_akuvox.modify_schedule`     | Update an existing schedule.   |
+| `local_akuvox.delete_schedule`     | Remove a schedule.             |
 
 **Schedule types** (`schedule_type` must be a string):
 
@@ -198,21 +198,21 @@ scripts.
 
 ### User Management
 
-| Service                              | Description                          |
-| ------------------------------------ | ------------------------------------ |
-| `akuvox.list_users`                  | Retrieve all user codes.             |
-| `akuvox.add_user`                    | Create a new user with PIN/card.     |
-| `akuvox.modify_user`                 | Update an existing user.             |
-| `akuvox.delete_user`                 | Remove a user.                       |
-| `akuvox.add_user_schedule_relay`     | Assign a schedule-relay pair.        |
-| `akuvox.remove_user_schedule_relay`  | Remove a schedule-relay pair.        |
+| Service                                   | Description               |
+| ----------------------------------------- | ------------------------- |
+| `local_akuvox.list_users`                 | Retrieve all user codes.  |
+| `local_akuvox.add_user`                   | Create a user (PIN/card). |
+| `local_akuvox.modify_user`                | Update an existing user.  |
+| `local_akuvox.delete_user`                | Remove a user.            |
+| `local_akuvox.add_user_schedule_relay`    | Assign schedule-relay.    |
+| `local_akuvox.remove_user_schedule_relay` | Remove schedule-relay.    |
 
 ### Example: Add a User with PIN Access
 
 ```yaml
-service: akuvox.add_user
+service: local_akuvox.add_user
 target:
-  entity_id: lock.akuvox_front_gate
+  entity_id: lock.local_akuvox_front_gate
 data:
   name: "Jane Doe"
   schedules: "10, 20"

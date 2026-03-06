@@ -143,7 +143,7 @@ by hooks, stage the changes and commit again.
 ## Project Structure
 
 ```text
-custom_components/akuvox/
+custom_components/local_akuvox/
 ├── __init__.py          # Integration setup and lifecycle
 ├── config_flow.py       # Configuration and options flows
 ├── const.py             # Constants and configuration keys

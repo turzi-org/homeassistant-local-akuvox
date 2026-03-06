@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Final
 if TYPE_CHECKING:
     from pylocal_akuvox import AuthMethod
 
-DOMAIN: Final = "akuvox"
+DOMAIN: Final = "local_akuvox"
 PLATFORMS: Final = ["lock"]
 
 # Webhook config keys
@@ -19,7 +19,7 @@ CONF_WEBHOOK_ID: Final = "webhook_id"
 CONF_WEBHOOK_ENABLED: Final = "webhook_enabled"
 
 # Webhook event name
-EVENT_WEBHOOK_RECEIVED: Final = "akuvox_webhook_received"
+EVENT_WEBHOOK_RECEIVED: Final = "local_akuvox_webhook_received"
 
 # Action URL config key prefix
 ACTIONURL_PREFIX: Final = "Config.Features.ACTIONURL"
@@ -82,8 +82,8 @@ SERVICE_ADD_USER_SCHEDULE_RELAY: Final = "add_user_schedule_relay"
 SERVICE_REMOVE_USER_SCHEDULE_RELAY: Final = "remove_user_schedule_relay"
 
 # Event names
-EVENT_SCHEDULE_CHANGED: Final = "akuvox_schedule_changed"
-EVENT_USER_CHANGED: Final = "akuvox_user_changed"
+EVENT_SCHEDULE_CHANGED: Final = "local_akuvox_schedule_changed"
+EVENT_USER_CHANGED: Final = "local_akuvox_user_changed"
 
 # Config keys
 CONF_HOST: Final = "host"

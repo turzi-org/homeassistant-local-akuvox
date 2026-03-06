@@ -19,7 +19,7 @@ from pylocal_akuvox import (
 )
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.akuvox.const import (
+from custom_components.local_akuvox.const import (
     AUTH_BASIC,
     AUTH_DIGEST,
     AUTH_NONE,
@@ -159,7 +159,7 @@ async def test_credentials_step_skipped_for_none(
 ) -> None:
     """Test credentials step skipped for none/allowlist."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -198,7 +198,7 @@ async def test_successful_connection_creates_entry(
 ) -> None:
     """Test successful connection creates config entry."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -245,7 +245,7 @@ async def test_cannot_connect_error(
 ) -> None:
     """Test cannot_connect error on AkuvoxConnectionError."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -274,7 +274,7 @@ async def test_invalid_auth_error(
 ) -> None:
     """Test invalid_auth error on AkuvoxAuthenticationError."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -314,7 +314,7 @@ async def test_already_configured_aborts(
     existing.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -347,7 +347,7 @@ async def test_unknown_error(
 ) -> None:
     """Test unknown error on generic AkuvoxError."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -381,7 +381,7 @@ async def test_options_flow_shows_current_values(
 ) -> None:
     """Test options flow init step shows form with current values."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -439,7 +439,7 @@ async def test_options_flow_updates_entry(
 ) -> None:
     """Test options flow saves updated values to entry.options."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -498,7 +498,7 @@ async def test_options_flow_triggers_reload(
 ) -> None:
     """Test integration reloads after options change."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -568,7 +568,7 @@ async def test_options_flow_rejects_empty_host(
 
     with (
         patch(
-            "custom_components.akuvox.AkuvoxDevice",
+            "custom_components.local_akuvox.AkuvoxDevice",
             autospec=True,
         ) as mock_cls,
     ):
@@ -617,7 +617,7 @@ async def test_options_flow_rejects_whitespace_host(
 
     with (
         patch(
-            "custom_components.akuvox.AkuvoxDevice",
+            "custom_components.local_akuvox.AkuvoxDevice",
             autospec=True,
         ) as mock_cls,
     ):
@@ -666,7 +666,7 @@ async def test_options_flow_rejects_missing_credentials(
 
     with (
         patch(
-            "custom_components.akuvox.AkuvoxDevice",
+            "custom_components.local_akuvox.AkuvoxDevice",
             autospec=True,
         ) as mock_cls,
     ):
@@ -715,7 +715,7 @@ async def test_options_flow_host_error_takes_precedence(
 
     with (
         patch(
-            "custom_components.akuvox.AkuvoxDevice",
+            "custom_components.local_akuvox.AkuvoxDevice",
             autospec=True,
         ) as mock_cls,
     ):
@@ -756,7 +756,7 @@ async def test_webhook_step_shows_form(
 ) -> None:
     """Test webhook step shows form after connection test."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -790,7 +790,7 @@ async def test_webhook_disabled_creates_entry(
 ) -> None:
     """Test disabling webhook creates entry with no webhook config."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -829,7 +829,7 @@ async def test_webhook_enabled_pushes_config(
 ) -> None:
     """Test enabling webhook pushes action URLs to device."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -873,7 +873,7 @@ async def test_webhook_push_fails_shows_error(
 ) -> None:
     """Test failed webhook push shows error and allows retry."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -917,7 +917,7 @@ async def test_webhook_push_fails_then_skip(
 ) -> None:
     """Test user can skip webhook after push failure."""
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -974,7 +974,7 @@ async def test_options_webhook_enable(
 ) -> None:
     """Test options flow enables webhook and pushes config."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -1008,7 +1008,7 @@ async def test_options_webhook_enable(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_flow_cls:
         flow_dev = mock_flow_cls.return_value
         flow_dev.set_device_config = AsyncMock(return_value=None)
@@ -1043,7 +1043,7 @@ async def test_options_webhook_disable(
 ) -> None:
     """Test options flow disables webhook and pushes clear config."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -1077,7 +1077,7 @@ async def test_options_webhook_disable(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_flow_cls:
         flow_dev = mock_flow_cls.return_value
         flow_dev.set_device_config = AsyncMock(return_value=None)
@@ -1111,7 +1111,7 @@ async def test_options_webhook_push_fails(
 ) -> None:
     """Test options flow shows error on webhook push failure."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -1144,7 +1144,7 @@ async def test_options_webhook_push_fails(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
     ) as mock_flow_cls:
         flow_dev = mock_flow_cls.return_value
         flow_dev.set_device_config = AsyncMock(

@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.akuvox.const import CONFIG_KEY_LOCATION, DOMAIN
+from custom_components.local_akuvox.const import CONFIG_KEY_LOCATION, DOMAIN
 from tests.conftest import MOCK_MAC
 
 
@@ -106,7 +106,7 @@ async def test_setup_fails_on_connection_error(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -237,7 +237,7 @@ async def test_webhook_registered_when_enabled(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.webhook.async_register",
+        "custom_components.local_akuvox.webhook.async_register",
     ) as mock_register:
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -266,7 +266,7 @@ async def test_webhook_not_registered_when_disabled(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.webhook.async_register",
+        "custom_components.local_akuvox.webhook.async_register",
     ) as mock_register:
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -289,7 +289,7 @@ async def test_webhook_not_registered_when_no_webhook_fields(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.webhook.async_register",
+        "custom_components.local_akuvox.webhook.async_register",
     ) as mock_register:
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -312,14 +312,14 @@ async def test_webhook_unregistered_on_unload(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.webhook.async_register",
+        "custom_components.local_akuvox.webhook.async_register",
     ):
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         assert entry.state is ConfigEntryState.LOADED
 
     with patch(
-        "custom_components.akuvox.webhook.async_unregister",
+        "custom_components.local_akuvox.webhook.async_unregister",
     ) as mock_unregister:
         await hass.config_entries.async_unload(entry.entry_id)
         await hass.async_block_till_done()
@@ -352,7 +352,7 @@ async def test_webhook_unload_safe_noop_when_not_in_registry(
     assert entry.state is ConfigEntryState.LOADED
 
     with patch(
-        "custom_components.akuvox.webhook.async_unregister",
+        "custom_components.local_akuvox.webhook.async_unregister",
     ) as mock_unregister:
         await hass.config_entries.async_unload(entry.entry_id)
         await hass.async_block_till_done()
@@ -375,13 +375,13 @@ async def test_unload_cleans_up_empty_registry(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.webhook.async_register",
+        "custom_components.local_akuvox.webhook.async_register",
     ):
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.akuvox.webhook.async_unregister",
+        "custom_components.local_akuvox.webhook.async_unregister",
     ):
         await hass.config_entries.async_unload(entry.entry_id)
         await hass.async_block_till_done()
@@ -409,7 +409,7 @@ async def test_remove_entry_pushes_disable_when_enabled(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -428,7 +428,7 @@ async def test_remove_entry_pushes_disable_when_enabled(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_remove_cls:
         remove_dev = mock_remove_cls.return_value
@@ -458,7 +458,7 @@ async def test_remove_entry_skips_when_disabled(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -476,7 +476,7 @@ async def test_remove_entry_skips_when_disabled(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_remove_cls:
         remove_dev = mock_remove_cls.return_value
@@ -506,7 +506,7 @@ async def test_remove_entry_handles_push_failure(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -524,7 +524,7 @@ async def test_remove_entry_handles_push_failure(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_remove_cls:
         remove_dev = mock_remove_cls.return_value
