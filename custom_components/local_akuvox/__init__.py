@@ -50,6 +50,8 @@ from .webhook import (
 
 _LOGGER = logging.getLogger(__name__)
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 
 def _csv_to_list(value: Any) -> list[str]:
     """Split a comma-separated string into a list of trimmed strings.
