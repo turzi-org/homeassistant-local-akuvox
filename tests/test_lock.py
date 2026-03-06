@@ -2219,6 +2219,9 @@ async def test_lock_during_active_unlock_window_bistable(
 
     comp = hass.data["lock"]
     entity = comp.get_entity("lock.testlab_intercom_front_gate")
+    assert entity is not None, (
+        "Expected lock.testlab_intercom_front_gate entity to exist"
+    )
 
     with (
         mock_patch.object(
@@ -2292,8 +2295,9 @@ async def test_rapid_lock_lock_idempotent_bistable(
     """Test rapid lock-lock is idempotent on bistable relay.
 
     T023: Call lock twice in succession on bistable relay, verify
-    only one trigger_relay command sent (second is no-op because
-    optimistic state is locked after first).
+    only one trigger_relay command sent (second is no-op because a
+    status refresh confirms the relay is already locked after the first
+    command).
     """
     cfg = mock_device_config_factory(
         **{
@@ -2434,6 +2438,7 @@ async def test_existing_unlock_behavior_unchanged(
 
     comp = hass.data["lock"]
     entity = comp.get_entity("lock.testlab_intercom_front_gate")
+    assert entity is not None
 
     with mock_patch.object(
         entity,
