@@ -287,14 +287,74 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         return _parse_relay_state(self._relay_key, state, relay_type)
 
     async def async_lock(self, **kwargs: Any) -> None:
-        """Lock the door (not supported — auto-locks via hardware).
+        """Lock the relay using mode-aware logic.
+
+        Clears optimistic state before proceeding with mode-specific
+        logic.
+
+        For **bistable** relays (relay_mode=1): cancels any pending
+        unlock timer (FR-005), refreshes coordinator state, then sends
+        a ``trigger_relay`` command if the relay is confirmed unlocked.
+        Sets optimistic locked state and schedules a delayed refresh.
+
+        For **auto-close** relays (relay_mode=0): performs a coordinator
+        refresh and writes the updated state (no command sent).  Any
+        pending unlock timer is preserved so it can re-sync state after
+        the relay hold-delay window.
+
+        Args:
+            **kwargs: Service call keyword arguments (unused).
 
         Raises:
-            HomeAssistantError: Always, as locking is not supported.
+            HomeAssistantError: If device communication fails.
 
         """
-        raise HomeAssistantError(
-            "Lock operation not supported; door auto-locks via hardware."
+        letter = chr(ord("A") + self._relay_number - 1)
+        relay_cfg = self.coordinator.data.relay_configs.get(letter)
+        relay_mode = relay_cfg.relay_mode if relay_cfg else DEFAULT_RELAY_MODE
+
+        # Clear optimistic state so coordinator data drives is_locked
+        self._optimistic_locked = None
+
+        if relay_mode == 0:
+            # Auto-close: refresh only, no command.
+            # Any pending unlock refresh timer is preserved so it can
+            # re-sync state after the relay hold-delay window.
+            await self.coordinator.async_refresh()
+            self.async_write_ha_state()
+            return
+
+        # Bistable: cancel any pending unlock timer (FR-005)
+        if self._delayed_refresh_cancel is not None:
+            self._delayed_refresh_cancel()
+            self._delayed_refresh_cancel = None
+
+        # Refresh coordinator to get current state
+        await self.coordinator.async_refresh()
+
+        # R-001: None (unknown after refresh) treated as unlocked — proceed
+        if self.is_locked:
+            self.async_write_ha_state()
+            return
+
+        hold_delay = relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS
+        relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
+        try:
+            await self.coordinator.device.trigger_relay(
+                num=self._relay_number,
+                delay=hold_delay,
+                level=relay_type,
+                mode=relay_mode,
+            )
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"Failed to lock relay {self._relay_number}: {err}"
+            ) from err
+        self._optimistic_locked = True
+        self.async_write_ha_state()
+        self._schedule_delayed_refresh(
+            0,
+            finish_callback=self._async_finish_optimistic_lock,
         )
 
     async def async_unlock(self, **kwargs: Any) -> None:
