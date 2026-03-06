@@ -224,33 +224,33 @@ any HA call site (UI, service, automation).
 
 **Purpose**: Edge cases, regression verification, and cleanup.
 
-- [ ] T022 [P] Add test: lock during active unlock window
+- [x] T022 [P] Add test: lock during active unlock window
   (bistable) in `tests/test_lock.py` (Edge Case 1). Unlock,
   then immediately lock before hold_delay expires. Verify
   pending unlock refresh cancelled, lock command sent, new
   refresh scheduled.
-- [ ] T023 [P] Add test: rapid lock-lock is idempotent in
+- [x] T023 [P] Add test: rapid lock-lock is idempotent in
   `tests/test_lock.py` (Edge Case 3). Call lock twice in
   succession on bistable relay, verify only one command sent.
-- [ ] T024 [P] Add test: lock completes within 5 seconds
+- [x] T024 [P] Add test: lock completes within 5 seconds
   (bistable) in `tests/test_lock.py` (SC-002). Similar to
   existing `test_async_unlock_completes_within_5s`.
-- [ ] T025 [P] Add test: existing unlock behavior unchanged
+- [x] T025 [P] Add test: existing unlock behavior unchanged
   (SC-005) in `tests/test_lock.py`. Re-run existing unlock
   test suite; verify no regressions from refactored
   `_schedule_delayed_refresh`.
-- [ ] T026 [P] Add test: bistable relay lock proceeds when state
+- [x] T026 [P] Add test: bistable relay lock proceeds when state
   is unknown (None) after coordinator refresh in
   `tests/test_lock.py` (data-model.md §Bistable Relay Lock
   Flow, unknown state handling). Mock coordinator refresh to
   return state where `is_locked` is None, verify
   `trigger_relay` is called (treats unknown as unlocked per
   design decision).
-- [ ] T027 Verify all tests pass and linting is clean:
+- [x] T027 Verify all tests pass and linting is clean:
   `uv run pytest tests/test_lock.py -x -q`,
   `uv run ruff check custom_components/ tests/`, and
   `uv run mypy custom_components/`
-- [ ] T028 Run quickstart.md manual verification steps to
+- [x] T028 Run quickstart.md manual verification steps to
   validate end-to-end behavior description is accurate.
 
 ---
