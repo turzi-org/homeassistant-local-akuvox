@@ -30,14 +30,14 @@ The `schedule_type` field must be a string:
 
 ## User Management
 
-| Service                                   | Description            |
-| ----------------------------------------- | ---------------------- |
-| `local_akuvox.list_users`                 | Retrieve all users.    |
-| `local_akuvox.add_user`                   | Create user (PIN/card) |
-| `local_akuvox.modify_user`                | Update existing user.  |
-| `local_akuvox.delete_user`                | Remove a user.         |
-| `local_akuvox.add_user_schedule_relay`    | Assign schedule-relay. |
-| `local_akuvox.remove_user_schedule_relay` | Remove schedule-relay. |
+| Service                                   | Description             |
+| ----------------------------------------- | ----------------------- |
+| `local_akuvox.list_users`                 | Retrieve all users.     |
+| `local_akuvox.add_user`                   | Create user (PIN/card). |
+| `local_akuvox.modify_user`                | Update existing user.   |
+| `local_akuvox.delete_user`                | Remove a user.          |
+| `local_akuvox.add_user_schedule_relay`    | Assign schedule-relay.  |
+| `local_akuvox.remove_user_schedule_relay` | Remove schedule-relay.  |
 
 ## Example: Add a User with PIN Access
 
