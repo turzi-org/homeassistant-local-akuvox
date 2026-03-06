@@ -2169,6 +2169,7 @@ async def test_service_call_lock_autoclose(
     # No exception raised; state reflects device state from refresh
     state = hass.states.get("lock.testlab_intercom_front_gate")
     assert state is not None
+    assert state.state == "unlocked"
 
 
 async def test_relay_entity_name_from_config(
