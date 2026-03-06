@@ -199,11 +199,11 @@ verify it completes successfully.
 
 ### Tests for User Story 3 (TDD red phase)
 
-- [ ] T020 [P] [US3] Add test: `lock.lock` service call succeeds
+- [x] T020 [P] [US3] Add test: `lock.lock` service call succeeds
   on bistable relay in `tests/test_lock.py` (AS-3.1). Use
   `hass.services.async_call("lock", "lock", ...)` with
   `blocking=True`, verify no exception and state updated.
-- [ ] T021 [P] [US3] Add test: `lock.lock` service call succeeds
+- [x] T021 [P] [US3] Add test: `lock.lock` service call succeeds
   on auto-close relay in `tests/test_lock.py` (AS-3.1). Use
   `hass.services.async_call("lock", "lock", ...)` with
   `blocking=True`, verify no exception.
