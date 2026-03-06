@@ -38,7 +38,7 @@ the required device-side setup.
    vary slightly by model and firmware version).
 2. Set the **HTTP API** toggle to **Enabled**.
 
-Without this step the device will reject all API requests with
+Without this step, the device will reject all API requests with
 HTTP 403 Forbidden, and the integration will not be able to
 communicate with it.
 
@@ -48,12 +48,11 @@ On the same HTTP API settings page you will find an
 **Authentication Mode** selector. The integration supports the
 following modes:
 
-| Mode               | Description                                |
-| ------------------ | ------------------------------------------ |
-| **None/AllowList** | No credentials required. Optionally limit  |
-|                    | access by IP address (see Step 4).         |
-| **Basic**          | Username and password sent Base64-encoded. |
-| **Digest**         | Username and password with MD5 hashing.    |
+| Mode                 | Description                                  |
+| -------------------- | -------------------------------------------- |
+| **None / AllowList** | No credentials; optionally limit by IP.      |
+| **Basic**            | Username and password sent Base64-encoded.   |
+| **Digest**           | Username and password with MD5 hashing.      |
 
 Choose the mode that fits your security requirements:
 
