@@ -255,6 +255,69 @@ any HA call site (UI, service, automation).
 
 ---
 
+## Phase 7: Fix Bistable Unlock (Bug Fix)
+
+**Purpose**: Fix `async_unlock` for bistable relays. The Akuvox API
+`mode` parameter controls the command direction (`mode=0` =
+open/toggle, `mode=1` = close-only), NOT the relay's configured
+mode. The existing code passes `relay_mode` (config) as the API
+`mode`, so bistable unlock (config mode=1) sends a close-only
+command that never opens the relay.
+
+**Root cause**: `trigger_relay(mode=relay_mode)` where
+`relay_mode=1` (bistable config) sends `mode=1` (close-only API
+command). The fix must send `mode=0` (open/toggle) for unlock and
+add a pre-action state check for bistable relays since `mode=0`
+is a toggle that could re-lock an already-unlocked relay.
+
+### Tests (TDD red phase)
+
+- [ ] T029 [P] Add test: bistable unlock sends `trigger_relay`
+  with `mode=0` (not `relay_mode`) and `delay=0` in
+  `tests/test_lock.py`. Verify correct API parameters when
+  relay is confirmed locked.
+- [ ] T030 [P] Add test: bistable unlock refreshes coordinator
+  before state check in `tests/test_lock.py`. Verify
+  `coordinator.async_refresh()` called before `is_locked`
+  evaluation.
+- [ ] T031 [P] Add test: bistable unlock is no-op when already
+  unlocked in `tests/test_lock.py`. Mock coordinator refresh
+  to return unlocked state, verify `trigger_relay` NOT called.
+- [ ] T032 [P] Add test: bistable unlock cancels pending lock
+  timer in `tests/test_lock.py`. Set up pending lock timer,
+  call unlock, verify timer cancelled and lock callback never
+  fires.
+- [ ] T033 [P] Add test: bistable unlock schedules delayed
+  refresh with `relay_delay=0` in `tests/test_lock.py`.
+  Verify `_schedule_delayed_refresh(0)` called.
+- [ ] T034 [P] Add test: bistable unlock proceeds when state is
+  unknown (None) after coordinator refresh in
+  `tests/test_lock.py`. Verify `trigger_relay` is called
+  (treats unknown as locked).
+- [ ] T035 [P] Add test: bistable unlock raises
+  `HomeAssistantError` on device error in `tests/test_lock.py`.
+  Verify error raised and state unchanged.
+- [ ] T036 [P] Add test: auto-close unlock behavior unchanged
+  (regression) in `tests/test_lock.py`. Verify `trigger_relay`
+  still called with `mode=0`, `delay=hold_delay`.
+
+### Implementation
+
+- [ ] T037 Implement mode-aware `async_unlock` in
+  `custom_components/akuvox/lock.py`. For bistable: clear
+  optimistic state → cancel pending timer → coordinator refresh
+  → check `is_locked` → if unlocked: no-op → send
+  `trigger_relay(mode=0, delay=0)` → optimistic False →
+  schedule refresh(0). For auto-close: keep existing behavior
+  but hardcode `mode=0`.
+
+### Verification
+
+- [ ] T038 All tests pass and linting clean.
+- [ ] T039 Live device verification against 192.168.30.50.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
