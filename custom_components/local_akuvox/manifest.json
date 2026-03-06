@@ -1,6 +1,6 @@
 {
-  "domain": "akuvox",
-  "name": "Akuvox",
+  "domain": "local_akuvox",
+  "name": "Local Akuvox",
   "version": "0.1.0",
   "codeowners": ["@tykeal"],
   "config_flow": true,

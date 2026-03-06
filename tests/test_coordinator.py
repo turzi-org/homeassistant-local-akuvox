@@ -22,7 +22,7 @@ from pylocal_akuvox import (
 )
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.akuvox.const import (
+from custom_components.local_akuvox.const import (
     CONFIG_KEY_LOCATION,
     CONFIG_KEY_RELAY_HOLD_DELAY,
     CONFIG_KEY_RELAY_MODE_SUFFIX,
@@ -35,7 +35,7 @@ from custom_components.akuvox.const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
-from custom_components.akuvox.coordinator import (
+from custom_components.local_akuvox.coordinator import (
     AkuvoxCoordinatorData,
     AkuvoxDataUpdateCoordinator,
     RelayConfig,
@@ -181,7 +181,7 @@ async def test_state_reflects_relay_change_after_update(
     device.__aexit__ = AsyncMock(return_value=None)
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         mock_cls.return_value = device
@@ -233,7 +233,7 @@ async def test_entity_recovers_after_coordinator_failure(
     device.__aexit__ = AsyncMock(return_value=None)
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         mock_cls.return_value = device
@@ -321,7 +321,7 @@ async def test_coordinator_multi_relay_state_change(
     device.__aexit__ = AsyncMock(return_value=None)
 
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         mock_cls.return_value = device

@@ -85,9 +85,9 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = [
     "tests.conftest",
-    "custom_components.akuvox.coordinator",
-    "custom_components.akuvox.config_flow",
-    "custom_components.akuvox",
+    "custom_components.local_akuvox.coordinator",
+    "custom_components.local_akuvox.config_flow",
+    "custom_components.local_akuvox",
 ]
 warn_unused_ignores = false
 

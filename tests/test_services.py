@@ -28,7 +28,7 @@ from pytest_homeassistant_custom_component.common import (
     async_capture_events,
 )
 
-from custom_components.akuvox.const import (
+from custom_components.local_akuvox.const import (
     DOMAIN,
     EVENT_SCHEDULE_CHANGED,
     EVENT_USER_CHANGED,
@@ -500,7 +500,7 @@ async def test_list_users_log_masks_sensitive_data(
 
     import logging
 
-    with caplog.at_level(logging.DEBUG, logger="custom_components.akuvox"):
+    with caplog.at_level(logging.DEBUG, logger="custom_components.local_akuvox"):
         await hass.services.async_call(
             DOMAIN,
             "list_users",
@@ -563,7 +563,7 @@ async def test_add_schedule_fires_event(
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
 ) -> None:
-    """Test add_schedule fires akuvox_schedule_changed event."""
+    """Test add_schedule fires local_akuvox_schedule_changed event."""
     entry = await _setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_SCHEDULE_CHANGED)
 
@@ -1008,7 +1008,7 @@ async def test_modify_schedule_fires_event(
     mock_akuvox_device: AsyncMock,
     mock_schedule_list: list[AccessSchedule],
 ) -> None:
-    """Test modify_schedule fires akuvox_schedule_changed event."""
+    """Test modify_schedule fires local_akuvox_schedule_changed event."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     entry = await _setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_SCHEDULE_CHANGED)
@@ -1201,7 +1201,7 @@ async def test_delete_schedule_fires_event(
     mock_akuvox_device: AsyncMock,
     mock_schedule_list: list[AccessSchedule],
 ) -> None:
-    """Test delete_schedule fires akuvox_schedule_changed event."""
+    """Test delete_schedule fires local_akuvox_schedule_changed event."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.list_users.return_value = []
     entry = await _setup_entry(hass, mock_config_entry_data_none)
@@ -1273,7 +1273,7 @@ async def test_delete_schedule_orphaned_warning(
     mock_akuvox_device.list_users.return_value = mock_user_list
     await _setup_entry(hass, mock_config_entry_data_none)
 
-    with caplog.at_level(logging.WARNING, logger="custom_components.akuvox"):
+    with caplog.at_level(logging.WARNING, logger="custom_components.local_akuvox"):
         await hass.services.async_call(
             DOMAIN,
             "delete_schedule",
@@ -1305,7 +1305,7 @@ async def test_delete_schedule_no_orphan_warning_on_failure(
     await _setup_entry(hass, mock_config_entry_data_none)
 
     with (
-        caplog.at_level(logging.WARNING, logger="custom_components.akuvox"),
+        caplog.at_level(logging.WARNING, logger="custom_components.local_akuvox"),
         pytest.raises(HomeAssistantError),
     ):
         await hass.services.async_call(
@@ -1368,7 +1368,7 @@ async def test_add_user_auto_user_id(
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     await _setup_entry(hass, mock_config_entry_data_none)
 
-    with patch("custom_components.akuvox.lock.time") as mock_time:
+    with patch("custom_components.local_akuvox.lock.time") as mock_time:
         mock_time.time.return_value = 1709153400.0
         await hass.services.async_call(
             DOMAIN,
@@ -1759,7 +1759,7 @@ async def test_add_user_fires_event(
     mock_akuvox_device: AsyncMock,
     mock_schedule_list: list[AccessSchedule],
 ) -> None:
-    """Test add_user fires akuvox_user_changed event."""
+    """Test add_user fires local_akuvox_user_changed event."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     entry = await _setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_USER_CHANGED)
@@ -2047,7 +2047,7 @@ async def test_modify_user_event_fired(
     mock_akuvox_device: AsyncMock,
     mock_user_list: list[User],
 ) -> None:
-    """Test modify_user fires akuvox_user_changed event."""
+    """Test modify_user fires local_akuvox_user_changed event."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     entry = await _setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_USER_CHANGED)
@@ -2185,7 +2185,7 @@ async def test_delete_user_event_fired(
     mock_akuvox_device: AsyncMock,
     mock_user_list: list[User],
 ) -> None:
-    """Test delete_user fires akuvox_user_changed event."""
+    """Test delete_user fires local_akuvox_user_changed event."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     entry = await _setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_USER_CHANGED)

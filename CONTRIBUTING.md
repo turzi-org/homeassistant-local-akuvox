@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 Andrew Grimberg <tykeal@bardicgrove.org>
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Contributing to Akuvox Local Integration
+# Contributing to Local Akuvox Integration
 
 Thank you for your interest in contributing! This document explains how
 to set up your development environment, run tests, and submit changes.
@@ -143,7 +143,7 @@ by hooks, stage the changes and commit again.
 ## Project Structure
 
 ```text
-custom_components/akuvox/
+custom_components/local_akuvox/
 ├── __init__.py          # Integration setup and lifecycle
 ├── config_flow.py       # Configuration and options flows
 ├── const.py             # Constants and configuration keys

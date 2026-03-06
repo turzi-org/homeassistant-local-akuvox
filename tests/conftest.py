@@ -16,7 +16,7 @@ from pylocal_akuvox import (
     User,
 )
 
-from custom_components.akuvox.const import (
+from custom_components.local_akuvox.const import (
     AUTH_BASIC,
     AUTH_DIGEST,
     AUTH_NONE,
@@ -56,7 +56,7 @@ def auto_enable_custom_integrations(
 def mock_webhook_url() -> Generator[None]:
     """Mock async_generate_url for all tests."""
     with patch(
-        "custom_components.akuvox.webhook.async_generate_url",
+        "custom_components.local_akuvox.webhook.async_generate_url",
         side_effect=lambda _hass, wid, **kw: f"{MOCK_WEBHOOK_BASE}/{wid}",
     ):
         yield
@@ -206,7 +206,7 @@ def mock_akuvox_device(
 ) -> Generator[AsyncMock]:
     """Return a mocked AkuvoxDevice."""
     with patch(
-        "custom_components.akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.AkuvoxDevice",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value

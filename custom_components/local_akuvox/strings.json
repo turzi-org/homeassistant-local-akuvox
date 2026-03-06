@@ -60,7 +60,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Akuvox Options",
+        "title": "Local Akuvox Options",
         "description": "Update connection settings for your Akuvox device.",
         "data": {
           "host": "Host",

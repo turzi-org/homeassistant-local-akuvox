@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.akuvox.sanitize import mask_webhook_id, sanitize_payload
+from custom_components.local_akuvox.sanitize import mask_webhook_id, sanitize_payload
 
 # ── mask_webhook_id tests ────────────────────────────────────
 

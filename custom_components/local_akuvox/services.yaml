@@ -5,7 +5,7 @@ list_schedules:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   supports_response: only
   fields:
     page:
@@ -20,7 +20,7 @@ list_users:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   supports_response: only
   fields:
     page:
@@ -35,7 +35,7 @@ add_schedule:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   fields:
     schedule_type:
       required: true
@@ -106,7 +106,7 @@ modify_schedule:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   fields:
     id:
       required: true
@@ -183,7 +183,7 @@ delete_schedule:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   fields:
     id:
       required: true
@@ -196,7 +196,7 @@ add_user:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   fields:
     name:
       required: true
@@ -246,7 +246,7 @@ modify_user:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   fields:
     id:
       required: true
@@ -302,7 +302,7 @@ delete_user:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   fields:
     id:
       required: true
@@ -315,7 +315,7 @@ add_user_schedule_relay:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   fields:
     id:
       required: true
@@ -340,7 +340,7 @@ remove_user_schedule_relay:
   target:
     entity:
       domain: lock
-      integration: akuvox
+      integration: local_akuvox
   fields:
     id:
       required: true
