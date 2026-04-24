@@ -10,6 +10,7 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from homeassistant.core import HomeAssistant
 from pylocal_akuvox import (
     AccessSchedule,
     Contact,
@@ -17,6 +18,7 @@ from pylocal_akuvox import (
     Group,
     User,
 )
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.local_akuvox.const import (
     AUTH_BASIC,
@@ -36,6 +38,7 @@ from custom_components.local_akuvox.const import (
     CONFIG_KEY_RELAY_NAME,
     CONFIG_KEY_RELAY_PREFIX,
     CONFIG_KEY_RELAY_TYPE_SUFFIX,
+    DOMAIN,
 )
 
 MOCK_HOST = "192.168.1.100"
@@ -435,3 +438,31 @@ def mock_group_list() -> list[Group]:
             id="2",
         ),
     ]
+
+
+async def setup_entry(
+    hass: HomeAssistant,
+    config_data: dict[str, Any],
+) -> MockConfigEntry:
+    """Set up a loaded config entry with a lock entity for service testing.
+
+    The caller must ensure the AkuvoxDevice mock is already patched
+    (e.g. via the ``mock_akuvox_device`` fixture).
+
+    Args:
+        hass: The Home Assistant instance.
+        config_data: Config entry data dict.
+
+    Returns:
+        The loaded MockConfigEntry.
+
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=config_data,
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry

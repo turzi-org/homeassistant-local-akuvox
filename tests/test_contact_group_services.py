@@ -21,7 +21,6 @@ from pylocal_akuvox import (
     Group,
 )
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_capture_events,
 )
 
@@ -30,33 +29,9 @@ from custom_components.local_akuvox.const import (
     EVENT_CONTACT_CHANGED,
     EVENT_GROUP_CHANGED,
 )
+from tests.conftest import setup_entry
 
 ENTITY_ID = "lock.testlab_intercom_front_gate"
-
-
-async def _setup_entry(
-    hass: HomeAssistant,
-    config_data: dict[str, Any],
-) -> MockConfigEntry:
-    """Set up a loaded config entry with a lock entity for service testing.
-
-    Args:
-        hass: The Home Assistant instance.
-        config_data: Config entry data dict.
-
-    Returns:
-        The loaded MockConfigEntry.
-
-    """
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=config_data,
-        unique_id="AA:BB:CC:DD:EE:FF",
-    )
-    entry.add_to_hass(hass)
-    await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-    return entry
 
 
 # ── US1: List Contacts ───────────────────────────────────────
@@ -70,7 +45,7 @@ async def test_list_contacts_returns_all_contacts(
 ) -> None:
     """Test list_contacts returns contact dicts."""
     mock_akuvox_device.list_contacts.return_value = mock_contact_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -108,7 +83,7 @@ async def test_list_contacts_empty(
 ) -> None:
     """Test list_contacts with no contacts returns empty list."""
     mock_akuvox_device.list_contacts.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -129,7 +104,7 @@ async def test_list_contacts_with_page(
 ) -> None:
     """Test page parameter is forwarded to device."""
     mock_akuvox_device.list_contacts.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -149,7 +124,7 @@ async def test_list_contacts_device_offline(
 ) -> None:
     """Test device offline raises HomeAssistantError."""
     mock_akuvox_device.list_contacts.side_effect = AkuvoxConnectionError("offline")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError):
         await hass.services.async_call(
@@ -172,7 +147,7 @@ async def test_list_groups_returns_all_groups(
 ) -> None:
     """Test list_groups returns group dicts."""
     mock_akuvox_device.list_groups.return_value = mock_group_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -206,7 +181,7 @@ async def test_list_groups_empty(
 ) -> None:
     """Test list_groups with no groups returns empty list."""
     mock_akuvox_device.list_groups.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -227,7 +202,7 @@ async def test_list_groups_with_page(
 ) -> None:
     """Test page parameter is forwarded to device."""
     mock_akuvox_device.list_groups.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -247,7 +222,7 @@ async def test_list_groups_device_offline(
 ) -> None:
     """Test device offline raises HomeAssistantError."""
     mock_akuvox_device.list_groups.side_effect = AkuvoxConnectionError("offline")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError):
         await hass.services.async_call(
@@ -268,7 +243,7 @@ async def test_add_contact_with_all_fields(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test add_contact with all fields calls device and fires event."""
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_CONTACT_CHANGED)
 
     await hass.services.async_call(
@@ -300,7 +275,7 @@ async def test_add_contact_name_only(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test add_contact with name only passes None for optional fields."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -325,7 +300,7 @@ async def test_add_contact_missing_name(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test add_contact without name raises vol.Invalid."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -346,7 +321,7 @@ async def test_add_contact_device_error(
 ) -> None:
     """Test device error raises HomeAssistantError and no event fired."""
     mock_akuvox_device.add_contact.side_effect = AkuvoxDeviceError("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_CONTACT_CHANGED)
 
     with pytest.raises(HomeAssistantError):
@@ -373,7 +348,7 @@ async def test_add_group_success(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test add_group calls device and fires event."""
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_GROUP_CHANGED)
 
     await hass.services.async_call(
@@ -399,7 +374,7 @@ async def test_add_group_missing_name(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test add_group without name raises vol.Invalid."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -419,7 +394,7 @@ async def test_add_group_device_error(
 ) -> None:
     """Test device error raises HomeAssistantError and no event fired."""
     mock_akuvox_device.add_group.side_effect = AkuvoxDeviceError("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_GROUP_CHANGED)
 
     with pytest.raises(HomeAssistantError):
@@ -446,7 +421,7 @@ async def test_modify_contact_success(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test modify_contact calls device and fires event."""
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_CONTACT_CHANGED)
 
     await hass.services.async_call(
@@ -480,7 +455,7 @@ async def test_modify_contact_not_found(
 ) -> None:
     """Test device error (not found) raises HomeAssistantError."""
     mock_akuvox_device.modify_contact.side_effect = AkuvoxDeviceError("not found")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError):
         await hass.services.async_call(
@@ -502,7 +477,7 @@ async def test_modify_contact_no_fields(
 ) -> None:
     """Test library validation error maps to ServiceValidationError."""
     mock_akuvox_device.modify_contact.side_effect = AkuvoxValidationError("no fields")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
@@ -522,7 +497,7 @@ async def test_modify_contact_missing_id(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test modify_contact without id raises vol.Invalid."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -545,7 +520,7 @@ async def test_modify_group_success(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test modify_group calls device and fires event."""
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_GROUP_CHANGED)
 
     await hass.services.async_call(
@@ -577,7 +552,7 @@ async def test_modify_group_not_found(
 ) -> None:
     """Test device error (not found) raises HomeAssistantError."""
     mock_akuvox_device.modify_group.side_effect = AkuvoxDeviceError("not found")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError):
         await hass.services.async_call(
@@ -598,7 +573,7 @@ async def test_modify_group_missing_id(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test modify_group without id raises vol.Invalid."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -618,7 +593,7 @@ async def test_modify_group_missing_name(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test modify_group without name raises vol.Invalid."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -641,7 +616,7 @@ async def test_delete_contact_single(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test delete_contact with single id calls device and fires event."""
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_CONTACT_CHANGED)
 
     await hass.services.async_call(
@@ -668,7 +643,7 @@ async def test_delete_contact_batch(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test delete_contact with list of ids calls device and fires event."""
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_CONTACT_CHANGED)
 
     await hass.services.async_call(
@@ -698,7 +673,7 @@ async def test_delete_contact_not_found(
 ) -> None:
     """Test device error raises HomeAssistantError."""
     mock_akuvox_device.delete_contact.side_effect = AkuvoxDeviceError("not found")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError):
         await hass.services.async_call(
@@ -718,7 +693,7 @@ async def test_delete_contact_missing_id(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test delete_contact without id raises vol.Invalid."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -740,7 +715,7 @@ async def test_delete_group_success(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test delete_group calls device and fires event."""
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_GROUP_CHANGED)
 
     await hass.services.async_call(
@@ -772,7 +747,7 @@ async def test_delete_group_orphan_warning(
         Contact(name="John Doe", id="1", phone="555-1234", group="5"),
         Contact(name="Jane Smith", id="2", phone=None, group="other"),
     ]
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with caplog.at_level(logging.WARNING):
         await hass.services.async_call(
@@ -796,7 +771,7 @@ async def test_delete_group_not_found(
 ) -> None:
     """Test device error raises HomeAssistantError."""
     mock_akuvox_device.delete_group.side_effect = AkuvoxDeviceError("not found")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError):
         await hass.services.async_call(
@@ -816,7 +791,7 @@ async def test_delete_group_missing_id(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test delete_group without id raises vol.Invalid."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
