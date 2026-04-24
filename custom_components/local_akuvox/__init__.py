@@ -272,7 +272,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         SERVICE_ADD_CONTACT,
         entity_domain=Platform.LOCK,
         schema={
-            vol.Required("name"): cv.string,
+            vol.Required("name"): vol.All(cv.string, vol.Length(min=1)),
             vol.Optional("phone"): cv.string,
             vol.Optional("group"): cv.string,
         },
@@ -286,7 +286,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         entity_domain=Platform.LOCK,
         schema={
             vol.Required("id"): cv.string,
-            vol.Optional("name"): cv.string,
+            vol.Optional("name"): vol.All(cv.string, vol.Length(min=1)),
             vol.Optional("phone"): cv.string,
             vol.Optional("group"): cv.string,
         },
@@ -327,7 +327,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         SERVICE_ADD_GROUP,
         entity_domain=Platform.LOCK,
         schema={
-            vol.Required("name"): cv.string,
+            vol.Required("name"): vol.All(cv.string, vol.Length(min=1)),
         },
         func=SERVICE_ADD_GROUP,
     )
@@ -339,7 +339,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         entity_domain=Platform.LOCK,
         schema={
             vol.Required("id"): cv.string,
-            vol.Required("name"): cv.string,
+            vol.Required("name"): vol.All(cv.string, vol.Length(min=1)),
         },
         func=SERVICE_MODIFY_GROUP,
     )
