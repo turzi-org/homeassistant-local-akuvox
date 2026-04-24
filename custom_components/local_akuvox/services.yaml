@@ -439,7 +439,8 @@ delete_contact:
       required: true
       example: "42"
       selector:
-        object:
+        text:
+          multiline: false
 
 list_groups:
   target:
