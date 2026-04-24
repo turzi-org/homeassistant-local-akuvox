@@ -31,6 +31,8 @@ from .const import (
     DEFAULT_RELAY_MODE,
     DEFAULT_RELAY_TYPE,
     DOMAIN,
+    EVENT_CONTACT_CHANGED,
+    EVENT_GROUP_CHANGED,
     EVENT_SCHEDULE_CHANGED,
     EVENT_USER_CHANGED,
     RELAY_KEY_RE,
@@ -1366,3 +1368,295 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         if config_entry is not None and hasattr(config_entry, "entry_id"):
             event_data["config_entry_id"] = config_entry.entry_id
         self.hass.bus.async_fire(EVENT_USER_CHANGED, event_data)
+
+    # ── Contact & Group Service Methods ──────────────────────
+
+    async def list_contacts(self, **kwargs: Any) -> ServiceResponse:
+        """Return all contacts from the device address book.
+
+        Args:
+            **kwargs: Service call data (optional ``page`` key).
+
+        Returns:
+            Dict with ``contacts`` list of contact dicts.
+
+        Raises:
+            HomeAssistantError: On device communication errors.
+            ServiceValidationError: On validation errors.
+
+        """
+        page = kwargs.get("page")
+        try:
+            contacts = await self.coordinator.device.list_contacts(
+                page=page,
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"list_contacts: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"list_contacts failed: {err}",
+            ) from err
+        return cast(
+            ServiceResponse,
+            {"contacts": [dict(vars(c)) for c in contacts]},
+        )
+
+    async def list_groups(self, **kwargs: Any) -> ServiceResponse:
+        """Return all groups from the device.
+
+        Args:
+            **kwargs: Service call data (optional ``page`` key).
+
+        Returns:
+            Dict with ``groups`` list of group dicts.
+
+        Raises:
+            HomeAssistantError: On device communication errors.
+            ServiceValidationError: On validation errors.
+
+        """
+        page = kwargs.get("page")
+        try:
+            groups = await self.coordinator.device.list_groups(
+                page=page,
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"list_groups: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"list_groups failed: {err}",
+            ) from err
+        return cast(
+            ServiceResponse,
+            {"groups": [dict(vars(g)) for g in groups]},
+        )
+
+    async def add_contact(self, **kwargs: Any) -> None:
+        """Create a new contact in the device address book.
+
+        Args:
+            **kwargs: Service call data (``name`` required,
+                ``phone`` and ``group`` optional).
+
+        Raises:
+            ServiceValidationError: On input validation errors.
+            HomeAssistantError: On device communication errors.
+
+        """
+        try:
+            await self.coordinator.device.add_contact(
+                name=kwargs["name"],
+                phone=kwargs.get("phone"),
+                group=kwargs.get("group"),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"add_contact: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"add_contact failed: {err}",
+            ) from err
+        event_data: dict[str, str] = {"action": "add"}
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_CONTACT_CHANGED, event_data)
+
+    async def add_group(self, **kwargs: Any) -> None:
+        """Create a new group on the device.
+
+        Args:
+            **kwargs: Service call data (``name`` required).
+
+        Raises:
+            ServiceValidationError: On input validation errors.
+            HomeAssistantError: On device communication errors.
+
+        """
+        try:
+            await self.coordinator.device.add_group(
+                name=kwargs["name"],
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"add_group: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"add_group failed: {err}",
+            ) from err
+        event_data: dict[str, str] = {"action": "add"}
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_GROUP_CHANGED, event_data)
+
+    async def modify_contact(self, **kwargs: Any) -> None:
+        """Update an existing contact in the device address book.
+
+        Args:
+            **kwargs: Service call data (``id`` required,
+                ``name``, ``phone``, ``group`` optional).
+
+        Raises:
+            ServiceValidationError: On input validation errors.
+            HomeAssistantError: On device communication errors.
+
+        """
+        contact_id: str = kwargs["id"]
+        try:
+            await self.coordinator.device.modify_contact(
+                id=contact_id,
+                name=kwargs.get("name"),
+                phone=kwargs.get("phone"),
+                group=kwargs.get("group"),
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"modify_contact: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"modify_contact failed: {err}",
+            ) from err
+        event_data: dict[str, str] = {
+            "action": "modify",
+            "contact_id": contact_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_CONTACT_CHANGED, event_data)
+
+    async def modify_group(self, **kwargs: Any) -> None:
+        """Rename an existing group on the device.
+
+        Args:
+            **kwargs: Service call data (``id`` and ``name``
+                required).
+
+        Raises:
+            ServiceValidationError: On input validation errors.
+            HomeAssistantError: On device communication errors.
+
+        """
+        group_id: str = kwargs["id"]
+        try:
+            await self.coordinator.device.modify_group(
+                id=group_id,
+                name=kwargs["name"],
+            )
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"modify_group: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"modify_group failed: {err}",
+            ) from err
+        event_data: dict[str, str] = {
+            "action": "modify",
+            "group_id": group_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_GROUP_CHANGED, event_data)
+
+    async def delete_contact(self, **kwargs: Any) -> None:
+        """Delete one or more contacts from the device address book.
+
+        Accepts a single ID string or a list of ID strings for
+        batch deletion.
+
+        Args:
+            **kwargs: Service call data (``id`` required, str or
+                list[str]).
+
+        Raises:
+            ServiceValidationError: On input validation errors.
+            HomeAssistantError: On device communication errors.
+
+        """
+        id_value: str | list[str] = kwargs["id"]
+        try:
+            await self.coordinator.device.delete_contact(id=id_value)
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"delete_contact: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"delete_contact failed: {err}",
+            ) from err
+        event_data: dict[str, Any] = {"action": "delete"}
+        if isinstance(id_value, list):
+            event_data["contact_ids"] = id_value
+        else:
+            event_data["contact_id"] = id_value
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_CONTACT_CHANGED, event_data)
+
+    async def delete_group(self, **kwargs: Any) -> None:
+        """Delete a group from the device.
+
+        After deletion, performs a best-effort check for contacts
+        that still reference the deleted group and logs a warning
+        for each orphaned contact.
+
+        Args:
+            **kwargs: Service call data (``id`` required).
+
+        Raises:
+            ServiceValidationError: On input validation errors.
+            HomeAssistantError: On device communication errors.
+
+        """
+        group_id: str = kwargs["id"]
+        try:
+            await self.coordinator.device.delete_group(id=group_id)
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                f"delete_group: {err}",
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                f"delete_group failed: {err}",
+            ) from err
+
+        # Best-effort orphan check
+        try:
+            contacts = await self.coordinator.device.list_contacts(
+                page=None,
+            )
+            for contact in contacts:
+                if contact.group == group_id:
+                    _LOGGER.warning(
+                        "Orphaned contact-group assignment: "
+                        "contact '%s' (id=%s) still references "
+                        "deleted group %s",
+                        contact.name,
+                        contact.id,
+                        group_id,
+                    )
+        except AkuvoxError:
+            _LOGGER.debug(
+                "Could not check for orphaned contacts after deleting group %s",
+                group_id,
+            )
+
+        event_data: dict[str, str] = {
+            "action": "delete",
+            "group_id": group_id,
+        }
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None and hasattr(config_entry, "entry_id"):
+            event_data["config_entry_id"] = config_entry.entry_id
+        self.hass.bus.async_fire(EVENT_GROUP_CHANGED, event_data)
