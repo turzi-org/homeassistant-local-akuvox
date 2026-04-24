@@ -12,7 +12,9 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from pylocal_akuvox import (
     AccessSchedule,
+    Contact,
     DeviceInfo,
+    Group,
     User,
 )
 
@@ -229,6 +231,15 @@ def mock_akuvox_device(
         device.add_user = AsyncMock(return_value=None)
         device.modify_user = AsyncMock(return_value=None)
         device.delete_user = AsyncMock(return_value=None)
+        # Contact and group CRUD methods
+        device.list_contacts = AsyncMock(return_value=[])
+        device.add_contact = AsyncMock(return_value=None)
+        device.modify_contact = AsyncMock(return_value=None)
+        device.delete_contact = AsyncMock(return_value=None)
+        device.list_groups = AsyncMock(return_value=[])
+        device.add_group = AsyncMock(return_value=None)
+        device.modify_group = AsyncMock(return_value=None)
+        device.delete_group = AsyncMock(return_value=None)
         yield device
 
 
@@ -388,5 +399,39 @@ def mock_user_list_with_pins() -> list[User]:
             user_type=None,
             source=None,
             source_type="1",
+        ),
+    ]
+
+
+@pytest.fixture
+def mock_contact_list() -> list[Contact]:
+    """Return a mock list of Contact objects."""
+    return [
+        Contact(
+            name="John Doe",
+            id="1",
+            phone="555-1234",
+            group="Family",
+        ),
+        Contact(
+            name="Jane Smith",
+            id="2",
+            phone=None,
+            group=None,
+        ),
+    ]
+
+
+@pytest.fixture
+def mock_group_list() -> list[Group]:
+    """Return a mock list of Group objects."""
+    return [
+        Group(
+            name="Family",
+            id="1",
+        ),
+        Group(
+            name="Maintenance",
+            id="2",
         ),
     ]

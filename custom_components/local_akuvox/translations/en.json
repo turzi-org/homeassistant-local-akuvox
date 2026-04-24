@@ -303,6 +303,110 @@
           "description": "Relay ID to remove."
         }
       }
+    },
+    "list_contacts": {
+      "name": "List contacts",
+      "description": "Retrieve contacts from the device address book.",
+      "fields": {
+        "page": {
+          "name": "Page",
+          "description": "Page number for pagination."
+        }
+      }
+    },
+    "add_contact": {
+      "name": "Add contact",
+      "description": "Create a new contact in the device address book.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name for the contact."
+        },
+        "phone": {
+          "name": "Phone",
+          "description": "Phone number for the contact."
+        },
+        "group": {
+          "name": "Group",
+          "description": "Group assignment for the contact."
+        }
+      }
+    },
+    "modify_contact": {
+      "name": "Modify contact",
+      "description": "Update an existing contact in the device address book.",
+      "fields": {
+        "id": {
+          "name": "Contact ID",
+          "description": "Device ID of the contact to modify."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Updated display name."
+        },
+        "phone": {
+          "name": "Phone",
+          "description": "Updated phone number."
+        },
+        "group": {
+          "name": "Group",
+          "description": "Updated group assignment."
+        }
+      }
+    },
+    "delete_contact": {
+      "name": "Delete contact",
+      "description": "Remove one or more contacts from the device address book.",
+      "fields": {
+        "id": {
+          "name": "Contact ID",
+          "description": "Device ID of the contact(s) to delete. Accepts a single ID or a list of IDs."
+        }
+      }
+    },
+    "list_groups": {
+      "name": "List groups",
+      "description": "Retrieve groups from the device.",
+      "fields": {
+        "page": {
+          "name": "Page",
+          "description": "Page number for pagination."
+        }
+      }
+    },
+    "add_group": {
+      "name": "Add group",
+      "description": "Create a new group on the device.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name for the group."
+        }
+      }
+    },
+    "modify_group": {
+      "name": "Modify group",
+      "description": "Rename an existing group on the device.",
+      "fields": {
+        "id": {
+          "name": "Group ID",
+          "description": "Device ID of the group to modify."
+        },
+        "name": {
+          "name": "Name",
+          "description": "New group name."
+        }
+      }
+    },
+    "delete_group": {
+      "name": "Delete group",
+      "description": "Remove a group from the device.",
+      "fields": {
+        "id": {
+          "name": "Group ID",
+          "description": "Device ID of the group to delete."
+        }
+      }
     }
   },
   "exceptions": {

@@ -176,7 +176,7 @@ repos:
         additional_dependencies:
           - "homeassistant>=2026.2.0"
           - "pytest"
-          - "pylocal-akuvox"
+          - "pylocal-akuvox>=0.3.0"
           - "types-pexpect"
           - "types-pygments"
           - "types-pytz"
