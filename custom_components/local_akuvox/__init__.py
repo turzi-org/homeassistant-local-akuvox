@@ -301,7 +301,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         schema={
             vol.Required("id"): vol.Any(
                 cv.string,
-                vol.All(cv.ensure_list, [cv.string]),
+                vol.All(cv.ensure_list, vol.Length(min=1), [cv.string]),
             ),
         },
         func=SERVICE_DELETE_CONTACT,
