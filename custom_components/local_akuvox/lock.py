@@ -1604,6 +1604,38 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             event_data["config_entry_id"] = config_entry.entry_id
         self.hass.bus.async_fire(EVENT_CONTACT_CHANGED, event_data)
 
+    async def _check_group_orphans(
+        self,
+        group_id: str,
+        group_name: str,
+    ) -> None:
+        """Log warnings for contacts that reference a deleted group.
+
+        Args:
+            group_id: The ID of the deleted group.
+            group_name: The name of the deleted group.
+
+        """
+        try:
+            contacts = await self.coordinator.device.list_contacts(
+                page=None,
+            )
+            for contact in contacts:
+                if contact.group == group_name:
+                    _LOGGER.warning(
+                        "Orphaned contact-group assignment: "
+                        "contact '%s' (id=%s) still references "
+                        "deleted group %s",
+                        contact.name,
+                        contact.id,
+                        group_id,
+                    )
+        except AkuvoxError:
+            _LOGGER.debug(
+                "Could not check for orphaned contacts after deleting group %s",
+                group_id,
+            )
+
     async def delete_group(self, **kwargs: Any) -> None:
         """Delete a group from the device.
 
@@ -1620,6 +1652,23 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
         """
         group_id: str = kwargs["id"]
+
+        # Resolve group name before deletion for orphan check
+        group_name: str | None = None
+        try:
+            groups = await self.coordinator.device.list_groups(
+                page=None,
+            )
+            for grp in groups:
+                if grp.id == group_id:
+                    group_name = grp.name
+                    break
+        except AkuvoxError:
+            _LOGGER.debug(
+                "Could not resolve group name for id %s",
+                group_id,
+            )
+
         try:
             await self.coordinator.device.delete_group(id=group_id)
         except AkuvoxValidationError as err:
@@ -1631,26 +1680,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
                 f"delete_group failed: {err}",
             ) from err
 
-        # Best-effort orphan check
-        try:
-            contacts = await self.coordinator.device.list_contacts(
-                page=None,
-            )
-            for contact in contacts:
-                if contact.group == group_id:
-                    _LOGGER.warning(
-                        "Orphaned contact-group assignment: "
-                        "contact '%s' (id=%s) still references "
-                        "deleted group %s",
-                        contact.name,
-                        contact.id,
-                        group_id,
-                    )
-        except AkuvoxError:
-            _LOGGER.debug(
-                "Could not check for orphaned contacts after deleting group %s",
-                group_id,
-            )
+        if group_name is not None:
+            await self._check_group_orphans(group_id, group_name)
 
         event_data: dict[str, str] = {
             "action": "delete",

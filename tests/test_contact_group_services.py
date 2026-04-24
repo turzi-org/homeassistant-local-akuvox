@@ -743,8 +743,11 @@ async def test_delete_group_orphan_warning(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Test delete_group logs warning for orphaned contacts."""
+    mock_akuvox_device.list_groups.return_value = [
+        Group(name="Family", id="5"),
+    ]
     mock_akuvox_device.list_contacts.return_value = [
-        Contact(name="John Doe", id="1", phone="555-1234", group="5"),
+        Contact(name="John Doe", id="1", phone="555-1234", group="Family"),
         Contact(name="Jane Smith", id="2", phone=None, group="other"),
     ]
     await setup_entry(hass, mock_config_entry_data_none)
