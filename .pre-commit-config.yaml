@@ -35,6 +35,7 @@ repos:
       - id: check-docstring-first
       - id: check-executables-have-shebangs
       - id: check-illegal-windows-names
+        stages: [pre-commit]
       - id: check-json
       - id: check-merge-conflict
       - id: check-shebang-scripts-are-executable
