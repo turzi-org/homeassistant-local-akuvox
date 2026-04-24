@@ -77,7 +77,7 @@ async def test_services_registered_on_setup(
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
 ) -> None:
-    """Test that all 10 services are registered after async_setup."""
+    """Test that all 18 services are registered after async_setup."""
     await setup_entry(hass, mock_config_entry_data_none)
 
     expected_services = [
@@ -91,6 +91,14 @@ async def test_services_registered_on_setup(
         "delete_user",
         "add_user_schedule_relay",
         "remove_user_schedule_relay",
+        "list_contacts",
+        "add_contact",
+        "modify_contact",
+        "delete_contact",
+        "list_groups",
+        "add_group",
+        "modify_group",
+        "delete_group",
     ]
     for svc_name in expected_services:
         assert hass.services.has_service(DOMAIN, svc_name), (
