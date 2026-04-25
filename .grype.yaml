@@ -10,3 +10,25 @@ ignore:
     package:
       name: pillow
       type: python
+
+  # PyJWT transitive dependency via homeassistant —
+  # algorithm confusion (GHSA-752w-5fwx-jx9f), fixed
+  # in 2.12.0. Pinned by homeassistant upper bound.
+  - vulnerability: GHSA-752w-5fwx-jx9f
+    package:
+      name: PyJWT
+      type: python
+
+  # pip is CI runner tooling, not a project dependency.
+  # GHSA-58qw-9mgm-455v has no fixed version yet.
+  - vulnerability: GHSA-58qw-9mgm-455v
+    package:
+      name: pip
+      type: python
+
+  # pytest pinned by pytest-homeassistant-custom-component
+  # upper bound. Fixed in 9.0.3 (GHSA-6w46-j5rx-g56g).
+  - vulnerability: GHSA-6w46-j5rx-g56g
+    package:
+      name: pytest
+      type: python

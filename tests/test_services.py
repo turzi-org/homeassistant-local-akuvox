@@ -24,7 +24,6 @@ from pylocal_akuvox import (
     User,
 )
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     async_capture_events,
 )
 
@@ -33,36 +32,9 @@ from custom_components.local_akuvox.const import (
     EVENT_SCHEDULE_CHANGED,
     EVENT_USER_CHANGED,
 )
+from tests.conftest import setup_entry
 
 ENTITY_ID = "lock.testlab_intercom_front_gate"
-
-
-async def _setup_entry(
-    hass: HomeAssistant,
-    config_data: dict[str, Any],
-) -> MockConfigEntry:
-    """Set up a loaded config entry with a lock entity for service testing.
-
-    The caller must ensure the AkuvoxDevice mock is already patched
-    (e.g. via the ``mock_akuvox_device`` fixture).
-
-    Args:
-        hass: The Home Assistant instance.
-        config_data: Config entry data dict.
-
-    Returns:
-        The loaded MockConfigEntry.
-
-    """
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=config_data,
-        unique_id="AA:BB:CC:DD:EE:FF",
-    )
-    entry.add_to_hass(hass)
-    await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-    return entry
 
 
 # Library-to-HA exception mapping pairs:
@@ -105,8 +77,8 @@ async def test_services_registered_on_setup(
     mock_config_entry_data_none: dict[str, Any],
     mock_akuvox_device: AsyncMock,
 ) -> None:
-    """Test that all 10 services are registered after async_setup."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    """Test that all 18 services are registered after async_setup."""
+    await setup_entry(hass, mock_config_entry_data_none)
 
     expected_services = [
         "list_schedules",
@@ -119,6 +91,14 @@ async def test_services_registered_on_setup(
         "delete_user",
         "add_user_schedule_relay",
         "remove_user_schedule_relay",
+        "list_contacts",
+        "add_contact",
+        "modify_contact",
+        "delete_contact",
+        "list_groups",
+        "add_group",
+        "modify_group",
+        "delete_group",
     ]
     for svc_name in expected_services:
         assert hass.services.has_service(DOMAIN, svc_name), (
@@ -137,7 +117,7 @@ async def test_list_schedules_success(
 ) -> None:
     """Test list_schedules returns schedule dicts."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -175,7 +155,7 @@ async def test_list_schedules_empty(
 ) -> None:
     """Test list_schedules with no schedules returns empty list."""
     mock_akuvox_device.list_schedules.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -196,7 +176,7 @@ async def test_list_schedules_page_passed_through(
 ) -> None:
     """Test page parameter is forwarded to device."""
     mock_akuvox_device.list_schedules.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -216,7 +196,7 @@ async def test_list_schedules_no_page_default(
 ) -> None:
     """Test omitting page passes None."""
     mock_akuvox_device.list_schedules.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -248,7 +228,7 @@ async def test_list_schedules_device_errors(
 ) -> None:
     """Test device errors are mapped to HA exceptions."""
     mock_akuvox_device.list_schedules.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(
@@ -268,7 +248,7 @@ async def test_list_schedules_all_fields_present(
 ) -> None:
     """Test all AccessSchedule fields appear in result dict."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -320,7 +300,7 @@ async def test_list_users_success(
 ) -> None:
     """Test list_users returns user dicts with plain-text PINs."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -356,7 +336,7 @@ async def test_list_users_empty(
 ) -> None:
     """Test list_users with no users returns empty list."""
     mock_akuvox_device.list_users.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -377,7 +357,7 @@ async def test_list_users_page_passed_through(
 ) -> None:
     """Test page parameter is forwarded to device."""
     mock_akuvox_device.list_users.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -399,7 +379,7 @@ async def test_list_users_no_page_default(
 ) -> None:
     """Test omitting page passes None."""
     mock_akuvox_device.list_users.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -434,7 +414,7 @@ async def test_list_users_device_errors(
 ) -> None:
     """Test device errors are mapped to HA exceptions."""
     mock_akuvox_device.list_users.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(
@@ -454,7 +434,7 @@ async def test_list_users_all_fields_present(
 ) -> None:
     """Test all User fields appear in result dict."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     result = await hass.services.async_call(
         DOMAIN,
@@ -496,7 +476,7 @@ async def test_list_users_log_masks_sensitive_data(
 ) -> None:
     """Test private_pin and card_code are masked in debug logs."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     import logging
 
@@ -527,7 +507,7 @@ async def test_add_schedule_success(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test add_schedule calls device with converted params."""
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -564,7 +544,7 @@ async def test_add_schedule_fires_event(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test add_schedule fires local_akuvox_schedule_changed event."""
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_SCHEDULE_CHANGED)
 
     await hass.services.async_call(
@@ -592,7 +572,7 @@ async def test_add_schedule_invalid_schedule_type(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test invalid schedule_type is rejected by schema."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -632,7 +612,7 @@ async def test_add_schedule_invalid_time_format(
     value: str,
 ) -> None:
     """Test malformed time values are rejected by schema."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -672,7 +652,7 @@ async def test_add_schedule_invalid_date_format(
     value: str,
 ) -> None:
     """Test malformed date values are rejected by schema."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -704,7 +684,7 @@ async def test_add_schedule_invalid_week_values(
     value: list[str],
 ) -> None:
     """Test invalid week day names are rejected by schema."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -730,7 +710,7 @@ async def test_add_schedule_rejects_empty_name(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test that an empty name is rejected by schema."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -772,7 +752,7 @@ async def test_add_schedule_missing_required_field(
     missing: str,
 ) -> None:
     """Test type-specific required fields raise ServiceValidationError."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     data: dict[str, Any] = {
         "entity_id": ENTITY_ID,
@@ -803,7 +783,7 @@ async def test_add_schedule_daily_no_week_needed(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test type 2 (daily) succeeds without week or date fields."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -848,7 +828,7 @@ async def test_add_schedule_device_errors(
 ) -> None:
     """Test device errors are mapped to HA exceptions."""
     mock_akuvox_device.add_schedule.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(
@@ -876,7 +856,7 @@ async def test_modify_schedule_success(
 ) -> None:
     """Test modify_schedule passes id and updated fields to device."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -912,7 +892,7 @@ async def test_modify_schedule_cloud_rejected(
 ) -> None:
     """Test cloud-provisioned schedule raises ServiceValidationError."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -937,7 +917,7 @@ async def test_modify_schedule_not_found(
 ) -> None:
     """Test non-existent schedule ID raises HomeAssistantError."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError, match="not found"):
         await hass.services.async_call(
@@ -960,7 +940,7 @@ async def test_modify_schedule_invalid_field_values(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test invalid field values are rejected by schema."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -985,7 +965,7 @@ async def test_modify_schedule_type_requires_fields(
 ) -> None:
     """Test schedule_type change validates required fields."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="required"):
         await hass.services.async_call(
@@ -1010,7 +990,7 @@ async def test_modify_schedule_fires_event(
 ) -> None:
     """Test modify_schedule fires local_akuvox_schedule_changed event."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_SCHEDULE_CHANGED)
 
     await hass.services.async_call(
@@ -1051,7 +1031,7 @@ async def test_modify_schedule_device_errors(
     """Test device errors are mapped to HA exceptions."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.modify_schedule.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(
@@ -1074,7 +1054,7 @@ async def test_modify_schedule_with_week_conversion(
 ) -> None:
     """Test week day names are converted to digit string."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1100,7 +1080,7 @@ async def test_modify_schedule_with_date_conversion(
 ) -> None:
     """Test date objects are converted to YYYYMMDD strings."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1132,7 +1112,7 @@ async def test_delete_schedule_success(
     """Test delete_schedule calls device.delete_schedule with id."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.list_users.return_value = []
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1155,7 +1135,7 @@ async def test_delete_schedule_cloud_rejected(
 ) -> None:
     """Test cloud-provisioned schedule raises ServiceValidationError."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -1179,7 +1159,7 @@ async def test_delete_schedule_not_found(
 ) -> None:
     """Test non-existent schedule raises HomeAssistantError."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError, match="not found"):
         await hass.services.async_call(
@@ -1204,7 +1184,7 @@ async def test_delete_schedule_fires_event(
     """Test delete_schedule fires local_akuvox_schedule_changed event."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.list_users.return_value = []
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_SCHEDULE_CHANGED)
 
     await hass.services.async_call(
@@ -1244,7 +1224,7 @@ async def test_delete_schedule_device_errors(
     """Test device errors are mapped to HA exceptions."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.delete_schedule.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(
@@ -1271,7 +1251,7 @@ async def test_delete_schedule_orphaned_warning(
 
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with caplog.at_level(logging.WARNING, logger="custom_components.local_akuvox"):
         await hass.services.async_call(
@@ -1302,7 +1282,7 @@ async def test_delete_schedule_no_orphan_warning_on_failure(
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.delete_schedule.side_effect = AkuvoxDeviceError("fail")
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with (
         caplog.at_level(logging.WARNING, logger="custom_components.local_akuvox"),
@@ -1332,7 +1312,7 @@ async def test_add_user_success(
 ) -> None:
     """Test add_user calls device.add_user with correct params."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1366,7 +1346,7 @@ async def test_add_user_auto_user_id(
 ) -> None:
     """Test user_id is auto-generated as numeric timestamp when omitted."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with patch("custom_components.local_akuvox.lock.time") as mock_time:
         mock_time.time.return_value = 1709153400.0
@@ -1419,7 +1399,7 @@ async def test_add_user_multiple_schedules(
         *mock_schedule_list,
         local2,
     ]
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1470,7 +1450,7 @@ async def test_add_user_csv_schedules(
         *mock_schedule_list,
         local2,
     ]
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1497,7 +1477,7 @@ async def test_add_user_with_optional_pin(
 ) -> None:
     """Test optional private_pin is passed through."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1525,7 +1505,7 @@ async def test_add_user_with_optional_card_code(
 ) -> None:
     """Test optional card_code is passed through."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1553,7 +1533,7 @@ async def test_add_user_with_optional_web_relay(
 ) -> None:
     """Test optional web_relay is passed through."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1579,7 +1559,7 @@ async def test_add_user_empty_schedules_rejected(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test empty schedules list raises error."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -1603,7 +1583,7 @@ async def test_add_user_non_digit_schedule_rejected(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test non-digit schedule display_id raises schema error."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -1627,7 +1607,7 @@ async def test_add_user_duplicate_schedules_rejected(
     mock_akuvox_device: AsyncMock,
 ) -> None:
     """Test duplicate schedule display_ids raises schema error."""
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
@@ -1659,7 +1639,7 @@ async def test_add_user_invalid_pin(
 ) -> None:
     """Test invalid PIN (not 4-8 digits) raises error."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="PIN"):
         await hass.services.async_call(
@@ -1686,7 +1666,7 @@ async def test_add_user_cloud_schedule_rejected(
 ) -> None:
     """Test referencing cloud schedule raises ServiceValidationError."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -1712,7 +1692,7 @@ async def test_add_user_nonexistent_schedule_rejected(
 ) -> None:
     """Test referencing non-existent schedule raises error."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="not found"):
         await hass.services.async_call(
@@ -1737,7 +1717,7 @@ async def test_add_user_schedule_check_validation_error(
 ) -> None:
     """Test AkuvoxValidationError from list_schedules maps correctly."""
     mock_akuvox_device.list_schedules.side_effect = AkuvoxValidationError("bad")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="verify schedules"):
         await hass.services.async_call(
@@ -1761,7 +1741,7 @@ async def test_add_user_fires_event(
 ) -> None:
     """Test add_user fires local_akuvox_user_changed event."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_USER_CHANGED)
 
     await hass.services.async_call(
@@ -1802,7 +1782,7 @@ async def test_add_user_device_errors(
     """Test device errors are mapped to HA exceptions."""
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.add_user.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(
@@ -1829,7 +1809,7 @@ async def test_modify_user_success(
 ) -> None:
     """Test modify_user calls device.modify_user with correct params."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -1858,7 +1838,7 @@ async def test_modify_user_cloud_rejected(
 ) -> None:
     """Test modifying a cloud user raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -1883,7 +1863,7 @@ async def test_modify_user_not_found(
 ) -> None:
     """Test modifying a non-existent user raises HomeAssistantError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError, match="not found"):
         await hass.services.async_call(
@@ -1910,7 +1890,7 @@ async def test_modify_user_schedule_relay_cloud_rejected(
     """Test schedule_relay referencing cloud schedule raises error."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -1941,7 +1921,7 @@ async def test_modify_user_invalid_pin(
 ) -> None:
     """Test invalid PIN (not 4-8 digits) raises error."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="PIN"):
         await hass.services.async_call(
@@ -1966,7 +1946,7 @@ async def test_modify_user_malformed_schedule_relay(
 ) -> None:
     """Test malformed schedule_relay entry raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="Invalid schedule_relay"):
         await hass.services.async_call(
@@ -1997,7 +1977,7 @@ async def test_modify_user_empty_schedule_relay(
 ) -> None:
     """Test empty/separator-only schedule_relay raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="must contain at least one"):
         await hass.services.async_call(
@@ -2024,7 +2004,7 @@ async def test_modify_user_semicolon_schedule_relay_normalized(
     """Test semicolon-separated schedule_relay is normalized to commas."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -2049,7 +2029,7 @@ async def test_modify_user_event_fired(
 ) -> None:
     """Test modify_user fires local_akuvox_user_changed event."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_USER_CHANGED)
 
     await hass.services.async_call(
@@ -2090,7 +2070,7 @@ async def test_modify_user_device_errors(
     """Test device errors are mapped to HA exceptions."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.modify_user.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(
@@ -2116,7 +2096,7 @@ async def test_delete_user_success(
 ) -> None:
     """Test delete_user calls device.delete_user with id."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -2139,7 +2119,7 @@ async def test_delete_user_cloud_rejected(
 ) -> None:
     """Test cloud-provisioned user raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -2163,7 +2143,7 @@ async def test_delete_user_not_found(
 ) -> None:
     """Test non-existent user raises HomeAssistantError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError, match="not found"):
         await hass.services.async_call(
@@ -2187,7 +2167,7 @@ async def test_delete_user_event_fired(
 ) -> None:
     """Test delete_user fires local_akuvox_user_changed event."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_USER_CHANGED)
 
     await hass.services.async_call(
@@ -2227,7 +2207,7 @@ async def test_delete_user_device_errors(
     """Test device errors are mapped to HA exceptions."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.delete_user.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(
@@ -2254,7 +2234,7 @@ async def test_add_user_schedule_relay_success(
     """Test add_user_schedule_relay appends pair and calls modify_user."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -2283,7 +2263,7 @@ async def test_add_user_schedule_relay_duplicate(
     """Test duplicate pair raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Aa]lready assigned"):
         await hass.services.async_call(
@@ -2309,7 +2289,7 @@ async def test_add_user_schedule_relay_cloud_user(
 ) -> None:
     """Test cloud user raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -2337,7 +2317,7 @@ async def test_add_user_schedule_relay_cloud_schedule(
     """Test cloud schedule reference raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -2372,7 +2352,7 @@ async def test_add_user_schedule_relay_existing_cloud_pair(
         mock_user_list[1],
     ]
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -2407,7 +2387,7 @@ async def test_remove_user_schedule_relay_existing_cloud_pair(
         mock_user_list[1],
     ]
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -2433,7 +2413,7 @@ async def test_add_user_schedule_relay_user_not_found(
 ) -> None:
     """Test user not found raises HomeAssistantError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError, match="not found"):
         await hass.services.async_call(
@@ -2466,7 +2446,7 @@ async def test_add_user_schedule_relay_non_numeric(
 ) -> None:
     """Test non-numeric schedule_id/relay_id raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Mm]ust be numeric"):
         await hass.services.async_call(
@@ -2494,7 +2474,7 @@ async def test_add_user_schedule_relay_event_fired(
     """Test add_user_schedule_relay fires event."""
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_USER_CHANGED)
 
     await hass.services.async_call(
@@ -2540,7 +2520,7 @@ async def test_add_user_schedule_relay_device_errors(
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.modify_user.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(
@@ -2573,7 +2553,7 @@ async def test_remove_user_schedule_relay_success(
     mock_user_list[0] = replace(mock_user_list[0], schedule_relay="10-1,10-2")
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     await hass.services.async_call(
         DOMAIN,
@@ -2600,7 +2580,7 @@ async def test_remove_user_schedule_relay_not_assigned(
 ) -> None:
     """Test pair not found raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="not assigned"):
         await hass.services.async_call(
@@ -2626,7 +2606,7 @@ async def test_remove_user_schedule_relay_last_pair(
 ) -> None:
     """Test removing last pair raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Ll]ast pair"):
         await hass.services.async_call(
@@ -2652,7 +2632,7 @@ async def test_remove_user_schedule_relay_cloud_user(
 ) -> None:
     """Test cloud user raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Cc]loud"):
         await hass.services.async_call(
@@ -2678,7 +2658,7 @@ async def test_remove_user_schedule_relay_user_not_found(
 ) -> None:
     """Test user not found raises HomeAssistantError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(HomeAssistantError, match="not found"):
         await hass.services.async_call(
@@ -2711,7 +2691,7 @@ async def test_remove_user_schedule_relay_non_numeric(
 ) -> None:
     """Test non-numeric schedule_id/relay_id raises ServiceValidationError."""
     mock_akuvox_device.list_users.return_value = mock_user_list
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ServiceValidationError, match="[Mm]ust be numeric"):
         await hass.services.async_call(
@@ -2742,7 +2722,7 @@ async def test_remove_user_schedule_relay_event_fired(
     mock_user_list[0] = replace(mock_user_list[0], schedule_relay="10-1,10-2")
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
-    entry = await _setup_entry(hass, mock_config_entry_data_none)
+    entry = await setup_entry(hass, mock_config_entry_data_none)
     events = async_capture_events(hass, EVENT_USER_CHANGED)
 
     await hass.services.async_call(
@@ -2791,7 +2771,7 @@ async def test_remove_user_schedule_relay_device_errors(
     mock_akuvox_device.list_users.return_value = mock_user_list
     mock_akuvox_device.list_schedules.return_value = mock_schedule_list
     mock_akuvox_device.modify_user.side_effect = lib_exc("fail")
-    await _setup_entry(hass, mock_config_entry_data_none)
+    await setup_entry(hass, mock_config_entry_data_none)
 
     with pytest.raises(ha_exc):
         await hass.services.async_call(

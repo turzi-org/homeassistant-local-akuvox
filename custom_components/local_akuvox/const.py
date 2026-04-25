@@ -80,10 +80,20 @@ SERVICE_MODIFY_USER: Final = "modify_user"
 SERVICE_DELETE_USER: Final = "delete_user"
 SERVICE_ADD_USER_SCHEDULE_RELAY: Final = "add_user_schedule_relay"
 SERVICE_REMOVE_USER_SCHEDULE_RELAY: Final = "remove_user_schedule_relay"
+SERVICE_LIST_CONTACTS: Final = "list_contacts"
+SERVICE_ADD_CONTACT: Final = "add_contact"
+SERVICE_MODIFY_CONTACT: Final = "modify_contact"
+SERVICE_DELETE_CONTACT: Final = "delete_contact"
+SERVICE_LIST_GROUPS: Final = "list_groups"
+SERVICE_ADD_GROUP: Final = "add_group"
+SERVICE_MODIFY_GROUP: Final = "modify_group"
+SERVICE_DELETE_GROUP: Final = "delete_group"
 
 # Event names
 EVENT_SCHEDULE_CHANGED: Final = "local_akuvox_schedule_changed"
 EVENT_USER_CHANGED: Final = "local_akuvox_user_changed"
+EVENT_CONTACT_CHANGED: Final = "local_akuvox_contact_changed"
+EVENT_GROUP_CHANGED: Final = "local_akuvox_group_changed"
 
 # Config keys
 CONF_HOST: Final = "host"

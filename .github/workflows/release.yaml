@@ -188,10 +188,39 @@ jobs:
         uses: lfreleng-actions/python-audit-action@1776538e768c52c55c3c96495f6e25f0762ad28f  # v0.2.6
         with:
           python_version: "${{ matrix.python-version }}"
-          # pillow transitive dep CVEs (via homeassistant)
+          # Transitive dep CVEs we cannot control
+          # aiohttp (via homeassistant)
+          # cryptography (via homeassistant)
+          # orjson (via homeassistant)
+          # pillow (via homeassistant)
+          # pip (CI runner tooling)
+          # pyjwt (via homeassistant)
+          # pyopenssl (via homeassistant)
+          # requests (via pip tooling)
+          # uv (dev tooling)
           ignore_vulns: >-
+            CVE-2026-22815
+            CVE-2026-25645
+            CVE-2026-27448
+            CVE-2026-27459
+            CVE-2026-3219
+            CVE-2026-32597
+            CVE-2026-34073
+            CVE-2026-34513
+            CVE-2026-34514
+            CVE-2026-34515
+            CVE-2026-34516
+            CVE-2026-34517
+            CVE-2026-34518
+            CVE-2026-34519
+            CVE-2026-34520
+            CVE-2026-34525
+            CVE-2026-39892
+            CVE-2026-40192
+            CVE-2025-67221
             GHSA-4xh5-x5gv-qwph
             GHSA-cfh3-3jmp-rvhc
+            GHSA-pjjw-68hj-v9mw
 
   sbom:
     name: 'Generate SBOM'

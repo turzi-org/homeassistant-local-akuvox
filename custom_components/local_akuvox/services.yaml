@@ -358,3 +358,145 @@ remove_user_schedule_relay:
       selector:
         text:
           multiline: false
+
+list_contacts:
+  target:
+    entity:
+      domain: lock
+      integration: local_akuvox
+  fields:
+    page:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 1
+          mode: box
+
+add_contact:
+  target:
+    entity:
+      domain: lock
+      integration: local_akuvox
+  fields:
+    name:
+      required: true
+      example: "John Doe"
+      selector:
+        text:
+          multiline: false
+    phone:
+      required: false
+      example: "555-1234"
+      selector:
+        text:
+          multiline: false
+    group:
+      required: false
+      example: "Family"
+      selector:
+        text:
+          multiline: false
+
+modify_contact:
+  target:
+    entity:
+      domain: lock
+      integration: local_akuvox
+  fields:
+    id:
+      required: true
+      example: "42"
+      selector:
+        text:
+          multiline: false
+    name:
+      required: false
+      example: "Jane Doe"
+      selector:
+        text:
+          multiline: false
+    phone:
+      required: false
+      example: "555-9999"
+      selector:
+        text:
+          multiline: false
+    group:
+      required: false
+      example: "Friends"
+      selector:
+        text:
+          multiline: false
+
+delete_contact:
+  target:
+    entity:
+      domain: lock
+      integration: local_akuvox
+  fields:
+    id:
+      required: true
+      example: "42, 43"
+      selector:
+        text:
+          multiline: false
+
+list_groups:
+  target:
+    entity:
+      domain: lock
+      integration: local_akuvox
+  fields:
+    page:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 1
+          mode: box
+
+add_group:
+  target:
+    entity:
+      domain: lock
+      integration: local_akuvox
+  fields:
+    name:
+      required: true
+      example: "Family"
+      selector:
+        text:
+          multiline: false
+
+modify_group:
+  target:
+    entity:
+      domain: lock
+      integration: local_akuvox
+  fields:
+    id:
+      required: true
+      example: "5"
+      selector:
+        text:
+          multiline: false
+    name:
+      required: true
+      example: "Friends"
+      selector:
+        text:
+          multiline: false
+
+delete_group:
+  target:
+    entity:
+      domain: lock
+      integration: local_akuvox
+  fields:
+    id:
+      required: true
+      example: "5"
+      selector:
+        text:
+          multiline: false

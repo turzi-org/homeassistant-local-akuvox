@@ -10,11 +10,15 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from homeassistant.core import HomeAssistant
 from pylocal_akuvox import (
     AccessSchedule,
+    Contact,
     DeviceInfo,
+    Group,
     User,
 )
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.local_akuvox.const import (
     AUTH_BASIC,
@@ -34,6 +38,7 @@ from custom_components.local_akuvox.const import (
     CONFIG_KEY_RELAY_NAME,
     CONFIG_KEY_RELAY_PREFIX,
     CONFIG_KEY_RELAY_TYPE_SUFFIX,
+    DOMAIN,
 )
 
 MOCK_HOST = "192.168.1.100"
@@ -229,6 +234,15 @@ def mock_akuvox_device(
         device.add_user = AsyncMock(return_value=None)
         device.modify_user = AsyncMock(return_value=None)
         device.delete_user = AsyncMock(return_value=None)
+        # Contact and group CRUD methods
+        device.list_contacts = AsyncMock(return_value=[])
+        device.add_contact = AsyncMock(return_value=None)
+        device.modify_contact = AsyncMock(return_value=None)
+        device.delete_contact = AsyncMock(return_value=None)
+        device.list_groups = AsyncMock(return_value=[])
+        device.add_group = AsyncMock(return_value=None)
+        device.modify_group = AsyncMock(return_value=None)
+        device.delete_group = AsyncMock(return_value=None)
         yield device
 
 
@@ -390,3 +404,65 @@ def mock_user_list_with_pins() -> list[User]:
             source_type="1",
         ),
     ]
+
+
+@pytest.fixture
+def mock_contact_list() -> list[Contact]:
+    """Return a mock list of Contact objects."""
+    return [
+        Contact(
+            name="John Doe",
+            id="1",
+            phone="555-1234",
+            group="Family",
+        ),
+        Contact(
+            name="Jane Smith",
+            id="2",
+            phone=None,
+            group=None,
+        ),
+    ]
+
+
+@pytest.fixture
+def mock_group_list() -> list[Group]:
+    """Return a mock list of Group objects."""
+    return [
+        Group(
+            name="Family",
+            id="1",
+        ),
+        Group(
+            name="Maintenance",
+            id="2",
+        ),
+    ]
+
+
+async def setup_entry(
+    hass: HomeAssistant,
+    config_data: dict[str, Any],
+) -> MockConfigEntry:
+    """Set up a loaded config entry with a lock entity for service testing.
+
+    The caller must ensure the AkuvoxDevice mock is already patched
+    (e.g. via the ``mock_akuvox_device`` fixture).
+
+    Args:
+        hass: The Home Assistant instance.
+        config_data: Config entry data dict.
+
+    Returns:
+        The loaded MockConfigEntry.
+
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=config_data,
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry

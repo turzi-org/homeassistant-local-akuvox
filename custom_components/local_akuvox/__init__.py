@@ -28,13 +28,21 @@ from .const import (
     CONF_WEBHOOK_ID,
     DOMAIN,
     PLATFORMS,
+    SERVICE_ADD_CONTACT,
+    SERVICE_ADD_GROUP,
     SERVICE_ADD_SCHEDULE,
     SERVICE_ADD_USER,
     SERVICE_ADD_USER_SCHEDULE_RELAY,
+    SERVICE_DELETE_CONTACT,
+    SERVICE_DELETE_GROUP,
     SERVICE_DELETE_SCHEDULE,
     SERVICE_DELETE_USER,
+    SERVICE_LIST_CONTACTS,
+    SERVICE_LIST_GROUPS,
     SERVICE_LIST_SCHEDULES,
     SERVICE_LIST_USERS,
+    SERVICE_MODIFY_CONTACT,
+    SERVICE_MODIFY_GROUP,
     SERVICE_MODIFY_SCHEDULE,
     SERVICE_MODIFY_USER,
     SERVICE_REMOVE_USER_SCHEDULE_RELAY,
@@ -242,6 +250,106 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Required("relay_id"): cv.string,
         },
         func=SERVICE_REMOVE_USER_SCHEDULE_RELAY,
+    )
+
+    # ── Contact services ─────────────────────────────────────
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_LIST_CONTACTS,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Optional("page"): cv.positive_int,
+        },
+        func=SERVICE_LIST_CONTACTS,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_ADD_CONTACT,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("name"): vol.All(cv.string, vol.Length(min=1)),
+            vol.Optional("phone"): cv.string,
+            vol.Optional("group"): cv.string,
+        },
+        func=SERVICE_ADD_CONTACT,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_MODIFY_CONTACT,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): cv.string,
+            vol.Optional("name"): vol.All(cv.string, vol.Length(min=1)),
+            vol.Optional("phone"): cv.string,
+            vol.Optional("group"): cv.string,
+        },
+        func=SERVICE_MODIFY_CONTACT,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_DELETE_CONTACT,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): vol.All(_csv_to_list, vol.Length(min=1), [cv.string]),
+        },
+        func=SERVICE_DELETE_CONTACT,
+    )
+
+    # ── Group services ───────────────────────────────────────
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_LIST_GROUPS,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Optional("page"): cv.positive_int,
+        },
+        func=SERVICE_LIST_GROUPS,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_ADD_GROUP,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("name"): vol.All(cv.string, vol.Length(min=1)),
+        },
+        func=SERVICE_ADD_GROUP,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_MODIFY_GROUP,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): cv.string,
+            vol.Required("name"): vol.All(cv.string, vol.Length(min=1)),
+        },
+        func=SERVICE_MODIFY_GROUP,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_DELETE_GROUP,
+        entity_domain=Platform.LOCK,
+        schema={
+            vol.Required("id"): cv.string,
+        },
+        func=SERVICE_DELETE_GROUP,
     )
 
     return True
