@@ -72,8 +72,9 @@ Retrieves the contact list stored on the device.
 | --------- | -------- | ------- | ---------------------------- |
 | `page`    | No       | integer | Page of results to retrieve. |
 
-With `return_response: true`, returns a dictionary keyed by
-`entity_id`; each per-entity payload contains a `contacts` list.
+When called from **Developer Tools** with response enabled, or
+from scripts using `response_variable`, returns a dictionary
+keyed by `entity_id`; each payload contains a `contacts` list.
 
 ### `local_akuvox.add_contact`
 
@@ -127,8 +128,9 @@ Retrieves the group list from the device.
 | --------- | -------- | ------- | ---------------------------- |
 | `page`    | No       | integer | Page of results to retrieve. |
 
-With `return_response: true`, returns a dictionary keyed by
-`entity_id`; each per-entity payload contains a `groups` list.
+When called from **Developer Tools** with response enabled, or
+from scripts using `response_variable`, returns a dictionary
+keyed by `entity_id`; each payload contains a `groups` list.
 
 ### `local_akuvox.add_group`
 
