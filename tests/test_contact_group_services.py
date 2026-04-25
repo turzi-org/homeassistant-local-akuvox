@@ -630,10 +630,10 @@ async def test_delete_contact_single(
     )
     await hass.async_block_till_done()
 
-    mock_akuvox_device.delete_contact.assert_called_once_with(id="42")
+    mock_akuvox_device.delete_contact.assert_called_once_with(id=["42"])
     assert len(events) == 1
     assert events[0].data["action"] == "delete"
-    assert events[0].data["contact_id"] == "42"
+    assert events[0].data["contact_ids"] == ["42"]
     assert events[0].data["config_entry_id"] == entry.entry_id
 
 
@@ -664,6 +664,33 @@ async def test_delete_contact_batch(
     assert events[0].data["action"] == "delete"
     assert events[0].data["contact_ids"] == ["42", "43", "44"]
     assert events[0].data["config_entry_id"] == entry.entry_id
+
+
+async def test_delete_contact_csv(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+    mock_akuvox_device: AsyncMock,
+) -> None:
+    """Test delete_contact with CSV string parses into list."""
+    await setup_entry(hass, mock_config_entry_data_none)
+    events = async_capture_events(hass, EVENT_CONTACT_CHANGED)
+
+    await hass.services.async_call(
+        DOMAIN,
+        "delete_contact",
+        service_data={
+            "entity_id": ENTITY_ID,
+            "id": "42, 43",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    mock_akuvox_device.delete_contact.assert_called_once_with(
+        id=["42", "43"],
+    )
+    assert len(events) == 1
+    assert events[0].data["contact_ids"] == ["42", "43"]
 
 
 async def test_delete_contact_not_found(

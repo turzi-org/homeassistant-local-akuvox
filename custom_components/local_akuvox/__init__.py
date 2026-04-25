@@ -299,10 +299,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         SERVICE_DELETE_CONTACT,
         entity_domain=Platform.LOCK,
         schema={
-            vol.Required("id"): vol.Any(
-                cv.string,
-                vol.All(cv.ensure_list, vol.Length(min=1), [cv.string]),
-            ),
+            vol.Required("id"): vol.All(_csv_to_list, vol.Length(min=1), [cv.string]),
         },
         func=SERVICE_DELETE_CONTACT,
     )

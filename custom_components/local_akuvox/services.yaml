@@ -437,7 +437,7 @@ delete_contact:
   fields:
     id:
       required: true
-      example: "42"
+      example: "42, 43"
       selector:
         text:
           multiline: false

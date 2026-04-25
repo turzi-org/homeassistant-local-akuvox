@@ -360,7 +360,7 @@
       "fields": {
         "id": {
           "name": "Contact ID",
-          "description": "Device ID of the contact(s) to delete. Accepts a single ID or a list of IDs."
+          "description": "Device ID of the contact(s) to delete. Accepts a single ID or comma-separated IDs."
         }
       }
     },

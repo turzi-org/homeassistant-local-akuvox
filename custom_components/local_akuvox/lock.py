@@ -1571,19 +1571,19 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
     async def delete_contact(self, **kwargs: Any) -> None:
         """Delete one or more contacts from the device address book.
 
-        Accepts a single ID string or a list of ID strings for
-        batch deletion.
+        Accepts a single ID or comma-separated IDs for batch
+        deletion.
 
         Args:
-            **kwargs: Service call data (``id`` required, str or
-                list[str]).
+            **kwargs: Service call data (``id`` required,
+                list[str] after CSV parsing).
 
         Raises:
             ServiceValidationError: On input validation errors.
             HomeAssistantError: On device communication errors.
 
         """
-        id_value: str | list[str] = kwargs["id"]
+        id_value: list[str] = kwargs["id"]
         try:
             await self.coordinator.device.delete_contact(id=id_value)
         except AkuvoxValidationError as err:
@@ -1594,11 +1594,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             raise HomeAssistantError(
                 f"delete_contact failed: {err}",
             ) from err
-        event_data: dict[str, Any] = {"action": "delete"}
-        if isinstance(id_value, list):
-            event_data["contact_ids"] = id_value
-        else:
-            event_data["contact_id"] = id_value
+        event_data: dict[str, Any] = {
+            "action": "delete",
+            "contact_ids": id_value,
+        }
         config_entry = self.coordinator.config_entry
         if config_entry is not None and hasattr(config_entry, "entry_id"):
             event_data["config_entry_id"] = config_entry.entry_id
