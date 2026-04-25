@@ -190,7 +190,7 @@ async def test_credentials_step_skipped_for_none(
         setup_device.get_relay_status = AsyncMock(
             return_value={"RelayA": "closed"},
         )
-        setup_device.get_device_config = AsyncMock(return_value=None)
+        setup_device.get_device_config = AsyncMock(return_value={})
         mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
@@ -251,7 +251,7 @@ async def test_successful_connection_creates_entry(
         setup_device.get_relay_status = AsyncMock(
             return_value={"RelayA": "closed"},
         )
-        setup_device.get_device_config = AsyncMock(return_value=None)
+        setup_device.get_device_config = AsyncMock(return_value={})
         mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
@@ -865,7 +865,7 @@ async def test_webhook_disabled_creates_entry(
         setup_device.get_relay_status = AsyncMock(
             return_value={"RelayA": "closed"},
         )
-        setup_device.get_device_config = AsyncMock(return_value=None)
+        setup_device.get_device_config = AsyncMock(return_value={})
         mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
@@ -929,7 +929,7 @@ async def test_webhook_enabled_pushes_config(
         setup_device.get_relay_status = AsyncMock(
             return_value={"RelayA": "closed"},
         )
-        setup_device.get_device_config = AsyncMock(return_value=None)
+        setup_device.get_device_config = AsyncMock(return_value={})
         mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
@@ -1041,7 +1041,7 @@ async def test_webhook_push_fails_then_skip(
         setup_device.get_relay_status = AsyncMock(
             return_value={"RelayA": "closed"},
         )
-        setup_device.get_device_config = AsyncMock(return_value=None)
+        setup_device.get_device_config = AsyncMock(return_value={})
         mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
@@ -1144,7 +1144,7 @@ async def test_options_webhook_enable(
         setup_device.get_relay_status = AsyncMock(
             return_value={"RelayA": "closed"},
         )
-        setup_device.get_device_config = AsyncMock(return_value=None)
+        setup_device.get_device_config = AsyncMock(return_value={})
         mock_create.return_value = setup_device
 
         result = await hass.config_entries.options.async_init(
@@ -1235,7 +1235,7 @@ async def test_options_webhook_disable(
         setup_device.get_relay_status = AsyncMock(
             return_value={"RelayA": "closed"},
         )
-        setup_device.get_device_config = AsyncMock(return_value=None)
+        setup_device.get_device_config = AsyncMock(return_value={})
         mock_create.return_value = setup_device
 
         result = await hass.config_entries.options.async_init(
