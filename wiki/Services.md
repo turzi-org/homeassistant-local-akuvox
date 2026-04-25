@@ -99,17 +99,26 @@ Updates an existing contact on the device. Fires
 | `phone`   | No       | string | New phone number.            |
 | `group`   | No       | string | New group name (not ID).     |
 
+> **Note:** At least one of `name`, `phone`, or `group` must be
+> provided in addition to `id`.
+
 ### `local_akuvox.delete_contact`
 
 Deletes one or more contacts from the device. Fires
 `local_akuvox_contact_changed` with `action: delete`.
 
-| Parameter | Required | Type   | Description                  |
-| --------- | -------- | ------ | ---------------------------- |
-| `id`      | Yes      | string | Contact ID(s) to delete.     |
+| Parameter | Required | Type           | Description                |
+| --------- | -------- | -------------- | -------------------------- |
+| `id`      | Yes      | string or list | Contact ID(s) to delete.   |
 
-> **Tip:** Pass comma-separated IDs for batch deletion,
-> e.g. `"42, 43"`.
+> **Tip:** For batch deletion pass comma-separated IDs
+> (e.g. `"42, 43"`) or a YAML list:
+>
+> ```yaml
+> id:
+>   - "42"
+>   - "43"
+> ```
 
 ## Group Management
 
