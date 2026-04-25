@@ -94,3 +94,97 @@ Unrecognized events from the device are emitted as
 >
 > **Security:** Raw PIN codes are never included in event
 > payloads. Only the resolved user identity is emitted.
+
+## Integration Events
+
+In addition to device webhook events, the integration fires
+events on the Home Assistant event bus when contacts or groups
+are modified through services.
+
+### `local_akuvox_contact_changed`
+
+Fired when contacts are added, modified, or deleted via
+services.
+
+**Event data payloads:**
+
+Add:
+
+```json
+{
+  "action": "add",
+  "config_entry_id": "ha_config_entry_id"
+}
+```
+
+Modify:
+
+```json
+{
+  "action": "modify",
+  "contact_id": "42",
+  "config_entry_id": "ha_config_entry_id"
+}
+```
+
+Delete:
+
+```json
+{
+  "action": "delete",
+  "contact_ids": ["42", "43"],
+  "config_entry_id": "ha_config_entry_id"
+}
+```
+
+### `local_akuvox_group_changed`
+
+Fired when groups are added, modified, or deleted via
+services.
+
+**Event data payloads:**
+
+Add:
+
+```json
+{
+  "action": "add",
+  "config_entry_id": "ha_config_entry_id"
+}
+```
+
+Modify:
+
+```json
+{
+  "action": "modify",
+  "group_id": "5",
+  "config_entry_id": "ha_config_entry_id"
+}
+```
+
+Delete:
+
+```json
+{
+  "action": "delete",
+  "group_id": "5",
+  "config_entry_id": "ha_config_entry_id"
+}
+```
+
+### Integration Event Automation Example
+
+```yaml
+automation:
+  - alias: "Refresh contacts panel on change"
+    trigger:
+      - platform: event
+        event_type: local_akuvox_contact_changed
+    action:
+      - service: persistent_notification.create
+        data:
+          title: "Contact list updated"
+          message: >
+            Action: {{ trigger.event.data.action }}
+```
