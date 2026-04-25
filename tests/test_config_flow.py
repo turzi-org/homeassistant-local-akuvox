@@ -158,9 +158,14 @@ async def test_credentials_step_skipped_for_none(
     hass: HomeAssistant,
 ) -> None:
     """Test credentials step skipped for none/allowlist."""
-    with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
-    ) as mock_cls:
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        ) as mock_cls,
+        patch(
+            "custom_components.local_akuvox._create_device",
+        ) as mock_create,
+    ):
         device = mock_cls.return_value
         device.get_info = AsyncMock(
             return_value=DeviceInfo(
@@ -170,6 +175,23 @@ async def test_credentials_step_skipped_for_none(
                 hardware_version="2.0.0",
             ),
         )
+
+        setup_device = AsyncMock()
+        setup_device.__aenter__ = AsyncMock(return_value=setup_device)
+        setup_device.__aexit__ = AsyncMock(return_value=None)
+        setup_device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        setup_device.get_relay_status = AsyncMock(
+            return_value={"RelayStatus": "0"},
+        )
+        setup_device.get_device_config = AsyncMock(return_value=None)
+        mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -197,9 +219,14 @@ async def test_successful_connection_creates_entry(
     hass: HomeAssistant,
 ) -> None:
     """Test successful connection creates config entry."""
-    with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
-    ) as mock_cls:
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        ) as mock_cls,
+        patch(
+            "custom_components.local_akuvox._create_device",
+        ) as mock_create,
+    ):
         device = mock_cls.return_value
         device.get_info = AsyncMock(
             return_value=DeviceInfo(
@@ -209,6 +236,23 @@ async def test_successful_connection_creates_entry(
                 hardware_version="2.0.0",
             ),
         )
+
+        setup_device = AsyncMock()
+        setup_device.__aenter__ = AsyncMock(return_value=setup_device)
+        setup_device.__aexit__ = AsyncMock(return_value=None)
+        setup_device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        setup_device.get_relay_status = AsyncMock(
+            return_value={"RelayStatus": "0"},
+        )
+        setup_device.get_device_config = AsyncMock(return_value=None)
+        mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -789,9 +833,14 @@ async def test_webhook_disabled_creates_entry(
     hass: HomeAssistant,
 ) -> None:
     """Test disabling webhook creates entry with no webhook config."""
-    with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
-    ) as mock_cls:
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        ) as mock_cls,
+        patch(
+            "custom_components.local_akuvox._create_device",
+        ) as mock_create,
+    ):
         device = mock_cls.return_value
         device.get_info = AsyncMock(
             return_value=DeviceInfo(
@@ -801,6 +850,23 @@ async def test_webhook_disabled_creates_entry(
                 hardware_version="2.0.0",
             ),
         )
+
+        setup_device = AsyncMock()
+        setup_device.__aenter__ = AsyncMock(return_value=setup_device)
+        setup_device.__aexit__ = AsyncMock(return_value=None)
+        setup_device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        setup_device.get_relay_status = AsyncMock(
+            return_value={"RelayStatus": "0"},
+        )
+        setup_device.get_device_config = AsyncMock(return_value=None)
+        mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -828,9 +894,14 @@ async def test_webhook_enabled_pushes_config(
     hass: HomeAssistant,
 ) -> None:
     """Test enabling webhook pushes action URLs to device."""
-    with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
-    ) as mock_cls:
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        ) as mock_cls,
+        patch(
+            "custom_components.local_akuvox._create_device",
+        ) as mock_create,
+    ):
         device = mock_cls.return_value
         device.get_info = AsyncMock(
             return_value=DeviceInfo(
@@ -843,6 +914,23 @@ async def test_webhook_enabled_pushes_config(
         device.set_device_config = AsyncMock(return_value=None)
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
+
+        setup_device = AsyncMock()
+        setup_device.__aenter__ = AsyncMock(return_value=setup_device)
+        setup_device.__aexit__ = AsyncMock(return_value=None)
+        setup_device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        setup_device.get_relay_status = AsyncMock(
+            return_value={"RelayStatus": "0"},
+        )
+        setup_device.get_device_config = AsyncMock(return_value=None)
+        mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -916,9 +1004,14 @@ async def test_webhook_push_fails_then_skip(
     hass: HomeAssistant,
 ) -> None:
     """Test user can skip webhook after push failure."""
-    with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
-    ) as mock_cls:
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        ) as mock_cls,
+        patch(
+            "custom_components.local_akuvox._create_device",
+        ) as mock_create,
+    ):
         device = mock_cls.return_value
         device.get_info = AsyncMock(
             return_value=DeviceInfo(
@@ -933,6 +1026,23 @@ async def test_webhook_push_fails_then_skip(
         )
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
+
+        setup_device = AsyncMock()
+        setup_device.__aenter__ = AsyncMock(return_value=setup_device)
+        setup_device.__aexit__ = AsyncMock(return_value=None)
+        setup_device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        setup_device.get_relay_status = AsyncMock(
+            return_value={"RelayStatus": "0"},
+        )
+        setup_device.get_device_config = AsyncMock(return_value=None)
+        mock_create.return_value = setup_device
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -1007,13 +1117,35 @@ async def test_options_webhook_enable(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-    with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
-    ) as mock_flow_cls:
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        ) as mock_flow_cls,
+        patch(
+            "custom_components.local_akuvox._create_device",
+        ) as mock_create,
+    ):
         flow_dev = mock_flow_cls.return_value
         flow_dev.set_device_config = AsyncMock(return_value=None)
         flow_dev.__aenter__ = AsyncMock(return_value=flow_dev)
         flow_dev.__aexit__ = AsyncMock(return_value=None)
+
+        setup_device = AsyncMock()
+        setup_device.__aenter__ = AsyncMock(return_value=setup_device)
+        setup_device.__aexit__ = AsyncMock(return_value=None)
+        setup_device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        setup_device.get_relay_status = AsyncMock(
+            return_value={"RelayStatus": "0"},
+        )
+        setup_device.get_device_config = AsyncMock(return_value=None)
+        mock_create.return_value = setup_device
 
         result = await hass.config_entries.options.async_init(
             entry.entry_id,
@@ -1076,13 +1208,35 @@ async def test_options_webhook_disable(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-    with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
-    ) as mock_flow_cls:
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        ) as mock_flow_cls,
+        patch(
+            "custom_components.local_akuvox._create_device",
+        ) as mock_create,
+    ):
         flow_dev = mock_flow_cls.return_value
         flow_dev.set_device_config = AsyncMock(return_value=None)
         flow_dev.__aenter__ = AsyncMock(return_value=flow_dev)
         flow_dev.__aexit__ = AsyncMock(return_value=None)
+
+        setup_device = AsyncMock()
+        setup_device.__aenter__ = AsyncMock(return_value=setup_device)
+        setup_device.__aexit__ = AsyncMock(return_value=None)
+        setup_device.get_info = AsyncMock(
+            return_value=DeviceInfo(
+                model="E21V",
+                mac_address=MOCK_MAC,
+                firmware_version="1.0.0",
+                hardware_version="2.0.0",
+            ),
+        )
+        setup_device.get_relay_status = AsyncMock(
+            return_value={"RelayStatus": "0"},
+        )
+        setup_device.get_device_config = AsyncMock(return_value=None)
+        mock_create.return_value = setup_device
 
         result = await hass.config_entries.options.async_init(
             entry.entry_id,
