@@ -779,7 +779,7 @@ async def test_delete_group_orphan_warning(
     ]
     await setup_entry(hass, mock_config_entry_data_none)
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.WARNING, logger="custom_components.local_akuvox"):
         await hass.services.async_call(
             DOMAIN,
             "delete_group",
