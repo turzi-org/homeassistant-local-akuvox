@@ -72,18 +72,19 @@ Retrieves the contact list stored on the device.
 | --------- | -------- | ------- | ---------------------------- |
 | `page`    | No       | integer | Page of results to retrieve. |
 
-Returns a dictionary with a `contacts` list.
+With `return_response: true`, returns a dictionary keyed by
+`entity_id`; each per-entity payload contains a `contacts` list.
 
 ### `local_akuvox.add_contact`
 
 Creates a new contact on the device. Fires
 `local_akuvox_contact_changed` with `action: add`.
 
-| Parameter | Required | Type   | Description                  |
-| --------- | -------- | ------ | ---------------------------- |
-| `name`    | Yes      | string | Contact name (1–32 chars).   |
-| `phone`   | No       | string | Phone number.                |
-| `group`   | No       | string | Group to assign the contact. |
+| Parameter | Required | Type   | Description                    |
+| --------- | -------- | ------ | ------------------------------ |
+| `name`    | Yes      | string | Contact name (1–32 chars).     |
+| `phone`   | No       | string | Phone number.                  |
+| `group`   | No       | string | Group name (not ID) to assign. |
 
 ### `local_akuvox.modify_contact`
 
@@ -95,7 +96,7 @@ Updates an existing contact on the device. Fires
 | `id`      | Yes      | string | Contact ID to modify.        |
 | `name`    | No       | string | New name (1–32 chars).       |
 | `phone`   | No       | string | New phone number.            |
-| `group`   | No       | string | New group assignment.        |
+| `group`   | No       | string | New group name (not ID).     |
 
 ### `local_akuvox.delete_contact`
 
@@ -126,7 +127,8 @@ Retrieves the group list from the device.
 | --------- | -------- | ------- | ---------------------------- |
 | `page`    | No       | integer | Page of results to retrieve. |
 
-Returns a dictionary with a `groups` list.
+With `return_response: true`, returns a dictionary keyed by
+`entity_id`; each per-entity payload contains a `groups` list.
 
 ### `local_akuvox.add_group`
 
