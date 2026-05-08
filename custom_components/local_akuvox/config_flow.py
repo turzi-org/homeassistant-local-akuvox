@@ -26,6 +26,7 @@ from .const import (
     AUTH_DIGEST,
     AUTH_NONE,
     CONF_AUTH_METHOD,
+    CONF_DEVICE_MODEL,
     CONF_HOST,
     CONF_PASSWORD,
     CONF_USE_SSL,
@@ -329,6 +330,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
 
             if not errors:
                 model = self._data.pop("_device_model", "Device")
+                self._data[CONF_DEVICE_MODEL] = model
                 return self.async_create_entry(
                     title=f"Akuvox {model}",
                     data=self._data,
@@ -495,13 +497,22 @@ class AkuvoxOptionsFlow(OptionsFlow):
             Flow result for entry creation or form.
 
         """
-        from .const import CONF_ENTITY_CONFIG, VALID_INPUT_DEVICE_CLASSES
+        from .const import (
+            CONF_DEVICE_MODEL,
+            CONF_ENTITY_CONFIG,
+            VALID_INPUT_DEVICE_CLASSES,
+            get_model_capabilities,
+        )
 
         current = {
             **self._config_entry.data,
             **self._config_entry.options,
         }
         entity_config = current.get(CONF_ENTITY_CONFIG, {})
+
+        # Determine model capabilities
+        model = current.get(CONF_DEVICE_MODEL, "")
+        caps = get_model_capabilities(model) if model else None
 
         if user_input is not None:
             # Parse entity config from flat form fields
@@ -543,27 +554,35 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 data=final_data,
             )
 
-        # Build entity config form with current values
-        # Discover relays from coordinator data
-        coordinator = self.hass.data.get(DOMAIN, {}).get(
-            self._config_entry.entry_id
-        )
+        # Determine how many relays/inputs to show
+        # Priority: model capabilities > coordinator data > fallback
+        relay_count = 2  # default
+        input_count = 2  # default
 
-        relay_letters: list[str] = []
-        if coordinator and coordinator.data:
-            from .const import RELAY_KEY_RE
+        if caps:
+            relay_count = caps["relays"]
+            input_count = caps["inputs"]
+        else:
+            # Try to discover from coordinator
+            coordinator = self.hass.data.get(DOMAIN, {}).get(
+                self._config_entry.entry_id
+            )
+            if coordinator and coordinator.data:
+                from .const import RELAY_KEY_RE
 
-            for key in sorted(coordinator.data.relay_status):
-                match = RELAY_KEY_RE.fullmatch(key)
-                if match:
-                    relay_letters.append(match.group(1))
+                discovered = 0
+                for key in coordinator.data.relay_status:
+                    if RELAY_KEY_RE.fullmatch(key):
+                        discovered += 1
+                if discovered:
+                    relay_count = discovered
 
-        # Fallback: show A and B if no coordinator data
-        if not relay_letters:
-            relay_letters = ["A", "B"]
+        relay_letters = [chr(ord("A") + i) for i in range(relay_count)]
+        input_letters = [chr(ord("A") + i) for i in range(input_count)]
 
         schema_dict: dict[Any, Any] = {}
 
+        # Build relay fields
         for letter in relay_letters:
             relay_key = f"relay_{letter.lower()}"
             cfg = entity_config.get(relay_key, {})
@@ -593,8 +612,8 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 )
             ] = vol.All(int, vol.Range(min=1, max=300))
 
-        # Input config (always show A-D, user enables what they need)
-        for letter in ["A", "B", "C", "D"]:
+        # Build input fields (only for inputs this model has)
+        for letter in input_letters:
             input_key = f"input_{letter.lower()}"
             cfg = entity_config.get(input_key, {})
 
@@ -611,9 +630,14 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 )
             ] = vol.In(VALID_INPUT_DEVICE_CLASSES)
 
+        # Add model info to description
+        model_info = f" ({model})" if model else ""
+        description_placeholders = {"model": model_info}
+
         return self.async_show_form(
             step_id="entities",
             data_schema=vol.Schema(schema_dict),
+            description_placeholders=description_placeholders,
         )
 
     async def _async_handle_webhook_change(

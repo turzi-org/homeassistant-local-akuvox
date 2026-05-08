@@ -221,6 +221,80 @@ VALID_INPUT_DEVICE_CLASSES: Final = [
     "none",
 ]
 
+# Device model stored in entry.data
+CONF_DEVICE_MODEL: Final = "device_model"
+
+# Model capabilities — relay and input counts per model
+# Derived from Akuvox "Action URLs Supported by Different Models" spec
+MODEL_CAPABILITIES: Final[dict[str, dict[str, int]]] = {
+    # S series
+    "S539": {"relays": 3, "inputs": 3},
+    "S535": {"relays": 1, "inputs": 2},
+    "S532": {"relays": 2, "inputs": 4},
+    # X series
+    "X916": {"relays": 4, "inputs": 4},
+    "X915": {"relays": 3, "inputs": 3},
+    "X915V2": {"relays": 3, "inputs": 3},
+    "X912": {"relays": 2, "inputs": 3},
+    "X910": {"relays": 2, "inputs": 2},
+    # R series
+    "R29": {"relays": 3, "inputs": 3},
+    "R28": {"relays": 3, "inputs": 3},
+    "R28V2": {"relays": 3, "inputs": 3},
+    "R20": {"relays": 2, "inputs": 2},
+    "R25": {"relays": 2, "inputs": 2},
+    # E series
+    "E18": {"relays": 2, "inputs": 3},
+    "E16": {"relays": 1, "inputs": 1},
+    "E16V2": {"relays": 1, "inputs": 1},
+    "E13": {"relays": 1, "inputs": 2},
+    "E12": {"relays": 1, "inputs": 2},
+    # A series
+    "A095": {"relays": 4, "inputs": 4},
+    "A094": {"relays": 4, "inputs": 0},
+    "A05": {"relays": 1, "inputs": 1},
+    "A03": {"relays": 1, "inputs": 2},
+    "A02": {"relays": 1, "inputs": 2},
+    "A01": {"relays": 1, "inputs": 2},
+}
+
+# Default capabilities when model is unknown
+DEFAULT_MODEL_CAPABILITIES: Final[dict[str, int]] = {
+    "relays": 2,
+    "inputs": 2,
+}
+
+
+def get_model_capabilities(model: str) -> dict[str, int]:
+    """Look up relay/input counts for a model name.
+
+    Performs fuzzy matching: tries exact match first, then checks
+    if the model string starts with a known prefix (e.g., "R29S"
+    matches "R29", "E16V2-IP" matches "E16V2").
+
+    Args:
+        model: The device model string from get_info().
+
+    Returns:
+        Dict with 'relays' and 'inputs' counts.
+
+    """
+    # Exact match
+    upper = model.upper().strip()
+    if upper in MODEL_CAPABILITIES:
+        return MODEL_CAPABILITIES[upper]
+
+    # Prefix match (longest match wins)
+    best_match = ""
+    for key in MODEL_CAPABILITIES:
+        if upper.startswith(key) and len(key) > len(best_match):
+            best_match = key
+
+    if best_match:
+        return MODEL_CAPABILITIES[best_match]
+
+    return dict(DEFAULT_MODEL_CAPABILITIES)
+
 # Day-of-week name → digit mapping (single source of truth)
 DAY_NAME_TO_DIGIT: Final[dict[str, str]] = {
     "sun": "0",
