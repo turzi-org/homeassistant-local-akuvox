@@ -76,7 +76,7 @@ _URL_TEMPLATES: Final[dict[str, str]] = {
     "ValidQRCodeEntered": "?event=valid_qr_code_entered&open_type=$open_type",
     "InvalidQRCodeEntered": "?event=invalid_qr_code_entered&open_type=$open_type",
     # Tamper alarm
-    "TamperAlarmTriggered": "?event=tamper_alarm_triggered&status=$alarmstatus",
+    "TamperAlarmTriggered": "?event=tamper_alarm_triggered",
     # Break-in alarms (A-D)
     "BreakInAlarmA": "?event=break_in_alarm_a&status=$input1status",
     "BreakInAlarmB": "?event=break_in_alarm_b&status=$input2status",
