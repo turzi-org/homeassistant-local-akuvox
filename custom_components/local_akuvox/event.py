@@ -20,12 +20,24 @@ _LOGGER = logging.getLogger(__name__)
 _WEBHOOK_TO_ACCESS_EVENT: dict[str, str] = {
     "valid_code_entered": "valid_code",
     "invalid_code_entered": "invalid_code",
+    "valid_card_entered": "valid_card",
+    "invalid_card_entered": "invalid_card",
+    "valid_face_recognition": "valid_face",
+    "invalid_face_recognition": "invalid_face",
+    "valid_qr_code_entered": "valid_qr",
+    "invalid_qr_code_entered": "invalid_qr",
 }
 
 # All supported access event types
 ALL_ACCESS_EVENT_TYPES = [
     "valid_code",
     "invalid_code",
+    "valid_card",
+    "invalid_card",
+    "valid_face",
+    "invalid_face",
+    "valid_qr",
+    "invalid_qr",
 ]
 
 
@@ -113,6 +125,9 @@ class AkuvoxAccessEvent(AkuvoxEntity, EventEntity):
             event_data["user_id"] = payload["user_id"]
         if payload.get("device_user_id"):
             event_data["device_user_id"] = payload["device_user_id"]
+        # Card serial for card events
+        if payload.get("card_sn"):
+            event_data["card_sn"] = payload["card_sn"]
 
         self._trigger_event(access_type, event_data)
         self.async_write_ha_state()

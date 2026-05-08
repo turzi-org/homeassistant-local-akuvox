@@ -43,17 +43,51 @@ _COLLAPSE_RE: Final[re.Pattern[str]] = re.compile(r"_+")
 _MAX_NORMALIZED_LENGTH: Final = 32
 
 # URL templates for each action URL key
+# Covers all events across all 20 Akuvox models
 _URL_TEMPLATES: Final[dict[str, str]] = {
+    # Relay events (A-D)
     "RelayATriggered": "?event=relay_a_triggered&status=$relay1status",
     "RelayAClosed": "?event=relay_a_closed&status=$relay1status",
     "RelayBTriggered": "?event=relay_b_triggered&status=$relay2status",
     "RelayBClosed": "?event=relay_b_closed&status=$relay2status",
+    "RelayCTriggered": "?event=relay_c_triggered&status=$relay3status",
+    "RelayCClosed": "?event=relay_c_closed&status=$relay3status",
+    "RelayDTriggered": "?event=relay_d_triggered&status=$relay4status",
+    "RelayDClosed": "?event=relay_d_closed&status=$relay4status",
+    # Input events (A-D)
     "InputATriggered": "?event=input_a_triggered&status=$input1status",
     "InputAClosed": "?event=input_a_closed&status=$input1status",
     "InputBTriggered": "?event=input_b_triggered&status=$input2status",
     "InputBClosed": "?event=input_b_closed&status=$input2status",
+    "InputCTriggered": "?event=input_c_triggered&status=$input3status",
+    "InputCClosed": "?event=input_c_closed&status=$input3status",
+    "InputDTriggered": "?event=input_d_triggered&status=$input4status",
+    "InputDClosed": "?event=input_d_closed&status=$input4status",
+    # Code events
     "ValidCodeEntered": "?event=valid_code_entered&code=$code",
     "InvalidCodeEntered": "?event=invalid_code_entered",
+    # Card events
+    "ValidCardEntered": "?event=valid_card_entered&card_sn=$card_sn",
+    "InvalidCardEntered": "?event=invalid_card_entered&card_sn=$card_sn",
+    # Face recognition events
+    "ValidFaceRecognition": "?event=valid_face_recognition&open_type=$open_type",
+    "InvalidFaceRecognition": "?event=invalid_face_recognition&open_type=$open_type",
+    # QR code events
+    "ValidQRCodeEntered": "?event=valid_qr_code_entered&open_type=$open_type",
+    "InvalidQRCodeEntered": "?event=invalid_qr_code_entered&open_type=$open_type",
+    # Tamper alarm
+    "TamperAlarmTriggered": "?event=tamper_alarm_triggered&status=$alarmstatus",
+    # Break-in alarms (A-D)
+    "BreakInAlarmA": "?event=break_in_alarm_a&status=$input1status",
+    "BreakInAlarmB": "?event=break_in_alarm_b&status=$input2status",
+    "BreakInAlarmC": "?event=break_in_alarm_c&status=$input3status",
+    "BreakInAlarmD": "?event=break_in_alarm_d&status=$input4status",
+    # Call events
+    "MakeCall": "?event=make_call&remote=$remote",
+    "HangUp": "?event=hang_up&remote=$remote",
+    # Door open timeout
+    "AlarmDoorOpenedTimeoutA": "?event=alarm_door_opened_timeout_a&relay_id=$relay_id&location=$location",
+    "AlarmDoorOpenedTimeoutB": "?event=alarm_door_opened_timeout_b&relay_id=$relay_id&location=$location",
 }
 
 

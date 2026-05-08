@@ -25,17 +25,51 @@ EVENT_WEBHOOK_RECEIVED: Final = "local_akuvox_webhook_received"
 ACTIONURL_PREFIX: Final = "Config.Features.ACTIONURL"
 
 # Action URL keys — maps logical name to device config key
+# Covers all events across all 20 Akuvox models (A-D relays/inputs)
 ACTIONURL_KEYS: Final[dict[str, str]] = {
+    # Relay events (A-D)
     "RelayATriggered": f"{ACTIONURL_PREFIX}.RelayATriggered",
     "RelayAClosed": f"{ACTIONURL_PREFIX}.RelayAClosed",
     "RelayBTriggered": f"{ACTIONURL_PREFIX}.RelayBTriggered",
     "RelayBClosed": f"{ACTIONURL_PREFIX}.RelayBClosed",
+    "RelayCTriggered": f"{ACTIONURL_PREFIX}.RelayCTriggered",
+    "RelayCClosed": f"{ACTIONURL_PREFIX}.RelayCClosed",
+    "RelayDTriggered": f"{ACTIONURL_PREFIX}.RelayDTriggered",
+    "RelayDClosed": f"{ACTIONURL_PREFIX}.RelayDClosed",
+    # Input events (A-D)
     "InputATriggered": f"{ACTIONURL_PREFIX}.InputATriggered",
     "InputAClosed": f"{ACTIONURL_PREFIX}.InputAClosed",
     "InputBTriggered": f"{ACTIONURL_PREFIX}.InputBTriggered",
     "InputBClosed": f"{ACTIONURL_PREFIX}.InputBClosed",
+    "InputCTriggered": f"{ACTIONURL_PREFIX}.InputCTriggered",
+    "InputCClosed": f"{ACTIONURL_PREFIX}.InputCClosed",
+    "InputDTriggered": f"{ACTIONURL_PREFIX}.InputDTriggered",
+    "InputDClosed": f"{ACTIONURL_PREFIX}.InputDClosed",
+    # Code events
     "ValidCodeEntered": f"{ACTIONURL_PREFIX}.ValidCodeEntered",
     "InvalidCodeEntered": f"{ACTIONURL_PREFIX}.InvalidCodeEntered",
+    # Card events
+    "ValidCardEntered": f"{ACTIONURL_PREFIX}.ValidCardEntered",
+    "InvalidCardEntered": f"{ACTIONURL_PREFIX}.InvalidCardEntered",
+    # Face recognition events
+    "ValidFaceRecognition": f"{ACTIONURL_PREFIX}.ValidFaceRecognition",
+    "InvalidFaceRecognition": f"{ACTIONURL_PREFIX}.InvalidFaceRecognition",
+    # QR code events
+    "ValidQRCodeEntered": f"{ACTIONURL_PREFIX}.ValidQRCodeEntered",
+    "InvalidQRCodeEntered": f"{ACTIONURL_PREFIX}.InvalidQRCodeEntered",
+    # Tamper alarm
+    "TamperAlarmTriggered": f"{ACTIONURL_PREFIX}.TamperAlarmTriggered",
+    # Break-in alarms (A-D)
+    "BreakInAlarmA": f"{ACTIONURL_PREFIX}.BreakInAlarmA",
+    "BreakInAlarmB": f"{ACTIONURL_PREFIX}.BreakInAlarmB",
+    "BreakInAlarmC": f"{ACTIONURL_PREFIX}.BreakInAlarmC",
+    "BreakInAlarmD": f"{ACTIONURL_PREFIX}.BreakInAlarmD",
+    # Call events
+    "MakeCall": f"{ACTIONURL_PREFIX}.MakeCall",
+    "HangUp": f"{ACTIONURL_PREFIX}.HangUp",
+    # Door open timeout
+    "AlarmDoorOpenedTimeoutA": f"{ACTIONURL_PREFIX}.AlarmDoorOpenedTimeoutA",
+    "AlarmDoorOpenedTimeoutB": f"{ACTIONURL_PREFIX}.AlarmDoorOpenedTimeoutB",
 }
 
 # Action URL enable/method keys
@@ -45,16 +79,49 @@ ACTIONURL_METHOD_KEY: Final = f"{ACTIONURL_PREFIX}.Method"
 # Known event types (from device action URL names)
 KNOWN_EVENT_TYPES: Final[frozenset[str]] = frozenset(
     {
+        # Relay events (A-D)
         "relay_a_triggered",
         "relay_a_closed",
         "relay_b_triggered",
         "relay_b_closed",
+        "relay_c_triggered",
+        "relay_c_closed",
+        "relay_d_triggered",
+        "relay_d_closed",
+        # Input events (A-D)
         "input_a_triggered",
         "input_a_closed",
         "input_b_triggered",
         "input_b_closed",
+        "input_c_triggered",
+        "input_c_closed",
+        "input_d_triggered",
+        "input_d_closed",
+        # Code events
         "valid_code_entered",
         "invalid_code_entered",
+        # Card events
+        "valid_card_entered",
+        "invalid_card_entered",
+        # Face recognition events
+        "valid_face_recognition",
+        "invalid_face_recognition",
+        # QR code events
+        "valid_qr_code_entered",
+        "invalid_qr_code_entered",
+        # Tamper alarm
+        "tamper_alarm_triggered",
+        # Break-in alarms (A-D)
+        "break_in_alarm_a",
+        "break_in_alarm_b",
+        "break_in_alarm_c",
+        "break_in_alarm_d",
+        # Call events
+        "make_call",
+        "hang_up",
+        # Door open timeout
+        "alarm_door_opened_timeout_a",
+        "alarm_door_opened_timeout_b",
     }
 )
 
@@ -65,6 +132,10 @@ REFRESH_EVENT_TYPES: Final[frozenset[str]] = frozenset(
         "relay_a_closed",
         "relay_b_triggered",
         "relay_b_closed",
+        "relay_c_triggered",
+        "relay_c_closed",
+        "relay_d_triggered",
+        "relay_d_closed",
         "valid_code_entered",
     }
 )
