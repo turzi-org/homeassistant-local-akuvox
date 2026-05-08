@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from pylocal_akuvox import AuthMethod
 
 DOMAIN: Final = "local_akuvox"
-PLATFORMS: Final = ["lock", "switch", "binary_sensor", "event", "number"]
+PLATFORMS: Final = ["lock", "switch", "binary_sensor", "event", "number", "button"]
 
 # Webhook config keys
 CONF_WEBHOOK_ID: Final = "webhook_id"
