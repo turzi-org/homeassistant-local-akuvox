@@ -205,6 +205,22 @@ DEFAULT_HOLD_DELAY_SECONDS: Final = 5
 DEFAULT_RELAY_TYPE: Final = 0
 DEFAULT_RELAY_MODE: Final = 0
 
+# Entity configuration keys (stored in entry.options["entity_config"])
+CONF_ENTITY_CONFIG: Final = "entity_config"
+
+# Valid device classes for input binary sensors
+VALID_INPUT_DEVICE_CLASSES: Final = [
+    "door",
+    "garage_door",
+    "gate",
+    "window",
+    "motion",
+    "opening",
+    "tamper",
+    "safety",
+    "none",
+]
+
 # Day-of-week name → digit mapping (single source of truth)
 DAY_NAME_TO_DIGIT: Final[dict[str, str]] = {
     "sun": "0",

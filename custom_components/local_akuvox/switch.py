@@ -26,6 +26,11 @@ async def async_setup_entry(
     """Set up Akuvox switch entities from a config entry."""
     coordinator: AkuvoxDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
+    from .const import CONF_ENTITY_CONFIG
+
+    effective = {**entry.data, **entry.options}
+    entity_config = effective.get(CONF_ENTITY_CONFIG, {})
+
     entities: list[AkuvoxRelaySwitch] = []
     if coordinator.data and coordinator.data.relay_status:
         for key in sorted(coordinator.data.relay_status):
@@ -35,11 +40,13 @@ async def async_setup_entry(
                 relay_config = coordinator.data.relay_configs.get(
                     letter, RelayConfig()
                 )
+                relay_opts = entity_config.get(f"relay_{letter.lower()}", {})
                 entities.append(
                     AkuvoxRelaySwitch(
                         coordinator=coordinator,
                         relay_letter=letter,
                         relay_config=relay_config,
+                        custom_name=relay_opts.get("name", ""),
                     )
                 )
 
@@ -62,6 +69,7 @@ class AkuvoxRelaySwitch(AkuvoxEntity, SwitchEntity):
         coordinator: AkuvoxDataUpdateCoordinator,
         relay_letter: str,
         relay_config: RelayConfig,
+        custom_name: str = "",
     ) -> None:
         """Initialize the relay switch.
 
@@ -69,15 +77,19 @@ class AkuvoxRelaySwitch(AkuvoxEntity, SwitchEntity):
             coordinator: The data update coordinator.
             relay_letter: Relay letter (A, B, C, D).
             relay_config: Configuration for this relay.
+            custom_name: User-configured custom name (overrides device).
         """
         super().__init__(coordinator)
         self._relay_letter = relay_letter
         self._relay_key = f"Relay{relay_letter}"
         self._relay_config = relay_config
 
-        # Use device-configured name or fallback
-        name = relay_config.name.strip() if relay_config.name else ""
-        self._attr_name = name or f"Relay {relay_letter} Switch"
+        # Priority: user config name > device config name > default label
+        if custom_name.strip():
+            self._attr_name = f"{custom_name.strip()} Switch"
+        else:
+            name = relay_config.name.strip() if relay_config.name else ""
+            self._attr_name = f"{name} Switch" if name else f"Relay {relay_letter} Switch"
 
         mac_clean = (
             coordinator.data.device_info.mac_address.lower().replace(":", "")

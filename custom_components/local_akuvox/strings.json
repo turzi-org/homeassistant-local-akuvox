@@ -60,7 +60,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Local Akuvox Options",
+        "title": "Connection Settings",
         "description": "Update connection settings for your Akuvox device.",
         "data": {
           "host": "Host",
@@ -70,6 +70,42 @@
           "username": "Username",
           "password": "Password",
           "webhook_enabled": "Enable Webhooks"
+        }
+      },
+      "entities": {
+        "title": "Entity Configuration",
+        "description": "Customize relay and input entity names, device classes, and lock behavior. Leave name blank to use defaults.",
+        "data": {
+          "relay_a_name": "Relay A — Name",
+          "relay_a_lock": "Relay A — Create Lock",
+          "relay_a_autolatch": "Relay A — Auto-relock",
+          "relay_a_delay": "Relay A — Hold Delay (seconds)",
+          "relay_b_name": "Relay B — Name",
+          "relay_b_lock": "Relay B — Create Lock",
+          "relay_b_autolatch": "Relay B — Auto-relock",
+          "relay_b_delay": "Relay B — Hold Delay (seconds)",
+          "relay_c_name": "Relay C — Name",
+          "relay_c_lock": "Relay C — Create Lock",
+          "relay_c_autolatch": "Relay C — Auto-relock",
+          "relay_c_delay": "Relay C — Hold Delay (seconds)",
+          "relay_d_name": "Relay D — Name",
+          "relay_d_lock": "Relay D — Create Lock",
+          "relay_d_autolatch": "Relay D — Auto-relock",
+          "relay_d_delay": "Relay D — Hold Delay (seconds)",
+          "input_a_name": "Input A — Name",
+          "input_a_class": "Input A — Device Class",
+          "input_b_name": "Input B — Name",
+          "input_b_class": "Input B — Device Class",
+          "input_c_name": "Input C — Name",
+          "input_c_class": "Input C — Device Class",
+          "input_d_name": "Input D — Name",
+          "input_d_class": "Input D — Device Class"
+        },
+        "data_description": {
+          "relay_a_lock": "Create a lock entity for this relay (uncheck for switch-only relays like gates or lights).",
+          "relay_a_autolatch": "Automatically re-lock after the hold delay expires.",
+          "relay_a_delay": "How long the relay stays open before auto-relocking (1-300 seconds).",
+          "input_a_class": "Device class determines the icon and behavior (door, motion, window, etc.)."
         }
       }
     }

@@ -47,21 +47,47 @@ async def async_setup_entry(
 ) -> None:
     """Set up Akuvox binary sensor entities from a config entry."""
     from .coordinator import AkuvoxDataUpdateCoordinator
+    from .const import CONF_ENTITY_CONFIG
 
     coordinator: AkuvoxDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     mac_clean = (
         coordinator.data.device_info.mac_address.lower().replace(":", "")
     )
 
+    effective = {**entry.data, **entry.options}
+    entity_config = effective.get(CONF_ENTITY_CONFIG, {})
+
+    # Map string device class to enum
+    _DEVICE_CLASS_MAP: dict[str, BinarySensorDeviceClass | None] = {
+        "door": BinarySensorDeviceClass.DOOR,
+        "garage_door": BinarySensorDeviceClass.GARAGE_DOOR,
+        "gate": BinarySensorDeviceClass.DOOR,  # No gate class, use door
+        "window": BinarySensorDeviceClass.WINDOW,
+        "motion": BinarySensorDeviceClass.MOTION,
+        "opening": BinarySensorDeviceClass.OPENING,
+        "tamper": BinarySensorDeviceClass.TAMPER,
+        "safety": BinarySensorDeviceClass.SAFETY,
+        "none": None,
+    }
+
     entities: list[BinarySensorEntity] = []
 
     # Create input sensors for all 4 possible inputs (A-D)
     for letter in ["A", "B", "C", "D"]:
+        input_key = f"input_{letter.lower()}"
+        input_opts = entity_config.get(input_key, {})
+        custom_name = input_opts.get("name", "")
+        device_class_str = input_opts.get("device_class", "door")
+        device_class = _DEVICE_CLASS_MAP.get(
+            device_class_str, BinarySensorDeviceClass.DOOR
+        )
         entities.append(
             AkuvoxInputSensor(
                 coordinator=coordinator,
                 input_letter=letter,
                 mac_clean=mac_clean,
+                custom_name=custom_name,
+                device_class_override=device_class,
             )
         )
 
@@ -129,7 +155,6 @@ class AkuvoxInputSensor(AkuvoxEntity, BinarySensorEntity):
     """Represents an Akuvox dry-contact input as a binary sensor."""
 
     _attr_has_entity_name = True
-    _attr_device_class = BinarySensorDeviceClass.DOOR
     _attr_entity_registry_enabled_default = False
 
     def __init__(
@@ -137,6 +162,8 @@ class AkuvoxInputSensor(AkuvoxEntity, BinarySensorEntity):
         coordinator: Any,
         input_letter: str,
         mac_clean: str,
+        custom_name: str = "",
+        device_class_override: BinarySensorDeviceClass | None = BinarySensorDeviceClass.DOOR,
     ) -> None:
         """Initialize the input sensor.
 
@@ -144,12 +171,15 @@ class AkuvoxInputSensor(AkuvoxEntity, BinarySensorEntity):
             coordinator: The data update coordinator.
             input_letter: Input letter (A, B, C, D).
             mac_clean: Normalized MAC address.
+            custom_name: User-configured name (overrides default).
+            device_class_override: Configurable device class.
         """
         super().__init__(coordinator)
         self._input_letter = input_letter
         self._mac_clean = mac_clean
-        self._attr_name = f"Input {input_letter}"
+        self._attr_name = custom_name.strip() if custom_name.strip() else f"Input {input_letter}"
         self._attr_unique_id = f"{mac_clean}_input_{input_letter.lower()}"
+        self._attr_device_class = device_class_override
         self._attr_is_on = False
 
     @property

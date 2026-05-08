@@ -416,22 +416,19 @@ class AkuvoxOptionsFlow(OptionsFlow):
 
         """
         self._config_entry = config_entry
+        self._connection_data: dict[str, Any] = {}
 
     async def async_step_init(
         self,
         user_input: dict[str, Any] | None = None,
     ) -> Any:
-        """Handle the init step of options flow.
-
-        Presents all connection parameters pre-filled with current
-        values. On submit, saves to entry.options and triggers
-        integration reload.
+        """Handle the init step of options flow (connection settings).
 
         Args:
             user_input: User input from the form.
 
         Returns:
-            Flow result for entry creation or form.
+            Flow result for next step or form.
 
         """
         if user_input is not None:
@@ -465,14 +462,12 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 }
                 return self.async_show_form(
                     step_id="init",
-                    data_schema=self._build_schema(current),
+                    data_schema=self._build_connection_schema(current),
                     errors=errors,
                 )
 
-            return self.async_create_entry(
-                title="",
-                data=user_input,
-            )
+            self._connection_data = user_input
+            return await self.async_step_entities()
 
         current = {
             **self._config_entry.data,
@@ -481,7 +476,144 @@ class AkuvoxOptionsFlow(OptionsFlow):
 
         return self.async_show_form(
             step_id="init",
-            data_schema=self._build_schema(current),
+            data_schema=self._build_connection_schema(current),
+        )
+
+    async def async_step_entities(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> Any:
+        """Handle the entity configuration step.
+
+        Allows users to set custom names, lock toggle, and device
+        class for each relay and input discovered from the device.
+
+        Args:
+            user_input: User input from the form.
+
+        Returns:
+            Flow result for entry creation or form.
+
+        """
+        from .const import CONF_ENTITY_CONFIG, VALID_INPUT_DEVICE_CLASSES
+
+        current = {
+            **self._config_entry.data,
+            **self._config_entry.options,
+        }
+        entity_config = current.get(CONF_ENTITY_CONFIG, {})
+
+        if user_input is not None:
+            # Parse entity config from flat form fields
+            new_config: dict[str, dict[str, Any]] = {}
+
+            for letter in ["A", "B", "C", "D"]:
+                relay_key = f"relay_{letter.lower()}"
+                name_key = f"relay_{letter.lower()}_name"
+                lock_key = f"relay_{letter.lower()}_lock"
+                autolatch_key = f"relay_{letter.lower()}_autolatch"
+                delay_key = f"relay_{letter.lower()}_delay"
+
+                if name_key in user_input:
+                    new_config[relay_key] = {
+                        "name": user_input[name_key],
+                        "create_lock": user_input.get(lock_key, True),
+                        "autolatch": user_input.get(autolatch_key, True),
+                        "hold_delay": user_input.get(delay_key, 5),
+                    }
+
+                input_key = f"input_{letter.lower()}"
+                input_name_key = f"input_{letter.lower()}_name"
+                input_class_key = f"input_{letter.lower()}_class"
+
+                if input_name_key in user_input:
+                    new_config[input_key] = {
+                        "name": user_input[input_name_key],
+                        "device_class": user_input.get(
+                            input_class_key, "door"
+                        ),
+                    }
+
+            # Merge connection data + entity config
+            final_data = {**self._connection_data}
+            final_data[CONF_ENTITY_CONFIG] = new_config
+
+            return self.async_create_entry(
+                title="",
+                data=final_data,
+            )
+
+        # Build entity config form with current values
+        # Discover relays from coordinator data
+        coordinator = self.hass.data.get(DOMAIN, {}).get(
+            self._config_entry.entry_id
+        )
+
+        relay_letters: list[str] = []
+        if coordinator and coordinator.data:
+            from .const import RELAY_KEY_RE
+
+            for key in sorted(coordinator.data.relay_status):
+                match = RELAY_KEY_RE.fullmatch(key)
+                if match:
+                    relay_letters.append(match.group(1))
+
+        # Fallback: show A and B if no coordinator data
+        if not relay_letters:
+            relay_letters = ["A", "B"]
+
+        schema_dict: dict[Any, Any] = {}
+
+        for letter in relay_letters:
+            relay_key = f"relay_{letter.lower()}"
+            cfg = entity_config.get(relay_key, {})
+
+            schema_dict[
+                vol.Optional(
+                    f"relay_{letter.lower()}_name",
+                    default=cfg.get("name", ""),
+                )
+            ] = str
+            schema_dict[
+                vol.Required(
+                    f"relay_{letter.lower()}_lock",
+                    default=cfg.get("create_lock", True),
+                )
+            ] = bool
+            schema_dict[
+                vol.Required(
+                    f"relay_{letter.lower()}_autolatch",
+                    default=cfg.get("autolatch", True),
+                )
+            ] = bool
+            schema_dict[
+                vol.Required(
+                    f"relay_{letter.lower()}_delay",
+                    default=cfg.get("hold_delay", 5),
+                )
+            ] = vol.All(int, vol.Range(min=1, max=300))
+
+        # Input config (always show A-D, user enables what they need)
+        for letter in ["A", "B", "C", "D"]:
+            input_key = f"input_{letter.lower()}"
+            cfg = entity_config.get(input_key, {})
+
+            schema_dict[
+                vol.Optional(
+                    f"input_{letter.lower()}_name",
+                    default=cfg.get("name", ""),
+                )
+            ] = str
+            schema_dict[
+                vol.Required(
+                    f"input_{letter.lower()}_class",
+                    default=cfg.get("device_class", "door"),
+                )
+            ] = vol.In(VALID_INPUT_DEVICE_CLASSES)
+
+        return self.async_show_form(
+            step_id="entities",
+            data_schema=vol.Schema(schema_dict),
         )
 
     async def _async_handle_webhook_change(
@@ -579,10 +711,10 @@ class AkuvoxOptionsFlow(OptionsFlow):
         return None
 
     @staticmethod
-    def _build_schema(
+    def _build_connection_schema(
         current: dict[str, Any],
     ) -> vol.Schema:
-        """Build the options flow form schema.
+        """Build the connection settings form schema.
 
         Args:
             current: Current configuration values.
@@ -623,3 +755,4 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 ): bool,
             }
         )
+
