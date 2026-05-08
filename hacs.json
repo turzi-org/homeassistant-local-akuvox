@@ -1,6 +1,4 @@
 {
   "name": "Turzi Local Akuvox",
-  "render_readme": true,
-  "zip_release": true,
-  "filename": "local_akuvox.zip"
+  "render_readme": true
 }
