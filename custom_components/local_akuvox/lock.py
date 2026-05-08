@@ -341,6 +341,12 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         relay_cfg = self.coordinator.data.relay_configs.get(letter)
         relay_mode = relay_cfg.relay_mode if relay_cfg else DEFAULT_RELAY_MODE
 
+        # Override relay_mode to bistable (1) if autolatch is disabled
+        settings = self.coordinator.relay_settings.get(self._relay_letter, {})
+        autolatch = settings.get("autolatch", True)
+        if not autolatch:
+            relay_mode = 1
+
         # Clear optimistic state so coordinator data drives is_locked
         self._optimistic_locked = None
 
@@ -365,8 +371,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             self.async_write_ha_state()
             return
 
-        hold_delay = self._config_hold_delay or (
-            relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS
+        settings = self.coordinator.relay_settings.get(self._relay_letter, {})
+        hold_delay = settings.get(
+            "hold_delay",
+            relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS,
         )
         relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
         try:
@@ -416,6 +424,12 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         relay_cfg = self.coordinator.data.relay_configs.get(letter)
         relay_mode = relay_cfg.relay_mode if relay_cfg else DEFAULT_RELAY_MODE
 
+        # Override relay_mode to bistable (1) if autolatch is disabled
+        settings = self.coordinator.relay_settings.get(self._relay_letter, {})
+        autolatch = settings.get("autolatch", True)
+        if not autolatch:
+            relay_mode = 1
+
         # Clear optimistic state so coordinator data drives is_locked
         self._optimistic_locked = None
 
@@ -451,9 +465,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             return
 
         # Auto-close: trigger with configured hold delay
-        settings = self.coordinator.relay_settings.get(self._relay_letter, {})
         hold_delay = settings.get("hold_delay", relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS)
-        autolatch = settings.get("autolatch", True)
         
         relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
         try:
@@ -469,8 +481,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ) from err
         self._optimistic_locked = False
         self.async_write_ha_state()
-        if autolatch:
-            self._schedule_delayed_refresh(hold_delay)
+        self._schedule_delayed_refresh(hold_delay)
 
     def _schedule_delayed_refresh(
         self,
