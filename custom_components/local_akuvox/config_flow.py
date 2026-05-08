@@ -231,14 +231,33 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         try:
             async with device:
                 info = await device.get_info()
-        except AkuvoxConnectionError:
-            _LOGGER.debug("Connection failed to %s", self._data[CONF_HOST])
+        except AkuvoxConnectionError as err:
+            _LOGGER.warning(
+                "Failed to connect to Akuvox device at %s "
+                "(ssl=%s, auth=%s): %s",
+                self._data[CONF_HOST],
+                self._data.get(CONF_USE_SSL, False),
+                self._data.get(CONF_AUTH_METHOD, AUTH_NONE),
+                err,
+            )
             errors["base"] = "cannot_connect"
-        except AkuvoxAuthenticationError:
-            _LOGGER.debug("Auth failed for %s", self._data[CONF_HOST])
+        except AkuvoxAuthenticationError as err:
+            _LOGGER.warning(
+                "Authentication failed for Akuvox device at %s "
+                "(auth=%s, user=%s): %s",
+                self._data[CONF_HOST],
+                self._data.get(CONF_AUTH_METHOD, AUTH_NONE),
+                self._data.get(CONF_USERNAME, ""),
+                err,
+            )
             errors["base"] = "invalid_auth"
-        except AkuvoxError:
-            _LOGGER.debug("Unknown error for %s", self._data[CONF_HOST])
+        except AkuvoxError as err:
+            _LOGGER.warning(
+                "Unexpected error connecting to Akuvox device at %s: %s",
+                self._data[CONF_HOST],
+                err,
+                exc_info=True,
+            )
             errors["base"] = "unknown"
 
         if errors:
