@@ -242,8 +242,6 @@ async def async_setup_entry(
                 coordinator=coordinator,
                 relay_key=relay_key,
                 custom_name=relay_opts.get("name", ""),
-                config_hold_delay=relay_opts.get("hold_delay"),
-                config_autolatch=relay_opts.get("autolatch", True),
             ),
         )
 
@@ -258,8 +256,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         coordinator: AkuvoxDataUpdateCoordinator,
         relay_key: str,
         custom_name: str = "",
-        config_hold_delay: int | None = None,
-        config_autolatch: bool = True,
     ) -> None:
         """Initialize the lock entity.
 
@@ -267,8 +263,6 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             coordinator: The data update coordinator.
             relay_key: The relay key from the device (e.g., "RelayA").
             custom_name: User-configured custom name (overrides device).
-            config_hold_delay: User-configured hold delay in seconds.
-            config_autolatch: Whether to auto-relock after hold delay.
 
         """
         super().__init__(coordinator)
@@ -278,8 +272,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             msg = f"Invalid relay key: {relay_key}"
             raise ValueError(msg)
         self._relay_number = relay_number
-        self._config_hold_delay = config_hold_delay
-        self._config_autolatch = config_autolatch
+        self._relay_letter = chr(ord("A") + self._relay_number - 1)
         mac_clean = coordinator.data.device_info.mac_address.lower().replace(
             ":",
             "",
@@ -458,9 +451,10 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             return
 
         # Auto-close: trigger with configured hold delay
-        hold_delay = self._config_hold_delay or (
-            relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS
-        )
+        settings = self.coordinator.relay_settings.get(self._relay_letter, {})
+        hold_delay = settings.get("hold_delay", relay_cfg.hold_delay if relay_cfg else DEFAULT_HOLD_DELAY_SECONDS)
+        autolatch = settings.get("autolatch", True)
+        
         relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
         try:
             await self.coordinator.device.trigger_relay(
@@ -475,7 +469,7 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ) from err
         self._optimistic_locked = False
         self.async_write_ha_state()
-        if self._config_autolatch:
+        if autolatch:
             self._schedule_delayed_refresh(hold_delay)
 
     def _schedule_delayed_refresh(

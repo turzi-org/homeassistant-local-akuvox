@@ -224,6 +224,7 @@ class AkuvoxDataUpdateCoordinator(
         self._cached_users: list[User] = []
         self._last_user_fetch: float | None = None
         self._was_unavailable: bool = False
+        self.relay_settings: dict[str, dict[str, Any]] = {}
 
     def get_user_by_pin(self, pin: str) -> User | None:
         """Look up a user by their private PIN from the cache.

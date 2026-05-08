@@ -437,15 +437,11 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
                 relay_key = f"relay_{letter.lower()}"
                 name_key = f"relay_{letter.lower()}_name"
                 lock_key = f"relay_{letter.lower()}_lock"
-                autolatch_key = f"relay_{letter.lower()}_autolatch"
-                delay_key = f"relay_{letter.lower()}_delay"
 
                 if name_key in user_input:
                     new_config[relay_key] = {
                         "name": user_input[name_key],
                         "create_lock": user_input.get(lock_key, True),
-                        "autolatch": user_input.get(autolatch_key, True),
-                        "hold_delay": user_input.get(delay_key, 5),
                     }
 
                 input_key = f"input_{letter.lower()}"
@@ -489,18 +485,6 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
                     default=True,
                 )
             ] = bool
-            schema_dict[
-                vol.Required(
-                    f"relay_{letter.lower()}_autolatch",
-                    default=True,
-                )
-            ] = bool
-            schema_dict[
-                vol.Required(
-                    f"relay_{letter.lower()}_delay",
-                    default=5,
-                )
-            ] = vol.All(int, vol.Range(min=1, max=300))
 
         for letter in input_letters:
             schema_dict[
@@ -639,15 +623,11 @@ class AkuvoxOptionsFlow(OptionsFlow):
                 relay_key = f"relay_{letter.lower()}"
                 name_key = f"relay_{letter.lower()}_name"
                 lock_key = f"relay_{letter.lower()}_lock"
-                autolatch_key = f"relay_{letter.lower()}_autolatch"
-                delay_key = f"relay_{letter.lower()}_delay"
 
                 if name_key in user_input:
                     new_config[relay_key] = {
                         "name": user_input[name_key],
                         "create_lock": user_input.get(lock_key, True),
-                        "autolatch": user_input.get(autolatch_key, True),
-                        "hold_delay": user_input.get(delay_key, 5),
                     }
 
                 input_key = f"input_{letter.lower()}"
@@ -716,18 +696,6 @@ class AkuvoxOptionsFlow(OptionsFlow):
                     default=cfg.get("create_lock", True),
                 )
             ] = bool
-            schema_dict[
-                vol.Required(
-                    f"relay_{letter.lower()}_autolatch",
-                    default=cfg.get("autolatch", True),
-                )
-            ] = bool
-            schema_dict[
-                vol.Required(
-                    f"relay_{letter.lower()}_delay",
-                    default=cfg.get("hold_delay", 5),
-                )
-            ] = vol.All(int, vol.Range(min=1, max=300))
 
         # Build input fields (only for inputs this model has)
         for letter in input_letters:

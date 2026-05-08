@@ -6,8 +6,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
+from homeassistant.components.switch import (
+    SwitchDeviceClass,
+    SwitchEntity,
+)
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -47,6 +52,14 @@ async def async_setup_entry(
                         relay_letter=letter,
                         relay_config=relay_config,
                         custom_name=relay_opts.get("name", ""),
+                    )
+                )
+                
+                # Add autolatch configuration switch
+                entities.append(
+                    AkuvoxAutolatchSwitch(
+                        coordinator=coordinator,
+                        relay_letter=letter,
                     )
                 )
 
@@ -130,3 +143,62 @@ class AkuvoxRelaySwitch(AkuvoxEntity, SwitchEntity):
             delay=self._relay_config.hold_delay,
         )
         await self.coordinator.async_request_refresh()
+
+class AkuvoxAutolatchSwitch(AkuvoxEntity, SwitchEntity, RestoreEntity):
+    """Represents a configuration switch for relay autolatch."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_device_class = SwitchDeviceClass.SWITCH
+
+    def __init__(
+        self,
+        coordinator: AkuvoxDataUpdateCoordinator,
+        relay_letter: str,
+    ) -> None:
+        """Initialize the autolatch switch entity.
+
+        Args:
+            coordinator: The data update coordinator.
+            relay_letter: Relay letter (A, B, C, D).
+        """
+        super().__init__(coordinator)
+        self._relay_letter = relay_letter
+        
+        relay_cfg = coordinator.data.relay_configs.get(relay_letter)
+        name = relay_cfg.name.strip() if relay_cfg and relay_cfg.name else ""
+        self._attr_name = f"Autolatch ({name})" if name else f"Autolatch (Relay {relay_letter})"
+        
+        mac_clean = (
+            coordinator.data.device_info.mac_address.lower().replace(":", "")
+        )
+        self._attr_unique_id = f"{mac_clean}_autolatch_{relay_letter.lower()}"
+        self._attr_is_on = True
+        
+        # Initialize default state inside coordinator settings
+        if self._relay_letter not in self.coordinator.relay_settings:
+            self.coordinator.relay_settings[self._relay_letter] = {}
+
+    async def async_added_to_hass(self) -> None:
+        """Handle entity which will be added."""
+        await super().async_added_to_hass()
+        
+        # Restore previous state
+        last_state = await self.async_get_last_state()
+        if last_state:
+            self._attr_is_on = last_state.state == "on"
+            
+        # Push to coordinator
+        self.coordinator.relay_settings[self._relay_letter]["autolatch"] = self._attr_is_on
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable autolatch."""
+        self._attr_is_on = True
+        self.coordinator.relay_settings[self._relay_letter]["autolatch"] = True
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable autolatch."""
+        self._attr_is_on = False
+        self.coordinator.relay_settings[self._relay_letter]["autolatch"] = False
+        self.async_write_ha_state()
