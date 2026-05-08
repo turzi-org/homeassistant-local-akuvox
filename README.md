@@ -14,22 +14,34 @@ locally controlling [Akuvox](https://www.akuvox.com/) intercoms and access
 control devices. All communication happens over your local network — no
 cloud services required.
 
-> **Fork of [tykeal/homeassistant-local-akuvox](https://github.com/tykeal/homeassistant-local-akuvox)** with extended entity support: switches, binary sensors, and event entities.
+> **Fork of [tykeal/homeassistant-local-akuvox](https://github.com/tykeal/homeassistant-local-akuvox)**
+> with extended entity support, model-aware configuration, and full
+> event coverage.
+
+---
 
 ## Features
 
-- **Lock Entities** — One lock entity per relay. Unlock doors and gates
-  directly from Home Assistant.
+- **Lock Entities** — One lock per relay. Unlock doors and gates
+  directly from Home Assistant with configurable hold delay and
+  autolatch behaviour.
 - **Switch Entities** — Relays as simple on/off switches for gates,
   lights, or other non-lock devices (manual toggle mode).
-- **Binary Sensor Entities** — Dry-contact inputs (door, window, motion)
-  with real-time state updates via webhooks.
-- **Event Entities** — Access events (valid/invalid code entry) as
-  proper HA Event entities for easy automation.
-- **Webhook Events** — Real-time notifications when relays trigger,
-  codes are entered, or inputs change state.
-- **User & Schedule Management** — Full CRUD services for managing
-  access codes, user PINs, card codes, and time-based schedules.
+- **Binary Sensor Entities** — Dry-contact inputs (door, window,
+  motion), tamper alarms, and break-in alarms with real-time state
+  updates via webhooks.
+- **Event Entities** — Access events (code, card, face, QR) as proper
+  HA Event entities for easy automation.
+- **Model-Aware Configuration** — Auto-detects 20+ Akuvox models and
+  shows only the relays and inputs your device actually has.
+- **Configurable Entity Options** — Custom names, device classes, lock
+  on/off toggles, autolatch, and hold delay — all from the UI.
+- **Webhook Events** — Real-time notifications for relay triggers,
+  input changes, access attempts, tamper alarms, break-in alarms,
+  call events, and door-open timeouts.
+- **User, Schedule, Contact & Group Management** — Full CRUD services
+  for managing access codes, PINs, cards, schedules, contacts, and
+  contact groups.
 - **Local Polling** — Device state updates every 30 seconds via direct
   HTTP communication.
 - **Flexible Authentication** — Supports no-auth (IP allowlist), HTTP
@@ -37,11 +49,25 @@ cloud services required.
 - **SSL Support** — Optional HTTPS with configurable certificate
   verification.
 
+## Supported Models
+
+The integration auto-detects your device model and adapts accordingly.
+Fuzzy matching handles model variants (e.g., `E16V2-IP` → `E16V2`).
+
+| Series | Models |
+| ------ | ------ |
+| **S** | S532, S535, S539 |
+| **X** | X910, X912, X915, X915V2, X916 |
+| **R** | R20, R25, R28, R28V2, R29 |
+| **E** | E12, E13, E16, E16V2, E18 |
+| **A** | A01, A02, A03, A05, A094, A095 |
+
+Unknown models default to 2 relays and 2 inputs.
+
 ## Requirements
 
 - Home Assistant 2026.2.0 or later
 - An Akuvox intercom or access control device with HTTP API access
-  (e.g., E16V2, E18, A02, S535, R29, or similar models)
 - Network connectivity between Home Assistant and the device
 
 ## Installation
@@ -72,40 +98,69 @@ cloud services required.
 2. Search for **Turzi Local Akuvox**.
 3. Follow the setup wizard:
 
-| Step                   | Description                                     |
-| ---------------------- | ----------------------------------------------- |
-| **Device Connection**  | Enter the IP/hostname and whether to use SSL.   |
-| **SSL Options**        | Choose whether to verify the SSL certificate.   |
-| **Authentication**     | Select: None / AllowList, Basic, or Digest.     |
-| **Credentials**        | Enter username and password (if required).      |
-| **Webhook Events**     | Optionally enable webhook event delivery.       |
+| Step | Description |
+| --- | --- |
+| **Device Connection** | Enter the IP/hostname and whether to use SSL. |
+| **SSL Options** | Choose whether to verify the SSL certificate. |
+| **Authentication** | Select: None / AllowList, Basic, or Digest. |
+| **Credentials** | Enter username and password (if required). |
+| **Webhook Events** | Optionally enable webhook event delivery. |
+| **Entity Configuration** | Configure relay/input names, lock toggles, device classes, hold delays, and autolatch. Fields are shown based on your detected model. |
 
 ### Reconfiguration
 
 Go to **Settings** → **Devices & Services** → **Turzi Local Akuvox** →
-**Configure**
-to update connection settings, authentication, or webhook configuration
-at any time.
+**Configure** to update connection settings, entity configuration, or
+webhook settings at any time. The options flow has two steps:
+
+1. **Connection settings** — Host, SSL, authentication, and webhooks.
+2. **Entity configuration** — Names, lock toggles, device classes,
+   hold delays, and autolatch (pre-filled with current values).
+
+### Entity Configuration Options
+
+These options are available per relay and per input, depending on your
+device model:
+
+**Per relay:**
+
+| Option | Description | Default |
+| --- | --- | --- |
+| **Name** | Custom display name for the relay | `Relay A`, `Relay B`, … |
+| **Create Lock** | Whether to create a lock entity for this relay | `true` |
+| **Autolatch** | Prevent auto-relock when disabled | `true` |
+| **Hold Delay** | How long the relay stays triggered (seconds) | `5` |
+
+**Per input:**
+
+| Option | Description | Default |
+| --- | --- | --- |
+| **Name** | Custom display name for the input | `Input A`, `Input B`, … |
+| **Device Class** | HA device class for the binary sensor | `door` |
+
+Supported device classes: `door`, `garage_door`, `gate`, `window`,
+`motion`, `opening`, `tamper`, `safety`, `none`.
 
 ## Entities
 
 ### Lock
 
-One `lock` entity is created for each relay on the device (e.g., Relay
-A, Relay B). Each lock entity supports:
+One `lock` entity is created for each relay where **Create Lock** is
+enabled. Each lock supports:
 
-| Action     | Description                                              |
-| ---------- | -------------------------------------------------------- |
-| **Unlock** | Triggers the relay for the configured hold duration.     |
-| **Lock**   | Mode-aware: auto-close refreshes state, bistable sends command. |
+| Action | Description |
+| --- | --- |
+| **Unlock** | Triggers the relay for the configured hold duration. |
+| **Lock** | Mode-aware: auto-close refreshes state, bistable sends command. |
 
-Entity names are derived from the device configuration. If a relay has
-a custom name configured on the device, that name is used.
+**Name priority:** user config → device config → default label.
+**Hold delay priority:** user config → device config → 5 seconds.
 
 ### Switch
 
-One `switch` entity is created for each relay, providing simple on/off
-control using manual mode (`mode=1`). Ideal for relays controlling:
+One `switch` entity is created for **every** relay (regardless of
+the lock toggle), providing simple on/off control using manual mode
+(`mode=1`). Ideal for relays controlling:
 
 - Gates and barriers
 - Lights and sirens
@@ -115,24 +170,29 @@ State is updated via the coordinator's 30-second polling cycle.
 
 ### Binary Sensor
 
-Binary sensor entities are created for dry-contact inputs:
+| Entity Type | Description | Updated via |
+| --- | --- | --- |
+| **Input (A–D)** | Dry-contact input with configurable device class | Webhook |
+| **Tamper** | Tamper alarm sensor | Webhook |
+| **Break-in (A–D)** | Break-in alarm per input | Webhook |
 
-| Entity            | Description                             |
-| ----------------- | --------------------------------------- |
-| **Input A**       | Dry-contact input A (device_class: door)|
-| **Input B**       | Dry-contact input B (device_class: door)|
-
-State is updated in real-time via webhook events (`input_a_triggered`,
-`input_a_closed`, etc.).
+Input sensors are **disabled by default** — enable them from the entity
+settings in Home Assistant.
 
 ### Event
 
-An **Access Event** entity fires when access codes are entered:
+An **Access Event** entity fires when access credentials are used:
 
-| Event Type         | Description                              |
-| ------------------ | ---------------------------------------- |
-| `valid_code`       | A valid PIN code was entered.            |
-| `invalid_code`     | An invalid PIN code was entered.         |
+| Event Type | Description |
+| --- | --- |
+| `valid_code` | A valid PIN code was entered. |
+| `invalid_code` | An invalid PIN code was entered. |
+| `valid_card` | A valid card was presented. |
+| `invalid_card` | An invalid card was presented. |
+| `valid_face` | A valid face was recognised. |
+| `invalid_face` | An invalid face recognition attempt. |
+| `valid_qr` | A valid QR code was scanned. |
+| `invalid_qr` | An invalid QR code was scanned. |
 
 Event data includes resolved user identity (`username`, `user_id`,
 `device_user_id`) when available from the device's user cache.
@@ -164,23 +224,23 @@ automation:
           message: "Front door was unlocked!"
 ```
 
-### Known Event Types
+### Event Types
 
-| Event Type             | Description                              |
-| ---------------------- | ---------------------------------------- |
-| `relay_a_triggered`    | Relay A was activated (door opened).     |
-| `relay_a_closed`       | Relay A returned to closed state.        |
-| `relay_b_triggered`    | Relay B was activated.                   |
-| `relay_b_closed`       | Relay B returned to closed state.        |
-| `input_a_triggered`    | Input A was triggered.                   |
-| `input_a_closed`       | Input A returned to closed state.        |
-| `input_b_triggered`    | Input B was triggered.                   |
-| `input_b_closed`       | Input B returned to closed state.        |
-| `valid_code_entered`   | A valid PIN or card code was entered.    |
-| `invalid_code_entered` | An invalid PIN or card code was entered. |
+| Category | Events | Variable |
+| --- | --- | --- |
+| Relay A–D | `relay_{a..d}_triggered` / `_closed` | `$relay1-4status` |
+| Input A–D | `input_{a..d}_triggered` / `_closed` | `$input1-4status` |
+| Code | `valid_code_entered` / `invalid_code_entered` | `$code` |
+| Card | `valid_card_entered` / `invalid_card_entered` | `$card_sn` |
+| Face | `valid_face_recognition` / `invalid_face_recognition` | `$open_type` |
+| QR Code | `valid_qr_code_entered` / `invalid_qr_code_entered` | `$open_type` |
+| Tamper | `tamper_alarm_triggered` | `$alarmstatus` |
+| Break-in A–D | `break_in_alarm_{a..d}` | `$input1-4status` |
+| Call | `make_call` / `hang_up` | `$remote` |
+| Door Timeout A–B | `alarm_door_opened_timeout_{a,b}` | `$relay_id` |
 
-Unrecognized events from the device are emitted as
-`unknown_<normalized_name>` with sanitized query parameters (sensitive
+Unrecognised events from the device are emitted as
+`unknown_<normalized_name>` with sanitised query parameters (sensitive
 fields such as `code` are redacted) as the payload.
 
 ### Event Payload
@@ -200,16 +260,16 @@ fields such as `code` are redacted) as the payload.
 }
 ```
 
-| Field                    | Description                              |
-| ------------------------ | ---------------------------------------- |
-| `device_id`              | HA device registry ID (may be null).     |
-| `config_entry_id`        | Home Assistant config entry ID.          |
-| `event_type`             | Normalized event type string.            |
-| `payload.event`          | Event name from webhook query param.     |
-| `payload.status`         | Relay status (null for code events).     |
-| `payload.device_user_id` | Device-internal user ID (code events).   |
-| `payload.user_id`        | External user identifier (code events).  |
-| `payload.username`       | Display name of the user (code events).  |
+| Field | Description |
+| --- | --- |
+| `device_id` | HA device registry ID (may be null). |
+| `config_entry_id` | Home Assistant config entry ID. |
+| `event_type` | Normalised event type string. |
+| `payload.event` | Event name from webhook query param. |
+| `payload.status` | Relay/input status (null for code events). |
+| `payload.device_user_id` | Device-internal user ID (code events). |
+| `payload.user_id` | External user identifier (code events). |
+| `payload.username` | Display name of the user (code events). |
 
 > **Note:** User identity fields (`device_user_id`, `user_id`,
 > `username`) are populated from a local cache and may be `null` on
@@ -226,12 +286,12 @@ scripts.
 
 ### Schedule Management
 
-| Service                            | Description                    |
-| ---------------------------------- | ------------------------------ |
-| `local_akuvox.list_schedules`      | Retrieve all access schedules. |
-| `local_akuvox.add_schedule`        | Create a new access schedule.  |
-| `local_akuvox.modify_schedule`     | Update an existing schedule.   |
-| `local_akuvox.delete_schedule`     | Remove a schedule.             |
+| Service | Description |
+| --- | --- |
+| `local_akuvox.list_schedules` | Retrieve all access schedules. |
+| `local_akuvox.add_schedule` | Create a new access schedule. |
+| `local_akuvox.modify_schedule` | Update an existing schedule. |
+| `local_akuvox.delete_schedule` | Remove a schedule. |
 
 **Schedule types** (`schedule_type` must be a string):
 
@@ -241,14 +301,32 @@ scripts.
 
 ### User Management
 
-| Service                                   | Description               |
-| ----------------------------------------- | ------------------------- |
-| `local_akuvox.list_users`                 | Retrieve all user codes.  |
-| `local_akuvox.add_user`                   | Create a user (PIN/card). |
-| `local_akuvox.modify_user`                | Update an existing user.  |
-| `local_akuvox.delete_user`                | Remove a user.            |
-| `local_akuvox.add_user_schedule_relay`    | Assign schedule-relay.    |
-| `local_akuvox.remove_user_schedule_relay` | Remove schedule-relay.    |
+| Service | Description |
+| --- | --- |
+| `local_akuvox.list_users` | Retrieve all user codes. |
+| `local_akuvox.add_user` | Create a user (PIN/card). |
+| `local_akuvox.modify_user` | Update an existing user. |
+| `local_akuvox.delete_user` | Remove a user. |
+| `local_akuvox.add_user_schedule_relay` | Assign a schedule-relay pair. |
+| `local_akuvox.remove_user_schedule_relay` | Remove a schedule-relay pair. |
+
+### Contact Management
+
+| Service | Description |
+| --- | --- |
+| `local_akuvox.list_contacts` | Retrieve all contacts. |
+| `local_akuvox.add_contact` | Create a contact. |
+| `local_akuvox.modify_contact` | Update an existing contact. |
+| `local_akuvox.delete_contact` | Remove one or more contacts. |
+
+### Group Management
+
+| Service | Description |
+| --- | --- |
+| `local_akuvox.list_groups` | Retrieve all contact groups. |
+| `local_akuvox.add_group` | Create a contact group. |
+| `local_akuvox.modify_group` | Update a group name. |
+| `local_akuvox.delete_group` | Remove a contact group. |
 
 ### Example: Add a User with PIN Access
 
@@ -299,11 +377,25 @@ Users and schedules provisioned via Akuvox cloud services cannot be
 modified or deleted through this integration. The integration will
 return a clear error message when this is attempted.
 
+## Documentation
+
+Full documentation is available in the
+[Wiki](https://github.com/turzi-org/homeassistant-local-akuvox/wiki):
+
+- [Installation](https://github.com/turzi-org/homeassistant-local-akuvox/wiki/Installation)
+- [Device Setup](https://github.com/turzi-org/homeassistant-local-akuvox/wiki/Device-Setup)
+- [Configuration](https://github.com/turzi-org/homeassistant-local-akuvox/wiki/Configuration)
+- [Webhook Events](https://github.com/turzi-org/homeassistant-local-akuvox/wiki/Webhook-Events)
+- [Services](https://github.com/turzi-org/homeassistant-local-akuvox/wiki/Services)
+- [Troubleshooting](https://github.com/turzi-org/homeassistant-local-akuvox/wiki/Troubleshooting)
+
 ## Credits
 
-This is a fork of [tykeal/homeassistant-local-akuvox](https://github.com/tykeal/homeassistant-local-akuvox)
+This is a fork of
+[tykeal/homeassistant-local-akuvox](https://github.com/tykeal/homeassistant-local-akuvox)
 by Andrew Grimberg. Extended with switch, binary sensor, and event
-entity platforms by [Turzi](https://github.com/turzi-org).
+entity platforms, model-aware configuration, and full event coverage
+by [Turzi](https://github.com/turzi-org).
 
 ## License
 
