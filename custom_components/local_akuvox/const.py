@@ -58,7 +58,7 @@ ACTIONURL_KEYS: Final[dict[str, str]] = {
     "ValidQRCodeEntered": f"{ACTIONURL_PREFIX}.ValidQRCodeEntered",
     "InvalidQRCodeEntered": f"{ACTIONURL_PREFIX}.InvalidQRCodeEntered",
     # Tamper alarm
-    "TamperAlarmTriggered": f"{ACTIONURL_PREFIX}.TamperAlarmTriggered",
+    "TamperAlarmTriggered": f"{ACTIONURL_PREFIX}.AlarmTriggered",
     # Break-in alarms (A-D)
     "BreakInAlarmA": f"{ACTIONURL_PREFIX}.BreakInAlarmA",
     "BreakInAlarmB": f"{ACTIONURL_PREFIX}.BreakInAlarmB",
