@@ -43,6 +43,62 @@
         "data_description": {
           "webhook_enabled": "When enabled, the integration will configure the device to send event notifications (relay triggers, code entry) to Home Assistant."
         }
+      },
+      "entities": {
+        "title": "Entity Configuration",
+        "description": "Configure relays and inputs for your Akuvox device{model}. Leave name blank to use device defaults.",
+        "data": {
+          "relay_a_name": "Relay A — Custom Name",
+          "relay_a_lock": "Relay A — Create Lock Entity",
+          "relay_a_autolatch": "Relay A — Auto-relock After Delay",
+          "relay_a_delay": "Relay A — Hold Delay (seconds)",
+          "relay_b_name": "Relay B — Custom Name",
+          "relay_b_lock": "Relay B — Create Lock Entity",
+          "relay_b_autolatch": "Relay B — Auto-relock After Delay",
+          "relay_b_delay": "Relay B — Hold Delay (seconds)",
+          "relay_c_name": "Relay C — Custom Name",
+          "relay_c_lock": "Relay C — Create Lock Entity",
+          "relay_c_autolatch": "Relay C — Auto-relock After Delay",
+          "relay_c_delay": "Relay C — Hold Delay (seconds)",
+          "relay_d_name": "Relay D — Custom Name",
+          "relay_d_lock": "Relay D — Create Lock Entity",
+          "relay_d_autolatch": "Relay D — Auto-relock After Delay",
+          "relay_d_delay": "Relay D — Hold Delay (seconds)",
+          "input_a_name": "Input A — Custom Name",
+          "input_a_class": "Input A — Sensor Type",
+          "input_b_name": "Input B — Custom Name",
+          "input_b_class": "Input B — Sensor Type",
+          "input_c_name": "Input C — Custom Name",
+          "input_c_class": "Input C — Sensor Type",
+          "input_d_name": "Input D — Custom Name",
+          "input_d_class": "Input D — Sensor Type"
+        },
+        "data_description": {
+          "relay_a_name": "Display name for this relay's lock and switch entities (e.g., 'Front Door', 'Gate').",
+          "relay_a_lock": "When enabled, a Lock entity is created alongside the Switch. Disable for non-lock relays like gates or lights.",
+          "relay_a_autolatch": "Automatically re-lock after the hold delay expires.",
+          "relay_a_delay": "How long the relay stays open before re-locking (1-300 seconds).",
+          "relay_b_name": "Display name for this relay's lock and switch entities.",
+          "relay_b_lock": "When enabled, a Lock entity is created alongside the Switch.",
+          "relay_b_autolatch": "Automatically re-lock after the hold delay expires.",
+          "relay_b_delay": "How long the relay stays open before re-locking (1-300 seconds).",
+          "relay_c_name": "Display name for this relay's lock and switch entities.",
+          "relay_c_lock": "When enabled, a Lock entity is created alongside the Switch.",
+          "relay_c_autolatch": "Automatically re-lock after the hold delay expires.",
+          "relay_c_delay": "How long the relay stays open before re-locking (1-300 seconds).",
+          "relay_d_name": "Display name for this relay's lock and switch entities.",
+          "relay_d_lock": "When enabled, a Lock entity is created alongside the Switch.",
+          "relay_d_autolatch": "Automatically re-lock after the hold delay expires.",
+          "relay_d_delay": "How long the relay stays open before re-locking (1-300 seconds).",
+          "input_a_name": "Display name for this input sensor (e.g., 'Main Door Sensor').",
+          "input_a_class": "Sensor type determines the icon and behavior (door, motion, window, etc.).",
+          "input_b_name": "Display name for this input sensor.",
+          "input_b_class": "Sensor type determines the icon and behavior.",
+          "input_c_name": "Display name for this input sensor.",
+          "input_c_class": "Sensor type determines the icon and behavior.",
+          "input_d_name": "Display name for this input sensor.",
+          "input_d_class": "Sensor type determines the icon and behavior."
+        }
       }
     },
     "error": {

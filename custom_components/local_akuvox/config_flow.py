@@ -331,10 +331,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
             if not errors:
                 model = self._data.pop("_device_model", "Device")
                 self._data[CONF_DEVICE_MODEL] = model
-                return self.async_create_entry(
-                    title=f"Akuvox {model}",
-                    data=self._data,
-                )
+                return await self.async_step_entities()
 
         if user_input is not None and CONF_WEBHOOK_ENABLED in user_input:
             default_enabled = bool(user_input[CONF_WEBHOOK_ENABLED])
@@ -406,6 +403,126 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         async with device:
             await device.set_device_config(payload)  # type: ignore[attr-defined]
 
+    async def async_step_entities(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> Any:
+        """Handle entity configuration during initial setup.
+
+        Shows model-aware relay/input configuration fields so users
+        can set custom names, lock behavior, and sensor types before
+        the entry is created.
+
+        Args:
+            user_input: User input from the form.
+
+        Returns:
+            Flow result for entry creation or form.
+
+        """
+        from .const import (
+            CONF_ENTITY_CONFIG,
+            VALID_INPUT_DEVICE_CLASSES,
+            get_model_capabilities,
+        )
+
+        model = self._data.get(CONF_DEVICE_MODEL, "")
+        caps = get_model_capabilities(model) if model else None
+
+        if user_input is not None:
+            # Parse entity config from flat form fields
+            new_config: dict[str, dict[str, Any]] = {}
+
+            for letter in ["A", "B", "C", "D"]:
+                relay_key = f"relay_{letter.lower()}"
+                name_key = f"relay_{letter.lower()}_name"
+                lock_key = f"relay_{letter.lower()}_lock"
+                autolatch_key = f"relay_{letter.lower()}_autolatch"
+                delay_key = f"relay_{letter.lower()}_delay"
+
+                if name_key in user_input:
+                    new_config[relay_key] = {
+                        "name": user_input[name_key],
+                        "create_lock": user_input.get(lock_key, True),
+                        "autolatch": user_input.get(autolatch_key, True),
+                        "hold_delay": user_input.get(delay_key, 5),
+                    }
+
+                input_key = f"input_{letter.lower()}"
+                input_name_key = f"input_{letter.lower()}_name"
+                input_class_key = f"input_{letter.lower()}_class"
+
+                if input_name_key in user_input:
+                    new_config[input_key] = {
+                        "name": user_input[input_name_key],
+                        "device_class": user_input.get(
+                            input_class_key, "door"
+                        ),
+                    }
+
+            self._data[CONF_ENTITY_CONFIG] = new_config
+
+            return self.async_create_entry(
+                title=f"Akuvox {model}",
+                data=self._data,
+            )
+
+        # Determine relay/input counts from model
+        relay_count = caps["relays"] if caps else 2
+        input_count = caps["inputs"] if caps else 2
+
+        relay_letters = [chr(ord("A") + i) for i in range(relay_count)]
+        input_letters = [chr(ord("A") + i) for i in range(input_count)]
+
+        schema_dict: dict[Any, Any] = {}
+
+        for letter in relay_letters:
+            schema_dict[
+                vol.Optional(
+                    f"relay_{letter.lower()}_name",
+                    default="",
+                )
+            ] = str
+            schema_dict[
+                vol.Required(
+                    f"relay_{letter.lower()}_lock",
+                    default=True,
+                )
+            ] = bool
+            schema_dict[
+                vol.Required(
+                    f"relay_{letter.lower()}_autolatch",
+                    default=True,
+                )
+            ] = bool
+            schema_dict[
+                vol.Required(
+                    f"relay_{letter.lower()}_delay",
+                    default=5,
+                )
+            ] = vol.All(int, vol.Range(min=1, max=300))
+
+        for letter in input_letters:
+            schema_dict[
+                vol.Optional(
+                    f"input_{letter.lower()}_name",
+                    default="",
+                )
+            ] = str
+            schema_dict[
+                vol.Required(
+                    f"input_{letter.lower()}_class",
+                    default="door",
+                )
+            ] = vol.In(VALID_INPUT_DEVICE_CLASSES)
+
+        model_info = f" ({model})" if model else ""
+
+        return self.async_show_form(
+            step_id="entities",
+            data_schema=vol.Schema(schema_dict),
+            description_placeholders={"model": model_info},
+        )
 
 class AkuvoxOptionsFlow(OptionsFlow):
     """Handle options flow for Akuvox integration."""
