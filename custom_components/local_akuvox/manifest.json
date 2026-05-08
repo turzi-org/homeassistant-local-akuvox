@@ -1,11 +1,11 @@
 {
   "domain": "local_akuvox",
-  "name": "Local Akuvox",
-  "codeowners": ["@tykeal"],
+  "name": "Turzi Local Akuvox",
+  "codeowners": ["@sburgues"],
   "config_flow": true,
-  "documentation": "https://github.com/tykeal/homeassistant-local-akuvox",
+  "documentation": "https://github.com/turzi-org/homeassistant-local-akuvox",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/tykeal/homeassistant-local-akuvox/issues",
+  "issue_tracker": "https://github.com/turzi-org/homeassistant-local-akuvox/issues",
   "requirements": ["pylocal-akuvox>=0.3.0"],
-  "version": "0.0.0"
+  "version": "0.1.0"
 }
