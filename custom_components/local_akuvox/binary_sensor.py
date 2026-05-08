@@ -47,7 +47,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up Akuvox binary sensor entities from a config entry."""
     from .coordinator import AkuvoxDataUpdateCoordinator
-    from .const import CONF_ENTITY_CONFIG
+    from .const import CONF_ENTITY_CONFIG, get_model_capabilities
 
     coordinator: AkuvoxDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     mac_clean = (
@@ -56,6 +56,11 @@ async def async_setup_entry(
 
     effective = {**entry.data, **entry.options}
     entity_config = effective.get(CONF_ENTITY_CONFIG, {})
+
+    # Get device capabilities
+    capabilities = get_model_capabilities(coordinator.data.device_info.model)
+    num_inputs = capabilities.get("inputs", 2)
+    has_tamper = capabilities.get("tamper", False)
 
     # Map string device class to enum
     _DEVICE_CLASS_MAP: dict[str, BinarySensorDeviceClass | None] = {
@@ -72,8 +77,9 @@ async def async_setup_entry(
 
     entities: list[BinarySensorEntity] = []
 
-    # Create input sensors for all 4 possible inputs (A-D)
-    for letter in ["A", "B", "C", "D"]:
+    # Create input sensors for all supported inputs
+    for i in range(num_inputs):
+        letter = chr(ord("A") + i)
         input_key = f"input_{letter.lower()}"
         input_opts = entity_config.get(input_key, {})
         custom_name = input_opts.get("name", "")
@@ -91,16 +97,18 @@ async def async_setup_entry(
             )
         )
 
-    # Add tamper alarm sensor
-    entities.append(
-        AkuvoxTamperSensor(
-            coordinator=coordinator,
-            mac_clean=mac_clean,
+    # Add tamper alarm sensor if supported
+    if has_tamper:
+        entities.append(
+            AkuvoxTamperSensor(
+                coordinator=coordinator,
+                mac_clean=mac_clean,
+            )
         )
-    )
 
-    # Add break-in alarm sensors for all 4 possible inputs (A-D)
-    for letter in ["A", "B", "C", "D"]:
+    # Add break-in alarm sensors for all supported inputs
+    for i in range(num_inputs):
+        letter = chr(ord("A") + i)
         entities.append(
             AkuvoxBreakInSensor(
                 coordinator=coordinator,
@@ -155,7 +163,6 @@ class AkuvoxInputSensor(AkuvoxEntity, BinarySensorEntity):
     """Represents an Akuvox dry-contact input as a binary sensor."""
 
     _attr_has_entity_name = True
-    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,
@@ -208,7 +215,6 @@ class AkuvoxTamperSensor(AkuvoxEntity, BinarySensorEntity):
 
     _attr_has_entity_name = True
     _attr_device_class = BinarySensorDeviceClass.TAMPER
-    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,
@@ -247,7 +253,6 @@ class AkuvoxBreakInSensor(AkuvoxEntity, BinarySensorEntity):
 
     _attr_has_entity_name = True
     _attr_device_class = BinarySensorDeviceClass.TAMPER
-    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,

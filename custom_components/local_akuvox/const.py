@@ -6,13 +6,13 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 if TYPE_CHECKING:
     from pylocal_akuvox import AuthMethod
 
 DOMAIN: Final = "local_akuvox"
-PLATFORMS: Final = ["lock", "switch", "binary_sensor", "event"]
+PLATFORMS: Final = ["lock", "switch", "binary_sensor", "event", "number"]
 
 # Webhook config keys
 CONF_WEBHOOK_ID: Final = "webhook_id"
@@ -226,47 +226,48 @@ CONF_DEVICE_MODEL: Final = "device_model"
 
 # Model capabilities — relay and input counts per model
 # Derived from Akuvox "Action URLs Supported by Different Models" spec
-MODEL_CAPABILITIES: Final[dict[str, dict[str, int]]] = {
+MODEL_CAPABILITIES: Final[dict[str, dict[str, int | bool]]] = {
     # S series
-    "S539": {"relays": 3, "inputs": 3},
-    "S535": {"relays": 1, "inputs": 2},
-    "S532": {"relays": 2, "inputs": 4},
+    "S539": {"relays": 3, "inputs": 3, "tamper": False},
+    "S535": {"relays": 1, "inputs": 2, "tamper": False},
+    "S532": {"relays": 2, "inputs": 4, "tamper": False},
     # X series
-    "X916": {"relays": 4, "inputs": 4},
-    "X915": {"relays": 3, "inputs": 3},
-    "X915V2": {"relays": 3, "inputs": 3},
-    "X912": {"relays": 2, "inputs": 3},
-    "X910": {"relays": 2, "inputs": 2},
+    "X916": {"relays": 4, "inputs": 4, "tamper": False},
+    "X915": {"relays": 3, "inputs": 3, "tamper": False},
+    "X915V2": {"relays": 3, "inputs": 3, "tamper": False},
+    "X912": {"relays": 2, "inputs": 3, "tamper": False},
+    "X910": {"relays": 2, "inputs": 2, "tamper": False},
     # R series
-    "R29": {"relays": 3, "inputs": 3},
-    "R28": {"relays": 3, "inputs": 3},
-    "R28V2": {"relays": 3, "inputs": 3},
-    "R20": {"relays": 2, "inputs": 2},
-    "R25": {"relays": 2, "inputs": 2},
+    "R29": {"relays": 3, "inputs": 3, "tamper": False},
+    "R28": {"relays": 3, "inputs": 3, "tamper": False},
+    "R28V2": {"relays": 3, "inputs": 3, "tamper": False},
+    "R20": {"relays": 2, "inputs": 2, "tamper": False},
+    "R25": {"relays": 2, "inputs": 2, "tamper": False},
     # E series
-    "E18": {"relays": 2, "inputs": 3},
-    "E16": {"relays": 1, "inputs": 1},
-    "E16V2": {"relays": 1, "inputs": 1},
-    "E13": {"relays": 1, "inputs": 2},
-    "E12": {"relays": 1, "inputs": 2},
+    "E18": {"relays": 2, "inputs": 3, "tamper": True},
+    "E16": {"relays": 1, "inputs": 1, "tamper": True},
+    "E16V2": {"relays": 1, "inputs": 1, "tamper": True},
+    "E13": {"relays": 1, "inputs": 2, "tamper": False},
+    "E12": {"relays": 1, "inputs": 2, "tamper": False},
     # A series
-    "A095": {"relays": 4, "inputs": 4},
-    "A094": {"relays": 4, "inputs": 0},
-    "A05": {"relays": 1, "inputs": 1},
-    "A03": {"relays": 1, "inputs": 2},
-    "A02": {"relays": 1, "inputs": 2},
-    "A01": {"relays": 1, "inputs": 2},
+    "A095": {"relays": 4, "inputs": 4, "tamper": True},
+    "A094": {"relays": 4, "inputs": 0, "tamper": True},
+    "A05": {"relays": 1, "inputs": 1, "tamper": True},
+    "A03": {"relays": 1, "inputs": 2, "tamper": True},
+    "A02": {"relays": 1, "inputs": 2, "tamper": True},
+    "A01": {"relays": 1, "inputs": 2, "tamper": True},
 }
 
 # Default capabilities when model is unknown
-DEFAULT_MODEL_CAPABILITIES: Final[dict[str, int]] = {
+DEFAULT_MODEL_CAPABILITIES: Final[dict[str, int | bool]] = {
     "relays": 2,
     "inputs": 2,
+    "tamper": False,
 }
 
 
-def get_model_capabilities(model: str) -> dict[str, int]:
-    """Look up relay/input counts for a model name.
+def get_model_capabilities(model: str) -> dict[str, Any]:
+    """Look up capabilities for a model name.
 
     Performs fuzzy matching: tries exact match first, then checks
     if the model string starts with a known prefix (e.g., "R29S"
@@ -276,7 +277,7 @@ def get_model_capabilities(model: str) -> dict[str, int]:
         model: The device model string from get_info().
 
     Returns:
-        Dict with 'relays' and 'inputs' counts.
+        Dict with 'relays', 'inputs' counts, and 'tamper' flag.
 
     """
     # Exact match
