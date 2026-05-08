@@ -53,8 +53,9 @@ class AkuvoxRebootButton(AkuvoxEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Handle the button press."""
         try:
-            # We access the internal _http client since pylocal-akuvox
-            # doesn't expose a dedicated reboot() method yet.
-            await self.coordinator.device._http.post("/api/system/reboot")
+            await self.coordinator.device._http.post(
+                "/api/system/reboot",
+                data={"target": "system", "action": "reboot"},
+            )
         except AkuvoxError as err:
             raise HomeAssistantError(f"Failed to reboot device: {err}") from err
