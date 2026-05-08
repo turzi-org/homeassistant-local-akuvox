@@ -475,7 +475,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
             ) from err
         self._optimistic_locked = False
         self.async_write_ha_state()
-        self._schedule_delayed_refresh(hold_delay)
+        if self._config_autolatch:
+            self._schedule_delayed_refresh(hold_delay)
 
     def _schedule_delayed_refresh(
         self,
