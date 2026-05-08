@@ -3,24 +3,31 @@ SPDX-FileCopyrightText: 2026 Andrew Grimberg <tykeal@bardicgrove.org>
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Local Akuvox Integration for Home Assistant
+# Turzi Local Akuvox — Home Assistant Integration
 
 [![HACS][hacs-badge]][hacs-url]
 [![GitHub Release][release-badge]][release-url]
 [![License][license-badge]][license-url]
-[![Build Status][build-badge]][build-url]
 
 A [Home Assistant](https://www.home-assistant.io/) custom integration for
 locally controlling [Akuvox](https://www.akuvox.com/) intercoms and access
 control devices. All communication happens over your local network — no
 cloud services required.
 
+> **Fork of [tykeal/homeassistant-local-akuvox](https://github.com/tykeal/homeassistant-local-akuvox)** with extended entity support: switches, binary sensors, and event entities.
+
 ## Features
 
-- **Lock Entities** — One lock entity per relay on your device. Unlock
-  doors and gates directly from Home Assistant.
-- **Webhook Events** — Receive real-time notifications when relays
-  trigger, codes are entered, or inputs change state.
+- **Lock Entities** — One lock entity per relay. Unlock doors and gates
+  directly from Home Assistant.
+- **Switch Entities** — Relays as simple on/off switches for gates,
+  lights, or other non-lock devices (manual toggle mode).
+- **Binary Sensor Entities** — Dry-contact inputs (door, window, motion)
+  with real-time state updates via webhooks.
+- **Event Entities** — Access events (valid/invalid code entry) as
+  proper HA Event entities for easy automation.
+- **Webhook Events** — Real-time notifications when relays trigger,
+  codes are entered, or inputs change state.
 - **User & Schedule Management** — Full CRUD services for managing
   access codes, user PINs, card codes, and time-based schedules.
 - **Local Polling** — Device state updates every 30 seconds via direct
@@ -34,7 +41,7 @@ cloud services required.
 
 - Home Assistant 2026.2.0 or later
 - An Akuvox intercom or access control device with HTTP API access
-  (e.g., E21V, R29, or similar models)
+  (e.g., E16V2, E18, A02, S535, R29, or similar models)
 - Network connectivity between Home Assistant and the device
 
 ## Installation
@@ -44,9 +51,9 @@ cloud services required.
 1. Open HACS in Home Assistant.
 2. Go to **Integrations** → click the three-dot menu → **Custom
    repositories**.
-3. Add `https://github.com/tykeal/homeassistant-local-akuvox` with
+3. Add `https://github.com/turzi-org/homeassistant-local-akuvox` with
    category **Integration**.
-4. Search for "Local Akuvox" and install it.
+4. Search for **"Turzi Local Akuvox"** and install it.
 5. Restart Home Assistant.
 
 ### Manual
@@ -62,7 +69,7 @@ cloud services required.
 ### Adding the Integration
 
 1. Go to **Settings** → **Devices & Services** → **Add Integration**.
-2. Search for **Local Akuvox**.
+2. Search for **Turzi Local Akuvox**.
 3. Follow the setup wizard:
 
 | Step                   | Description                                     |
@@ -75,7 +82,7 @@ cloud services required.
 
 ### Reconfiguration
 
-Go to **Settings** → **Devices & Services** → **Local Akuvox** →
+Go to **Settings** → **Devices & Services** → **Turzi Local Akuvox** →
 **Configure**
 to update connection settings, authentication, or webhook configuration
 at any time.
@@ -90,10 +97,45 @@ A, Relay B). Each lock entity supports:
 | Action     | Description                                              |
 | ---------- | -------------------------------------------------------- |
 | **Unlock** | Triggers the relay for the configured hold duration.     |
-| **Lock**   | Not supported — relay closure depends on device config.  |
+| **Lock**   | Mode-aware: auto-close refreshes state, bistable sends command. |
 
 Entity names are derived from the device configuration. If a relay has
 a custom name configured on the device, that name is used.
+
+### Switch
+
+One `switch` entity is created for each relay, providing simple on/off
+control using manual mode (`mode=1`). Ideal for relays controlling:
+
+- Gates and barriers
+- Lights and sirens
+- Any device that should stay on/off until toggled
+
+State is updated via the coordinator's 30-second polling cycle.
+
+### Binary Sensor
+
+Binary sensor entities are created for dry-contact inputs:
+
+| Entity            | Description                             |
+| ----------------- | --------------------------------------- |
+| **Input A**       | Dry-contact input A (device_class: door)|
+| **Input B**       | Dry-contact input B (device_class: door)|
+
+State is updated in real-time via webhook events (`input_a_triggered`,
+`input_a_closed`, etc.).
+
+### Event
+
+An **Access Event** entity fires when access codes are entered:
+
+| Event Type         | Description                              |
+| ------------------ | ---------------------------------------- |
+| `valid_code`       | A valid PIN code was entered.            |
+| `invalid_code`     | An invalid PIN code was entered.         |
+
+Event data includes resolved user identity (`username`, `user_id`,
+`device_user_id`) when available from the device's user cache.
 
 ## Webhook Events
 
@@ -231,6 +273,8 @@ data:
 - If using authentication, confirm the credentials are correct.
 - If using SSL, try disabling certificate verification to rule out
   certificate issues.
+- Check **Settings → System → Logs** for detailed error messages
+  (connection errors are logged at WARNING level).
 
 ### Webhook events not received
 
@@ -255,6 +299,12 @@ Users and schedules provisioned via Akuvox cloud services cannot be
 modified or deleted through this integration. The integration will
 return a clear error message when this is attempted.
 
+## Credits
+
+This is a fork of [tykeal/homeassistant-local-akuvox](https://github.com/tykeal/homeassistant-local-akuvox)
+by Andrew Grimberg. Extended with switch, binary sensor, and event
+entity platforms by [Turzi](https://github.com/turzi-org).
+
 ## License
 
 This project is licensed under the Apache License 2.0. See the
@@ -263,9 +313,7 @@ This project is licensed under the Apache License 2.0. See the
 
 [hacs-badge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg
 [hacs-url]: https://hacs.xyz/
-[release-badge]: https://img.shields.io/github/v/release/tykeal/homeassistant-local-akuvox
-[release-url]: https://github.com/tykeal/homeassistant-local-akuvox/releases
-[license-badge]: https://img.shields.io/github/license/tykeal/homeassistant-local-akuvox
-[license-url]: https://github.com/tykeal/homeassistant-local-akuvox/blob/main/LICENSE
-[build-badge]: https://img.shields.io/github/actions/workflow/status/tykeal/homeassistant-local-akuvox/build-test.yaml?branch=main
-[build-url]: https://github.com/tykeal/homeassistant-local-akuvox/actions/workflows/build-test.yaml
+[release-badge]: https://img.shields.io/github/v/release/turzi-org/homeassistant-local-akuvox
+[release-url]: https://github.com/turzi-org/homeassistant-local-akuvox/releases
+[license-badge]: https://img.shields.io/github/license/turzi-org/homeassistant-local-akuvox
+[license-url]: https://github.com/turzi-org/homeassistant-local-akuvox/blob/main/LICENSE
