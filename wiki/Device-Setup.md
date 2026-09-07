@@ -93,7 +93,10 @@ If your device supports HTTPS:
 2. Enable HTTPS and install a certificate if required.
 3. Note whether the device uses a self-signed certificate — you will
    need this information during integration setup (the wizard will
-   ask whether to verify the SSL certificate).
+   ask whether to verify the SSL certificate). Devices that ship
+   with the factory certificate cannot be verified; the wizard
+   disables verification for them automatically when it detects an
+   HTTPS-only device.
 
 Using HTTPS is especially important when:
 

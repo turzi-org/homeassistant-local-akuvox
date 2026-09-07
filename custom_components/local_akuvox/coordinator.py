@@ -24,6 +24,7 @@ from pylocal_akuvox import (
     AkuvoxDeviceError,
     AkuvoxError,
     AkuvoxParseError,
+    AkuvoxUnsupportedError,
     DeviceInfo,
     User,
 )
@@ -441,6 +442,11 @@ class AkuvoxDataUpdateCoordinator(
             raise UpdateFailed(
                 f"Parse error: {err}",
             ) from err
+        except AkuvoxUnsupportedError as err:
+            self._was_unavailable = True
+            raise UpdateFailed(
+                f"Unsupported by device: {err}",
+            ) from err
 
         if self._cached_device_info is None:
             try:
@@ -453,6 +459,7 @@ class AkuvoxDataUpdateCoordinator(
                 AkuvoxConnectionError,
                 AkuvoxDeviceError,
                 AkuvoxParseError,
+                AkuvoxUnsupportedError,
             ) as err:
                 raise UpdateFailed(
                     f"Failed to get device info: {err}",

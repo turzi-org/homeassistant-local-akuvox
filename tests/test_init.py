@@ -13,7 +13,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.local_akuvox.const import CONFIG_KEY_LOCATION, DOMAIN
+from custom_components.local_akuvox import _create_device
+from custom_components.local_akuvox.const import (
+    AUTH_NONE,
+    CONF_AUTH_METHOD,
+    CONF_HOST,
+    CONF_USE_SSL,
+    CONF_VERIFY_SSL,
+    CONFIG_KEY_LOCATION,
+    DOMAIN,
+)
 from tests.conftest import MOCK_MAC
 
 
@@ -106,7 +115,7 @@ async def test_setup_fails_on_connection_error(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -409,7 +418,7 @@ async def test_remove_entry_pushes_disable_when_enabled(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -428,7 +437,7 @@ async def test_remove_entry_pushes_disable_when_enabled(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_remove_cls:
         remove_dev = mock_remove_cls.return_value
@@ -458,7 +467,7 @@ async def test_remove_entry_skips_when_disabled(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -476,7 +485,7 @@ async def test_remove_entry_skips_when_disabled(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_remove_cls:
         remove_dev = mock_remove_cls.return_value
@@ -506,7 +515,7 @@ async def test_remove_entry_handles_push_failure(
     entry.add_to_hass(hass)
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -524,7 +533,7 @@ async def test_remove_entry_handles_push_failure(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_remove_cls:
         remove_dev = mock_remove_cls.return_value
@@ -537,3 +546,29 @@ async def test_remove_entry_handles_push_failure(
         # Should not raise — best-effort
         await hass.config_entries.async_remove(entry.entry_id)
         await hass.async_block_till_done()
+
+
+async def test_create_device_prefers_options_over_data(
+    hass: HomeAssistant,
+    mock_config_entry_data_none: dict[str, Any],
+) -> None:
+    """Connection settings changed in the options flow win over setup data."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_config_entry_data_none,
+        options={
+            CONF_HOST: "10.0.15.20",
+            CONF_USE_SSL: True,
+            CONF_VERIFY_SSL: False,
+        },
+    )
+
+    with patch("custom_components.local_akuvox.create_device") as mock_create:
+        device = _create_device(entry)
+
+    assert device is mock_create.return_value
+    config = mock_create.call_args.args[0]
+    assert config[CONF_HOST] == "10.0.15.20"
+    assert config[CONF_USE_SSL] is True
+    assert config[CONF_VERIFY_SSL] is False
+    assert config[CONF_AUTH_METHOD] == AUTH_NONE

@@ -100,8 +100,8 @@ Unknown models default to 2 relays and 2 inputs.
 
 | Step | Description |
 | --- | --- |
-| **Device Connection** | Enter the IP/hostname and whether to use SSL. |
-| **SSL Options** | Choose whether to verify the SSL certificate. |
+| **Device Connection** | Enter the IP/hostname. Leave **Use SSL** off to auto-detect: devices that only accept HTTPS (for example the S535) are switched to SSL automatically. |
+| **SSL Options** | Shown when **Use SSL** is on. Akuvox devices ship a self-signed certificate, so keep verification off unless you installed a trusted certificate on the device. |
 | **Authentication** | Select: None / AllowList, Basic, or Digest. |
 | **Credentials** | Enter username and password (if required). |
 | **Webhook Events** | Optionally enable webhook event delivery. |
@@ -349,10 +349,23 @@ data:
   Home Assistant host.
 - Check that the HTTP API is enabled on the device.
 - If using authentication, confirm the credentials are correct.
-- If using SSL, try disabling certificate verification to rule out
-  certificate issues.
+- With **Use SSL** off, devices that redirect to HTTPS are detected and
+  switched to SSL automatically. Their factory self-signed certificate
+  cannot be verified, so verification is turned off for them and a
+  warning is logged.
+- If you turned **Use SSL** on with certificate verification, the
+  wizard reports that the certificate could not be verified; turn
+  verification off to continue.
 - Check **Settings → System → Logs** for detailed error messages
   (connection errors are logged at WARNING level).
+
+### Failed to push webhook configuration
+
+- Earlier versions refused every configuration write for models that
+  the pylocal-akuvox capability matrix does not list (for example the
+  S535). The integration now opts in to those capabilities on every
+  connection and lets the device report what it does not support;
+  update and retry.
 
 ### Webhook events not received
 

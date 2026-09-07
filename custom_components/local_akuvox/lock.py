@@ -38,6 +38,7 @@ from .const import (
     RELAY_KEY_RE,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
+from .device import async_trigger_relay
 from .entity import AkuvoxEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -378,7 +379,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         )
         relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
         try:
-            await self.coordinator.device.trigger_relay(
+            await async_trigger_relay(
+                self.coordinator.device,
                 num=self._relay_number,
                 delay=hold_delay,
                 level=relay_type,
@@ -449,7 +451,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
 
             relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
             try:
-                await self.coordinator.device.trigger_relay(
+                await async_trigger_relay(
+                    self.coordinator.device,
                     num=self._relay_number,
                     delay=0,
                     level=relay_type,
@@ -469,7 +472,8 @@ class AkuvoxLockEntity(AkuvoxEntity, LockEntity):
         
         relay_type = relay_cfg.relay_type if relay_cfg else DEFAULT_RELAY_TYPE
         try:
-            await self.coordinator.device.trigger_relay(
+            await async_trigger_relay(
+                self.coordinator.device,
                 num=self._relay_number,
                 delay=hold_delay,
                 level=relay_type,

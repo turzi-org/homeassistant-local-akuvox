@@ -7,18 +7,18 @@ from __future__ import annotations
 
 import logging
 import secrets
-from typing import Any
+import ssl
+from typing import TYPE_CHECKING, Any
 
+import aiohttp
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pylocal_akuvox import (
     AkuvoxAuthenticationError,
     AkuvoxConnectionError,
-    AkuvoxDevice,
     AkuvoxError,
-    AuthConfig,
-    AuthMethod,
 )
 
 from .const import (
@@ -35,11 +35,112 @@ from .const import (
     CONF_WEBHOOK_ENABLED,
     CONF_WEBHOOK_ID,
     DOMAIN,
-    get_auth_method_map,
 )
+from .device import create_device
 from .webhook import build_action_urls
 
+if TYPE_CHECKING:
+    from pylocal_akuvox import DeviceInfo
+
 _LOGGER = logging.getLogger(__name__)
+
+# Path probed over plain HTTP to learn whether the device enforces HTTPS.
+_HTTPS_PROBE_PATH = "/api/system/info"
+_HTTPS_PROBE_TIMEOUT = aiohttp.ClientTimeout(total=10)
+_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
+# Upper bound when walking an exception's cause chain.
+_MAX_CAUSE_DEPTH = 10
+
+_USER_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_HOST): str,
+        vol.Required(CONF_USE_SSL, default=False): bool,
+    }
+)
+_AUTH_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_AUTH_METHOD, default=AUTH_NONE): vol.In(
+            [AUTH_NONE, AUTH_BASIC, AUTH_DIGEST]
+        ),
+    }
+)
+_CREDENTIALS_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_USERNAME): str,
+        vol.Required(CONF_PASSWORD): str,
+    }
+)
+
+
+def _ssl_schema(verify_ssl: bool) -> vol.Schema:
+    """Build the SSL options schema with the given verification default.
+
+    Args:
+        verify_ssl: Default for the certificate verification toggle.
+
+    Returns:
+        The voluptuous schema for the SSL step.
+
+    """
+    return vol.Schema({vol.Required(CONF_VERIFY_SSL, default=verify_ssl): bool})
+
+
+async def _async_device_requires_https(hass: HomeAssistant, host: str) -> bool:
+    """Return True when the device redirects plain HTTP to HTTPS.
+
+    Akuvox firmware that enforces HTTPS answers every HTTP request with
+    a permanent redirect to the same path on port 443. Following that
+    redirect blindly fails on the factory self-signed certificate, so
+    the flow detects the redirect up front and switches to HTTPS
+    itself. Any transport failure returns False so the regular
+    connection attempt can report the real problem.
+
+    Args:
+        hass: The Home Assistant instance.
+        host: Device host name or IP address, optionally with a port.
+
+    Returns:
+        Whether the device answered with a redirect to an HTTPS URL.
+
+    """
+    session = async_get_clientsession(hass)
+    try:
+        async with session.get(
+            f"http://{host}{_HTTPS_PROBE_PATH}",
+            allow_redirects=False,
+            timeout=_HTTPS_PROBE_TIMEOUT,
+        ) as resp:
+            location = resp.headers.get("Location", "")
+            return (
+                resp.status in _REDIRECT_STATUSES
+                and location.lower().startswith("https://")
+            )
+    except (aiohttp.ClientError, TimeoutError):
+        return False
+
+
+def _is_certificate_error(err: BaseException) -> bool:
+    """Return True when a connection error stems from certificate checks.
+
+    Args:
+        err: The exception raised by the library.
+
+    Returns:
+        Whether a TLS certificate verification failure is in its
+        cause chain.
+
+    """
+    current: BaseException | None = err
+    for _ in range(_MAX_CAUSE_DEPTH):
+        if current is None:
+            return False
+        if isinstance(
+            current,
+            (ssl.SSLCertVerificationError, aiohttp.ClientConnectorCertificateError),
+        ):
+            return True
+        current = current.__cause__ or current.__context__
+    return False
 
 
 class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -81,26 +182,13 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
 
         """
         if user_input is None:
-            return self.async_show_form(
-                step_id="user",
-                data_schema=vol.Schema(
-                    {
-                        vol.Required(CONF_HOST): str,
-                        vol.Required(CONF_USE_SSL, default=False): bool,
-                    }
-                ),
-            )
+            return self.async_show_form(step_id="user", data_schema=_USER_SCHEMA)
 
         host = user_input.get(CONF_HOST, "")
         if not host or not host.strip():
             return self.async_show_form(
                 step_id="user",
-                data_schema=vol.Schema(
-                    {
-                        vol.Required(CONF_HOST): str,
-                        vol.Required(CONF_USE_SSL, default=False): bool,
-                    }
-                ),
+                data_schema=_USER_SCHEMA,
                 errors={"base": "invalid_host"},
             )
 
@@ -127,14 +215,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
 
         """
         if user_input is None:
-            return self.async_show_form(
-                step_id="ssl",
-                data_schema=vol.Schema(
-                    {
-                        vol.Required(CONF_VERIFY_SSL, default=True): bool,
-                    }
-                ),
-            )
+            return self.async_show_form(step_id="ssl", data_schema=_ssl_schema(True))
 
         self._data.update(user_input)
         return await self.async_step_auth()
@@ -153,16 +234,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
 
         """
         if user_input is None:
-            return self.async_show_form(
-                step_id="auth",
-                data_schema=vol.Schema(
-                    {
-                        vol.Required(CONF_AUTH_METHOD, default=AUTH_NONE): vol.In(
-                            [AUTH_NONE, AUTH_BASIC, AUTH_DIGEST]
-                        ),
-                    }
-                ),
-            )
+            return self.async_show_form(step_id="auth", data_schema=_AUTH_SCHEMA)
 
         self._data.update(user_input)
 
@@ -189,105 +261,209 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is None:
             return self.async_show_form(
                 step_id="credentials",
-                data_schema=vol.Schema(
-                    {
-                        vol.Required(CONF_USERNAME): str,
-                        vol.Required(CONF_PASSWORD): str,
-                    }
-                ),
+                data_schema=_CREDENTIALS_SCHEMA,
             )
 
         self._data.update(user_input)
         return await self._async_test_connection()
 
+    async def _async_connection_attempts(self) -> list[tuple[bool, bool]]:
+        """Return the ``(use_ssl, verify_ssl)`` combinations to try, in order.
+
+        The user's own choice is always honoured as-is. When SSL is off
+        but the device turns out to enforce HTTPS, the flow tries HTTPS
+        with certificate verification first and without it second:
+        Akuvox devices ship a factory self-signed certificate that no
+        trust store accepts, so a verified handshake only succeeds when
+        the owner installed their own certificate on the device.
+
+        Returns:
+            The SSL settings to attempt, most secure first.
+
+        """
+        use_ssl = bool(self._data.get(CONF_USE_SSL, False))
+        verify_ssl = bool(self._data.get(CONF_VERIFY_SSL, True))
+        if use_ssl:
+            return [(True, verify_ssl)]
+        if await _async_device_requires_https(self.hass, self._data[CONF_HOST]):
+            return [(True, True), (True, False)]
+        return [(False, verify_ssl)]
+
+    async def _async_fetch_info(
+        self,
+        *,
+        use_ssl: bool,
+        verify_ssl: bool,
+    ) -> DeviceInfo:
+        """Open a session with the given SSL settings and read device info.
+
+        Args:
+            use_ssl: Whether to connect over HTTPS.
+            verify_ssl: Whether to verify the device certificate.
+
+        Returns:
+            The device identification data.
+
+        """
+        settings = {
+            **self._data,
+            CONF_USE_SSL: use_ssl,
+            CONF_VERIFY_SSL: verify_ssl,
+        }
+        device = create_device(settings)
+        async with device:
+            return await device.get_info()
+
+    def _log_connection_failure(self, err: Exception, error_key: str) -> None:
+        """Log a failed connection test with the settings that were used.
+
+        Args:
+            err: The exception raised by the library.
+            error_key: The form error that will be shown to the user.
+
+        """
+        _LOGGER.warning(
+            "Connection test for Akuvox device at %s failed with %s "
+            "(ssl=%s, verify_ssl=%s, auth=%s, user=%s): %s",
+            self._data[CONF_HOST],
+            error_key,
+            self._data.get(CONF_USE_SSL, False),
+            self._data.get(CONF_VERIFY_SSL, True),
+            self._data.get(CONF_AUTH_METHOD, AUTH_NONE),
+            self._data.get(CONF_USERNAME, ""),
+            err,
+            exc_info=error_key == "unknown",
+        )
+
+    def _connection_error_key(
+        self,
+        err: AkuvoxConnectionError,
+        *,
+        retry_allowed: bool,
+    ) -> str | None:
+        """Map a connection error to a form error, or ``None`` to retry.
+
+        Args:
+            err: The connection error raised by the library.
+            retry_allowed: Whether a less strict attempt is still queued.
+
+        Returns:
+            The form error to show, or ``None`` when the next attempt
+            should run instead.
+
+        """
+        if not _is_certificate_error(err):
+            self._log_connection_failure(err, "cannot_connect")
+            return "cannot_connect"
+        if retry_allowed:
+            _LOGGER.debug(
+                "Certificate of Akuvox device at %s failed verification; "
+                "retrying without verification",
+                self._data[CONF_HOST],
+            )
+            return None
+        self._log_connection_failure(err, "ssl_verify_failed")
+        return "ssl_verify_failed"
+
+    def _apply_ssl_settings(self, *, use_ssl: bool, verify_ssl: bool) -> None:
+        """Store the SSL settings that worked, noting any automatic change.
+
+        Args:
+            use_ssl: Whether the successful attempt used HTTPS.
+            verify_ssl: Whether it verified the device certificate.
+
+        """
+        if use_ssl and not self._data.get(CONF_USE_SSL, False):
+            if verify_ssl:
+                _LOGGER.info(
+                    "Akuvox device at %s enforces HTTPS; the connection was "
+                    "switched to SSL",
+                    self._data[CONF_HOST],
+                )
+            else:
+                _LOGGER.warning(
+                    "Akuvox device at %s enforces HTTPS with a certificate "
+                    "that cannot be verified; SSL certificate verification "
+                    "was disabled for this device",
+                    self._data[CONF_HOST],
+                )
+        self._data[CONF_USE_SSL] = use_ssl
+        self._data[CONF_VERIFY_SSL] = verify_ssl
+
+    async def _async_probe_device(self) -> tuple[DeviceInfo | None, str | None]:
+        """Try each SSL combination in turn until one connects.
+
+        Returns:
+            ``(info, None)`` on success, or ``(None, error_key)`` naming
+            the form error to show.
+
+        """
+        attempts = await self._async_connection_attempts()
+        last_index = len(attempts) - 1
+        for index, (use_ssl, verify_ssl) in enumerate(attempts):
+            try:
+                info = await self._async_fetch_info(
+                    use_ssl=use_ssl,
+                    verify_ssl=verify_ssl,
+                )
+            except AkuvoxConnectionError as err:
+                error_key = self._connection_error_key(
+                    err,
+                    retry_allowed=index < last_index,
+                )
+                if error_key is None:
+                    continue
+                return None, error_key
+            except AkuvoxAuthenticationError as err:
+                self._log_connection_failure(err, "invalid_auth")
+                return None, "invalid_auth"
+            except AkuvoxError as err:
+                self._log_connection_failure(err, "unknown")
+                return None, "unknown"
+            self._apply_ssl_settings(use_ssl=use_ssl, verify_ssl=verify_ssl)
+            return info, None
+        return None, "cannot_connect"
+
+    def _show_connection_error(self, error_key: str) -> Any:
+        """Show the step that can fix a failed connection test.
+
+        Args:
+            error_key: The form error to display.
+
+        Returns:
+            Flow result for the form to show again.
+
+        """
+        errors = {"base": error_key}
+        if error_key == "ssl_verify_failed":
+            return self.async_show_form(
+                step_id="ssl",
+                data_schema=_ssl_schema(bool(self._data.get(CONF_VERIFY_SSL, True))),
+                errors=errors,
+            )
+        if self._data.get(CONF_AUTH_METHOD) in (AUTH_BASIC, AUTH_DIGEST):
+            return self.async_show_form(
+                step_id="credentials",
+                data_schema=_CREDENTIALS_SCHEMA,
+                errors=errors,
+            )
+        return self.async_show_form(
+            step_id="auth",
+            data_schema=_AUTH_SCHEMA,
+            errors=errors,
+        )
+
     async def _async_test_connection(self) -> Any:
         """Test connection to the Akuvox device.
 
         Returns:
-            Flow result for entry creation, abort, or form with errors.
+            Flow result for the webhook step, an abort, or a form with
+            errors.
 
         """
-        errors: dict[str, str] = {}
-
-        auth_method_str = self._data.get(CONF_AUTH_METHOD, AUTH_NONE)
-        auth_method = get_auth_method_map().get(auth_method_str, AuthMethod.NONE)
-
-        auth_config: AuthConfig | None = None
-        if auth_method in (AuthMethod.BASIC, AuthMethod.DIGEST):
-            auth_config = AuthConfig(
-                method=auth_method,
-                username=self._data.get(CONF_USERNAME, ""),
-                password=self._data.get(CONF_PASSWORD, ""),
-            )
-        else:
-            auth_config = AuthConfig(method=auth_method)
-
-        device = AkuvoxDevice(
-            host=self._data[CONF_HOST],
-            auth=auth_config,
-            use_ssl=self._data.get(CONF_USE_SSL, False),
-            verify_ssl=self._data.get(CONF_VERIFY_SSL, True),
-        )
-
-        try:
-            async with device:
-                info = await device.get_info()
-        except AkuvoxConnectionError as err:
-            _LOGGER.warning(
-                "Failed to connect to Akuvox device at %s "
-                "(ssl=%s, auth=%s): %s",
-                self._data[CONF_HOST],
-                self._data.get(CONF_USE_SSL, False),
-                self._data.get(CONF_AUTH_METHOD, AUTH_NONE),
-                err,
-            )
-            errors["base"] = "cannot_connect"
-        except AkuvoxAuthenticationError as err:
-            _LOGGER.warning(
-                "Authentication failed for Akuvox device at %s "
-                "(auth=%s, user=%s): %s",
-                self._data[CONF_HOST],
-                self._data.get(CONF_AUTH_METHOD, AUTH_NONE),
-                self._data.get(CONF_USERNAME, ""),
-                err,
-            )
-            errors["base"] = "invalid_auth"
-        except AkuvoxError as err:
-            _LOGGER.warning(
-                "Unexpected error connecting to Akuvox device at %s: %s",
-                self._data[CONF_HOST],
-                err,
-                exc_info=True,
-            )
-            errors["base"] = "unknown"
-
-        if errors:
-            # Go back to the appropriate step
-            if self._data.get(CONF_AUTH_METHOD) in (
-                AUTH_BASIC,
-                AUTH_DIGEST,
-            ):
-                return self.async_show_form(
-                    step_id="credentials",
-                    data_schema=vol.Schema(
-                        {
-                            vol.Required(CONF_USERNAME): str,
-                            vol.Required(CONF_PASSWORD): str,
-                        }
-                    ),
-                    errors=errors,
-                )
-            return self.async_show_form(
-                step_id="auth",
-                data_schema=vol.Schema(
-                    {
-                        vol.Required(CONF_AUTH_METHOD, default=AUTH_NONE): vol.In(
-                            [AUTH_NONE, AUTH_BASIC, AUTH_DIGEST]
-                        ),
-                    }
-                ),
-                errors=errors,
-            )
+        info, error_key = await self._async_probe_device()
+        if info is None:
+            return self._show_connection_error(error_key or "cannot_connect")
 
         mac_clean = info.mac_address.lower().replace(":", "")
         await self.async_set_unique_id(mac_clean)
@@ -375,33 +551,9 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         payload = enable_payload if enable else disable_payload
 
-        auth_method_str = self._data.get(
-            CONF_AUTH_METHOD,
-            AUTH_NONE,
-        )
-        auth_method = get_auth_method_map().get(
-            auth_method_str,
-            AuthMethod.NONE,
-        )
-
-        auth_config: AuthConfig | None = None
-        if auth_method in (AuthMethod.BASIC, AuthMethod.DIGEST):
-            auth_config = AuthConfig(
-                method=auth_method,
-                username=self._data.get(CONF_USERNAME, ""),
-                password=self._data.get(CONF_PASSWORD, ""),
-            )
-        else:
-            auth_config = AuthConfig(method=auth_method)
-
-        device = AkuvoxDevice(
-            host=self._data[CONF_HOST],
-            auth=auth_config,
-            use_ssl=self._data.get(CONF_USE_SSL, False),
-            verify_ssl=self._data.get(CONF_VERIFY_SSL, True),
-        )
+        device = create_device(self._data)
         async with device:
-            await device.set_device_config(payload)  # type: ignore[attr-defined]
+            await device.set_device_config(payload)
 
     async def async_step_entities(
         self,
@@ -777,41 +929,10 @@ class AkuvoxOptionsFlow(OptionsFlow):
 
         # Use merged settings for device connection
         effective = {**current, **user_input}
-        auth_method_str = effective.get(
-            CONF_AUTH_METHOD,
-            AUTH_NONE,
-        )
-        auth_method = get_auth_method_map().get(
-            auth_method_str,
-            AuthMethod.NONE,
-        )
-
-        auth_config: AuthConfig | None = None
-        if auth_method in (AuthMethod.BASIC, AuthMethod.DIGEST):
-            auth_config = AuthConfig(
-                method=auth_method,
-                username=str(
-                    effective.get(CONF_USERNAME, ""),
-                ),
-                password=str(
-                    effective.get(CONF_PASSWORD, ""),
-                ),
-            )
-        else:
-            auth_config = AuthConfig(method=auth_method)
-
-        device = AkuvoxDevice(
-            host=str(effective.get(CONF_HOST, "")),
-            auth=auth_config,
-            use_ssl=bool(effective.get(CONF_USE_SSL, False)),
-            verify_ssl=bool(
-                effective.get(CONF_VERIFY_SSL, True),
-            ),
-        )
-
         try:
+            device = create_device(effective)
             async with device:
-                await device.set_device_config(payload)  # type: ignore[attr-defined]
+                await device.set_device_config(payload)
         except Exception:
             return "webhook_push_failed"
 

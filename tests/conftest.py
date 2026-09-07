@@ -67,6 +67,17 @@ def mock_webhook_url() -> Generator[None]:
         yield
 
 
+@pytest.fixture(autouse=True)
+def mock_https_probe() -> Generator[AsyncMock]:
+    """Assume devices answer plain HTTP unless a test says otherwise."""
+    with patch(
+        "custom_components.local_akuvox.config_flow._async_device_requires_https",
+        new_callable=AsyncMock,
+        return_value=False,
+    ) as probe:
+        yield probe
+
+
 @pytest.fixture
 def mock_device_info() -> DeviceInfo:
     """Return a mock DeviceInfo object."""
@@ -211,7 +222,7 @@ def mock_akuvox_device(
 ) -> Generator[AsyncMock]:
     """Return a mocked AkuvoxDevice."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value

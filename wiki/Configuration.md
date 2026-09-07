@@ -13,7 +13,7 @@ SPDX-License-Identifier: Apache-2.0
 
 | Step                   | Description                                     |
 | ---------------------- | ----------------------------------------------- |
-| **Device Connection**  | Enter the IP/hostname and whether to use SSL.   |
+| **Device Connection**  | Enter the IP/hostname; HTTPS-only devices are detected automatically. |
 | **SSL Options**        | Choose whether to verify the SSL certificate.   |
 | **Authentication**     | Select: None / AllowList, Basic, or Digest.     |
 | **Credentials**        | Enter username and password (if required).      |
@@ -29,13 +29,20 @@ SPDX-License-Identifier: Apache-2.0
 ### Device Connection
 
 Enter the IP address or hostname of your Akuvox device. Enable
-**Use SSL** if the device is configured with HTTPS.
+**Use SSL** if the device is configured with HTTPS. You can also
+leave it off: when the device redirects plain HTTP to HTTPS (the
+S535 does), the wizard switches to SSL by itself, tries to verify
+the certificate, and falls back to an unverified connection when
+the device presents its factory self-signed certificate. A warning
+is logged when that happens.
 
 ### SSL Options
 
 This step only appears when SSL is enabled. Choose whether to
 verify the device's SSL certificate. Disable verification if the
-device uses a self-signed certificate.
+device uses a self-signed certificate. When verification fails,
+the wizard returns to this step with the error *The device's SSL
+certificate could not be verified*.
 
 ### Authentication
 

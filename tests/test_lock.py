@@ -116,7 +116,7 @@ async def test_is_locked_true(
 ) -> None:
     """Test is_locked returns True for closed/inactive/0 states."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -168,7 +168,7 @@ async def test_is_locked_false(
 ) -> None:
     """Test is_locked returns False for open/active/1 states."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -216,7 +216,7 @@ async def test_is_locked_unknown_for_unexpected_int(
 ) -> None:
     """Test is_locked returns None for unexpected integer states."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -264,7 +264,7 @@ async def test_is_locked_unknown_for_unexpected_str(
 ) -> None:
     """Test is_locked returns None for unrecognized string states."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -314,7 +314,7 @@ async def test_is_locked_none_for_missing_relay_key(
     is_locked must return None so HA reports the entity as unknown.
     """
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -378,7 +378,7 @@ async def test_is_locked_handles_dict_int_state(
 ) -> None:
     """Test is_locked handles dict-wrapped integer states."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -426,7 +426,7 @@ async def test_entity_unavailable_when_coordinator_fails(
     from pylocal_akuvox import AkuvoxConnectionError, DeviceInfo
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -483,7 +483,7 @@ async def test_multi_relay_entities_created(
 ) -> None:
     """Test multiple relay entities are created with correct IDs."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -543,7 +543,7 @@ async def test_multi_relay_distinct_names(
 ) -> None:
     """Test multi-relay entities have distinct friendly names."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -601,7 +601,7 @@ async def test_unlock_relay_a_does_not_change_relay_b(
     When relay A is unlocked, relay B must remain locked.
     """
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -678,7 +678,7 @@ async def test_is_locked_handles_dict_state_format(
 ) -> None:
     """Test is_locked handles legacy dict state format defensively."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -724,7 +724,7 @@ async def test_unrecognized_relay_keys_skipped(
 ) -> None:
     """Test that unrecognized relay keys are skipped."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -767,10 +767,14 @@ async def test_unrecognized_relay_keys_skipped(
         assert state_a is not None
 
         ent_reg = er.async_get(hass)
-        entities = er.async_entries_for_config_entry(
-            ent_reg,
-            entry.entry_id,
-        )
+        entities = [
+            entity
+            for entity in er.async_entries_for_config_entry(
+                ent_reg,
+                entry.entry_id,
+            )
+            if entity.domain == "lock"
+        ]
         assert len(entities) == 1
 
 
@@ -1257,7 +1261,7 @@ async def test_async_unlock_raises_on_device_error(
     from homeassistant.exceptions import HomeAssistantError
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo
@@ -1357,7 +1361,7 @@ async def test_async_unlock_completes_within_5s(
     near-instantly, well under the 5-second budget.
     """
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         from pylocal_akuvox import DeviceInfo

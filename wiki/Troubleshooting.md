@@ -13,8 +13,16 @@ SPDX-License-Identifier: Apache-2.0
   [Device Setup](Device-Setup)).
 - If using authentication, confirm the credentials match the
   device configuration exactly.
-- If using SSL, try disabling certificate verification to rule
-  out certificate issues.
+- With **Use SSL** off, HTTPS-only devices are detected and
+  switched to SSL automatically, with certificate verification
+  disabled when the device presents its factory self-signed
+  certificate.
+- If you turned **Use SSL** on with certificate verification and
+  the wizard reports the certificate could not be verified, turn
+  verification off.
+- *Failed to push webhook configuration* on a model the
+  pylocal-akuvox capability matrix does not list (for example the
+  S535) means an old integration version; update and retry.
 
 ## Webhook Events Not Received
 

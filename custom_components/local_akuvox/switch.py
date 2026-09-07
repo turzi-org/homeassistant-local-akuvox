@@ -18,9 +18,40 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, RELAY_KEY_RE
 from .coordinator import AkuvoxDataUpdateCoordinator, RelayConfig
+from .device import async_trigger_relay
 from .entity import AkuvoxEntity
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _relay_is_on(status: Any) -> bool:
+    """Interpret a relay status value as reported by the device.
+
+    Devices report ``0``/``1`` (also as digit strings); older firmware
+    and the lock platform's tests use ``closed``/``open`` and
+    ``inactive``/``active``.
+
+    Args:
+        status: Raw relay status value.
+
+    Returns:
+        True when the relay is triggered (open/active).
+
+    """
+    if isinstance(status, str):
+        normalized = status.strip().lower()
+        if normalized in ("open", "active"):
+            return True
+        if normalized in ("closed", "inactive"):
+            return False
+        try:
+            return int(normalized) == 1
+        except ValueError:
+            return False
+    try:
+        return int(status) == 1
+    except (TypeError, ValueError):
+        return False
 
 
 async def async_setup_entry(
@@ -117,15 +148,15 @@ class AkuvoxRelaySwitch(AkuvoxEntity, SwitchEntity):
             if status is not None:
                 # Status is typically a dict with 'status' key or an int
                 if isinstance(status, dict):
-                    self._attr_is_on = status.get("status", 0) == 1
-                else:
-                    self._attr_is_on = int(status) == 1
+                    status = status.get("status", 0)
+                self._attr_is_on = _relay_is_on(status)
         self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the relay on (manual mode, stays on)."""
         relay_num = ord(self._relay_letter) - ord("A") + 1
-        await self.coordinator.device.trigger_relay(
+        await async_trigger_relay(
+            self.coordinator.device,
             num=relay_num,
             mode=1,  # Manual mode — stays on
             level=self._relay_config.relay_type,
@@ -136,7 +167,8 @@ class AkuvoxRelaySwitch(AkuvoxEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the relay off (manual mode, toggle back)."""
         relay_num = ord(self._relay_letter) - ord("A") + 1
-        await self.coordinator.device.trigger_relay(
+        await async_trigger_relay(
+            self.coordinator.device,
             num=relay_num,
             mode=1,  # Manual mode — toggle
             level=self._relay_config.relay_type,

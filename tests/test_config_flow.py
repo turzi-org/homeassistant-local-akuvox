@@ -5,9 +5,12 @@
 
 from __future__ import annotations
 
+import ssl
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
+import aiohttp
+import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -19,6 +22,12 @@ from pylocal_akuvox import (
 )
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.local_akuvox.config_flow import (
+    _async_device_requires_https as _real_https_probe,
+)
+from custom_components.local_akuvox.config_flow import (
+    _is_certificate_error,
+)
 from custom_components.local_akuvox.const import (
     AUTH_BASIC,
     AUTH_DIGEST,
@@ -160,7 +169,7 @@ async def test_credentials_step_skipped_for_none(
     """Test credentials step skipped for none/allowlist."""
     with (
         patch(
-            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+            "custom_components.local_akuvox.config_flow.create_device",
         ) as mock_cls,
         patch(
             "custom_components.local_akuvox._create_device",
@@ -212,6 +221,12 @@ async def test_credentials_step_skipped_for_none(
             result["flow_id"],
             {CONF_WEBHOOK_ENABLED: False},
         )
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "entities"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
         assert result["type"] is FlowResultType.CREATE_ENTRY
 
 
@@ -221,7 +236,7 @@ async def test_successful_connection_creates_entry(
     """Test successful connection creates config entry."""
     with (
         patch(
-            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+            "custom_components.local_akuvox.config_flow.create_device",
         ) as mock_cls,
         patch(
             "custom_components.local_akuvox._create_device",
@@ -277,7 +292,12 @@ async def test_successful_connection_creates_entry(
             result["flow_id"],
             {CONF_WEBHOOK_ENABLED: False},
         )
-
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "entities"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
         assert result["type"] is FlowResultType.CREATE_ENTRY
         assert result["title"] == "Akuvox E21V"
         assert result["data"][CONF_HOST] == MOCK_HOST
@@ -289,7 +309,7 @@ async def test_cannot_connect_error(
 ) -> None:
     """Test cannot_connect error on AkuvoxConnectionError."""
     with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.create_device",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -318,7 +338,7 @@ async def test_invalid_auth_error(
 ) -> None:
     """Test invalid_auth error on AkuvoxAuthenticationError."""
     with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.create_device",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -358,7 +378,7 @@ async def test_already_configured_aborts(
     existing.add_to_hass(hass)
 
     with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.create_device",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -391,7 +411,7 @@ async def test_unknown_error(
 ) -> None:
     """Test unknown error on generic AkuvoxError."""
     with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.create_device",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -425,7 +445,7 @@ async def test_options_flow_shows_current_values(
 ) -> None:
     """Test options flow init step shows form with current values."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -483,7 +503,7 @@ async def test_options_flow_updates_entry(
 ) -> None:
     """Test options flow saves updated values to entry.options."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -529,6 +549,12 @@ async def test_options_flow_updates_entry(
                 CONF_PASSWORD: "",
             },
         )
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "entities"
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {},
+        )
         assert result["type"] is FlowResultType.CREATE_ENTRY
         assert entry.options[CONF_HOST] == "192.168.1.200"
         assert entry.options[CONF_USE_SSL] is True
@@ -542,7 +568,7 @@ async def test_options_flow_triggers_reload(
 ) -> None:
     """Test integration reloads after options change."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -592,6 +618,12 @@ async def test_options_flow_triggers_reload(
                     CONF_PASSWORD: "",
                 },
             )
+            assert result["type"] is FlowResultType.FORM
+            assert result["step_id"] == "entities"
+            result = await hass.config_entries.options.async_configure(
+                result["flow_id"],
+                {},
+            )
             await hass.async_block_till_done()
             mock_reload.assert_awaited_once_with(entry.entry_id)
 
@@ -612,7 +644,7 @@ async def test_options_flow_rejects_empty_host(
 
     with (
         patch(
-            "custom_components.local_akuvox.AkuvoxDevice",
+            "custom_components.local_akuvox.create_device",
             autospec=True,
         ) as mock_cls,
     ):
@@ -661,7 +693,7 @@ async def test_options_flow_rejects_whitespace_host(
 
     with (
         patch(
-            "custom_components.local_akuvox.AkuvoxDevice",
+            "custom_components.local_akuvox.create_device",
             autospec=True,
         ) as mock_cls,
     ):
@@ -710,7 +742,7 @@ async def test_options_flow_rejects_missing_credentials(
 
     with (
         patch(
-            "custom_components.local_akuvox.AkuvoxDevice",
+            "custom_components.local_akuvox.create_device",
             autospec=True,
         ) as mock_cls,
     ):
@@ -759,7 +791,7 @@ async def test_options_flow_host_error_takes_precedence(
 
     with (
         patch(
-            "custom_components.local_akuvox.AkuvoxDevice",
+            "custom_components.local_akuvox.create_device",
             autospec=True,
         ) as mock_cls,
     ):
@@ -800,7 +832,7 @@ async def test_webhook_step_shows_form(
 ) -> None:
     """Test webhook step shows form after connection test."""
     with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.create_device",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -835,7 +867,7 @@ async def test_webhook_disabled_creates_entry(
     """Test disabling webhook creates entry with no webhook config."""
     with (
         patch(
-            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+            "custom_components.local_akuvox.config_flow.create_device",
         ) as mock_cls,
         patch(
             "custom_components.local_akuvox._create_device",
@@ -884,7 +916,12 @@ async def test_webhook_disabled_creates_entry(
             result["flow_id"],
             {CONF_WEBHOOK_ENABLED: False},
         )
-
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "entities"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_WEBHOOK_ID] is None
     assert result["data"][CONF_WEBHOOK_ENABLED] is False
@@ -896,7 +933,7 @@ async def test_webhook_enabled_pushes_config(
     """Test enabling webhook pushes action URLs to device."""
     with (
         patch(
-            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+            "custom_components.local_akuvox.config_flow.create_device",
         ) as mock_cls,
         patch(
             "custom_components.local_akuvox._create_device",
@@ -948,7 +985,12 @@ async def test_webhook_enabled_pushes_config(
             result["flow_id"],
             {CONF_WEBHOOK_ENABLED: True},
         )
-
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "entities"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_WEBHOOK_ENABLED] is True
     assert result["data"][CONF_WEBHOOK_ID] is not None
@@ -961,7 +1003,7 @@ async def test_webhook_push_fails_shows_error(
 ) -> None:
     """Test failed webhook push shows error and allows retry."""
     with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.create_device",
     ) as mock_cls:
         device = mock_cls.return_value
         device.get_info = AsyncMock(
@@ -1006,7 +1048,7 @@ async def test_webhook_push_fails_then_skip(
     """Test user can skip webhook after push failure."""
     with (
         patch(
-            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+            "custom_components.local_akuvox.config_flow.create_device",
         ) as mock_cls,
         patch(
             "custom_components.local_akuvox._create_device",
@@ -1068,7 +1110,12 @@ async def test_webhook_push_fails_then_skip(
             result["flow_id"],
             {CONF_WEBHOOK_ENABLED: False},
         )
-
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "entities"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {},
+        )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_WEBHOOK_ENABLED] is False
     assert result["data"][CONF_WEBHOOK_ID] is None
@@ -1084,7 +1131,7 @@ async def test_options_webhook_enable(
 ) -> None:
     """Test options flow enables webhook and pushes config."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -1119,7 +1166,7 @@ async def test_options_webhook_enable(
 
     with (
         patch(
-            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+            "custom_components.local_akuvox.config_flow.create_device",
         ) as mock_flow_cls,
         patch(
             "custom_components.local_akuvox._create_device",
@@ -1162,7 +1209,12 @@ async def test_options_webhook_enable(
                 CONF_WEBHOOK_ENABLED: True,
             },
         )
-
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "entities"
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {},
+        )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options[CONF_WEBHOOK_ENABLED] is True
     assert entry.options[CONF_WEBHOOK_ID] is not None
@@ -1175,7 +1227,7 @@ async def test_options_webhook_disable(
 ) -> None:
     """Test options flow disables webhook and pushes clear config."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -1210,7 +1262,7 @@ async def test_options_webhook_disable(
 
     with (
         patch(
-            "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+            "custom_components.local_akuvox.config_flow.create_device",
         ) as mock_flow_cls,
         patch(
             "custom_components.local_akuvox._create_device",
@@ -1253,7 +1305,12 @@ async def test_options_webhook_disable(
                 CONF_WEBHOOK_ENABLED: False,
             },
         )
-
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "entities"
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {},
+        )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options[CONF_WEBHOOK_ENABLED] is False
 
@@ -1265,7 +1322,7 @@ async def test_options_webhook_push_fails(
 ) -> None:
     """Test options flow shows error on webhook push failure."""
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         device = mock_cls.return_value
@@ -1298,7 +1355,7 @@ async def test_options_webhook_push_fails(
         await hass.async_block_till_done()
 
     with patch(
-        "custom_components.local_akuvox.config_flow.AkuvoxDevice",
+        "custom_components.local_akuvox.config_flow.create_device",
     ) as mock_flow_cls:
         flow_dev = mock_flow_cls.return_value
         flow_dev.set_device_config = AsyncMock(
@@ -1325,3 +1382,326 @@ async def test_options_webhook_push_fails(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "webhook_push_failed"}
+
+
+# ── Forced HTTPS and certificate handling ─────────────────────────
+
+S535_INFO = DeviceInfo(
+    model="S535",
+    mac_address=MOCK_MAC,
+    firmware_version="535.30.10.245",
+    hardware_version="535.0",
+)
+PROBE_URL = f"http://{MOCK_HOST}/api/system/info"
+
+
+def _certificate_error() -> AkuvoxConnectionError:
+    """Build the error pylocal-akuvox raises for an untrusted certificate."""
+    err = AkuvoxConnectionError(
+        "Connection to https://10.0.15.20 failed: certificate verify failed",
+    )
+    err.__cause__ = ssl.SSLCertVerificationError(
+        1,
+        "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: "
+        "self-signed certificate",
+    )
+    return err
+
+
+def _flow_device(enter_error: Exception | None = None) -> AsyncMock:
+    """Return a device mock for the config flow's connection test."""
+    device = AsyncMock()
+    device.__aenter__ = AsyncMock(return_value=device, side_effect=enter_error)
+    device.__aexit__ = AsyncMock(return_value=None)
+    device.get_info = AsyncMock(return_value=S535_INFO)
+    device.set_device_config = AsyncMock(return_value=None)
+    return device
+
+
+def _setup_device() -> AsyncMock:
+    """Return a device mock for the entry setup that follows the flow."""
+    device = AsyncMock()
+    device.__aenter__ = AsyncMock(return_value=device)
+    device.__aexit__ = AsyncMock(return_value=None)
+    device.get_info = AsyncMock(return_value=S535_INFO)
+    device.get_relay_status = AsyncMock(return_value={"RelayA": 0})
+    device.get_device_config = AsyncMock(return_value={})
+    device.list_users = AsyncMock(return_value=[])
+    return device
+
+
+def _ssl_settings(mock_create: Any) -> list[tuple[bool, bool]]:
+    """Return the SSL settings of every device the flow created, in order."""
+    return [
+        (call.args[0][CONF_USE_SSL], call.args[0][CONF_VERIFY_SSL])
+        for call in mock_create.call_args_list
+    ]
+
+
+async def _start_flow(
+    hass: HomeAssistant,
+    *,
+    use_ssl: bool = False,
+    verify_ssl: bool = True,
+) -> Any:
+    """Drive the flow through the host and SSL steps up to the auth form."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_HOST: MOCK_HOST, CONF_USE_SSL: use_ssl},
+    )
+    if use_ssl:
+        assert result["step_id"] == "ssl"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_VERIFY_SSL: verify_ssl},
+        )
+    assert result["step_id"] == "auth"
+    return result
+
+
+async def _submit_no_auth(hass: HomeAssistant, result: Any) -> Any:
+    """Submit the auth step without credentials, running the connection test."""
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_AUTH_METHOD: AUTH_NONE},
+    )
+
+
+async def _finish_flow(
+    hass: HomeAssistant,
+    result: Any,
+    *,
+    webhook: bool = False,
+) -> Any:
+    """Complete the webhook and entities steps and create the entry."""
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "webhook"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_WEBHOOK_ENABLED: webhook},
+    )
+    assert result["step_id"] == "entities"
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {},
+    )
+
+
+async def test_forced_https_disables_verification_for_self_signed_cert(
+    hass: HomeAssistant,
+    mock_https_probe: AsyncMock,
+) -> None:
+    """A device that redirects to HTTPS with a factory certificate connects."""
+    mock_https_probe.return_value = True
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.create_device",
+            side_effect=[_flow_device(_certificate_error()), _flow_device()],
+        ) as mock_create,
+        patch(
+            "custom_components.local_akuvox._create_device",
+            return_value=_setup_device(),
+        ),
+    ):
+        result = await _start_flow(hass)
+        result = await _submit_no_auth(hass, result)
+        result = await _finish_flow(hass, result)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_USE_SSL] is True
+    assert result["data"][CONF_VERIFY_SSL] is False
+    assert _ssl_settings(mock_create) == [(True, True), (True, False)]
+    mock_https_probe.assert_awaited_once_with(hass, MOCK_HOST)
+
+
+async def test_forced_https_keeps_verification_for_trusted_cert(
+    hass: HomeAssistant,
+    mock_https_probe: AsyncMock,
+) -> None:
+    """A redirecting device with a trusted certificate stays verified."""
+    mock_https_probe.return_value = True
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.create_device",
+            side_effect=[_flow_device()],
+        ) as mock_create,
+        patch(
+            "custom_components.local_akuvox._create_device",
+            return_value=_setup_device(),
+        ),
+    ):
+        result = await _start_flow(hass)
+        result = await _submit_no_auth(hass, result)
+        result = await _finish_flow(hass, result)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_USE_SSL] is True
+    assert result["data"][CONF_VERIFY_SSL] is True
+    assert _ssl_settings(mock_create) == [(True, True)]
+
+
+async def test_forced_https_other_connection_error_reports_cannot_connect(
+    hass: HomeAssistant,
+    mock_https_probe: AsyncMock,
+) -> None:
+    """Only certificate failures trigger the unverified retry."""
+    mock_https_probe.return_value = True
+    with patch(
+        "custom_components.local_akuvox.config_flow.create_device",
+        side_effect=[_flow_device(AkuvoxConnectionError("Connection refused"))],
+    ) as mock_create:
+        result = await _start_flow(hass)
+        result = await _submit_no_auth(hass, result)
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "auth"
+    assert result["errors"] == {"base": "cannot_connect"}
+    assert _ssl_settings(mock_create) == [(True, True)]
+
+
+async def test_explicit_ssl_certificate_error_returns_to_ssl_step(
+    hass: HomeAssistant,
+    mock_https_probe: AsyncMock,
+) -> None:
+    """An explicit verified-SSL choice is respected and explained."""
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.create_device",
+            side_effect=[_flow_device(_certificate_error()), _flow_device()],
+        ) as mock_create,
+        patch(
+            "custom_components.local_akuvox._create_device",
+            return_value=_setup_device(),
+        ),
+    ):
+        result = await _start_flow(hass, use_ssl=True, verify_ssl=True)
+        result = await _submit_no_auth(hass, result)
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "ssl"
+        assert result["errors"] == {"base": "ssl_verify_failed"}
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_VERIFY_SSL: False},
+        )
+        assert result["step_id"] == "auth"
+        result = await _submit_no_auth(hass, result)
+        result = await _finish_flow(hass, result)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_USE_SSL] is True
+    assert result["data"][CONF_VERIFY_SSL] is False
+    assert _ssl_settings(mock_create) == [(True, True), (True, False)]
+    mock_https_probe.assert_not_awaited()
+
+
+async def test_plain_http_device_keeps_http(
+    hass: HomeAssistant,
+    mock_https_probe: AsyncMock,
+) -> None:
+    """A device that answers plain HTTP is configured without SSL."""
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.create_device",
+            side_effect=[_flow_device()],
+        ) as mock_create,
+        patch(
+            "custom_components.local_akuvox._create_device",
+            return_value=_setup_device(),
+        ),
+    ):
+        result = await _start_flow(hass)
+        result = await _submit_no_auth(hass, result)
+        result = await _finish_flow(hass, result)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_USE_SSL] is False
+    assert result["data"][CONF_VERIFY_SSL] is True
+    assert _ssl_settings(mock_create) == [(False, True)]
+    mock_https_probe.assert_awaited_once_with(hass, MOCK_HOST)
+
+
+async def test_webhook_push_uses_detected_ssl_settings(
+    hass: HomeAssistant,
+    mock_https_probe: AsyncMock,
+) -> None:
+    """The webhook push connects with the SSL settings that worked."""
+    mock_https_probe.return_value = True
+    push_device = _flow_device()
+    with (
+        patch(
+            "custom_components.local_akuvox.config_flow.create_device",
+            side_effect=[
+                _flow_device(_certificate_error()),
+                _flow_device(),
+                push_device,
+            ],
+        ) as mock_create,
+        patch(
+            "custom_components.local_akuvox._create_device",
+            return_value=_setup_device(),
+        ),
+    ):
+        result = await _start_flow(hass)
+        result = await _submit_no_auth(hass, result)
+        result = await _finish_flow(hass, result, webhook=True)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_WEBHOOK_ENABLED] is True
+    assert _ssl_settings(mock_create)[-1] == (True, False)
+    push_device.set_device_config.assert_awaited_once()
+
+
+@pytest.mark.parametrize(
+    ("status", "location", "expected"),
+    [
+        (308, "https://192.168.1.100:443/api/system/info", True),
+        (301, "https://192.168.1.100/api/system/info", True),
+        (302, "http://192.168.1.100/login", False),
+        (200, None, False),
+    ],
+)
+async def test_https_probe_detects_redirect_to_https(
+    hass: HomeAssistant,
+    aioclient_mock: Any,
+    status: int,
+    location: str | None,
+    expected: bool,
+) -> None:
+    """The probe reports only redirects that point at an HTTPS URL."""
+    headers = {"Location": location} if location else {}
+    aioclient_mock.get(PROBE_URL, status=status, headers=headers)
+
+    assert await _real_https_probe(hass, MOCK_HOST) is expected
+    assert aioclient_mock.call_count == 1
+
+
+async def test_https_probe_returns_false_when_unreachable(
+    hass: HomeAssistant,
+    aioclient_mock: Any,
+) -> None:
+    """Transport failures leave the regular connection test to report them."""
+    aioclient_mock.get(PROBE_URL, exc=aiohttp.ClientConnectionError("refused"))
+
+    assert await _real_https_probe(hass, MOCK_HOST) is False
+
+
+def test_is_certificate_error_walks_cause_chain() -> None:
+    """A wrapped certificate verification failure is recognised."""
+    assert _is_certificate_error(_certificate_error()) is True
+
+
+def test_is_certificate_error_follows_implicit_context() -> None:
+    """Implicit exception chaining is followed as well."""
+    err = AkuvoxConnectionError("wrapped")
+    err.__context__ = ssl.SSLCertVerificationError(1, "verify failed")
+    assert _is_certificate_error(err) is True
+
+
+def test_is_certificate_error_ignores_other_failures() -> None:
+    """A plain connection failure is not a certificate problem."""
+    assert _is_certificate_error(AkuvoxConnectionError("refused")) is False

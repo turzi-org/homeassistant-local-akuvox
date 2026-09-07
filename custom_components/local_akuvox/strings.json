@@ -3,10 +3,13 @@
     "step": {
       "user": {
         "title": "Device Connection",
-        "description": "Enter the IP address or hostname of your Akuvox device.",
+        "description": "Enter the IP address or hostname of your Akuvox device. Devices that only accept HTTPS are detected automatically.",
         "data": {
           "host": "Host",
           "use_ssl": "Use SSL"
+        },
+        "data_description": {
+          "use_ssl": "Turn on to connect over HTTPS. Leave off to let the integration detect whether the device redirects to HTTPS."
         }
       },
       "ssl": {
@@ -14,6 +17,9 @@
         "description": "Configure SSL certificate verification.",
         "data": {
           "verify_ssl": "Verify SSL Certificate"
+        },
+        "data_description": {
+          "verify_ssl": "Akuvox devices ship a self-signed certificate that cannot be verified. Keep this on only if you installed a trusted certificate on the device."
         }
       },
       "auth": {
@@ -91,7 +97,8 @@
       "invalid_host": "Invalid host address.",
       "already_configured": "This device is already configured.",
       "unknown": "An unexpected error occurred.",
-      "webhook_push_failed": "Failed to push webhook configuration to the device."
+      "webhook_push_failed": "Failed to push webhook configuration to the device.",
+      "ssl_verify_failed": "The device's SSL certificate could not be verified. Turn off certificate verification to connect anyway."
     },
     "abort": {
       "already_configured": "This device is already configured."

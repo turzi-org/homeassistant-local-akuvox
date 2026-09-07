@@ -15,15 +15,9 @@ from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import service
 from homeassistant.helpers.typing import ConfigType
-from pylocal_akuvox import AkuvoxDevice, AuthConfig, AuthMethod
+from pylocal_akuvox import AkuvoxDevice
 
 from .const import (
-    CONF_AUTH_METHOD,
-    CONF_HOST,
-    CONF_PASSWORD,
-    CONF_USE_SSL,
-    CONF_USERNAME,
-    CONF_VERIFY_SSL,
     CONF_WEBHOOK_ENABLED,
     CONF_WEBHOOK_ID,
     DOMAIN,
@@ -47,9 +41,9 @@ from .const import (
     SERVICE_MODIFY_USER,
     SERVICE_REMOVE_USER_SCHEDULE_RELAY,
     VALID_DAYS,
-    get_auth_method_map,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
+from .device import create_device
 from .webhook import (
     async_register_webhook,
     async_unregister_webhook,
@@ -373,6 +367,9 @@ def _get_config_value(entry: ConfigEntry, key: str, default: object = None) -> o
 def _create_device(entry: ConfigEntry) -> AkuvoxDevice:
     """Create an AkuvoxDevice from a config entry.
 
+    Options take precedence over the data stored when the entry was
+    created, matching ``_get_config_value``.
+
     Args:
         entry: The config entry.
 
@@ -380,28 +377,7 @@ def _create_device(entry: ConfigEntry) -> AkuvoxDevice:
         Configured AkuvoxDevice instance.
 
     """
-    host = str(_get_config_value(entry, CONF_HOST, ""))
-    use_ssl = bool(_get_config_value(entry, CONF_USE_SSL, False))
-    verify_ssl = bool(_get_config_value(entry, CONF_VERIFY_SSL, True))
-    auth_method_str = str(_get_config_value(entry, CONF_AUTH_METHOD, "none"))
-    auth_method = get_auth_method_map().get(auth_method_str, AuthMethod.NONE)
-
-    auth_config: AuthConfig | None = None
-    if auth_method in (AuthMethod.BASIC, AuthMethod.DIGEST):
-        auth_config = AuthConfig(
-            method=auth_method,
-            username=str(_get_config_value(entry, CONF_USERNAME, "")),
-            password=str(_get_config_value(entry, CONF_PASSWORD, "")),
-        )
-    else:
-        auth_config = AuthConfig(method=auth_method)
-
-    return AkuvoxDevice(
-        host=host,
-        auth=auth_config,
-        use_ssl=use_ssl,
-        verify_ssl=verify_ssl,
-    )
+    return create_device({**entry.data, **entry.options})
 
 
 async def async_setup_entry(

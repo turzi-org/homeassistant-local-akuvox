@@ -18,6 +18,7 @@ from pylocal_akuvox import (
     AkuvoxConnectionError,
     AkuvoxDeviceError,
     AkuvoxParseError,
+    AkuvoxUnsupportedError,
     DeviceInfo,
 )
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -181,7 +182,7 @@ async def test_state_reflects_relay_change_after_update(
     device.__aexit__ = AsyncMock(return_value=None)
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         mock_cls.return_value = device
@@ -233,7 +234,7 @@ async def test_entity_recovers_after_coordinator_failure(
     device.__aexit__ = AsyncMock(return_value=None)
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         mock_cls.return_value = device
@@ -321,7 +322,7 @@ async def test_coordinator_multi_relay_state_change(
     device.__aexit__ = AsyncMock(return_value=None)
 
     with patch(
-        "custom_components.local_akuvox.AkuvoxDevice",
+        "custom_components.local_akuvox.create_device",
         autospec=True,
     ) as mock_cls:
         mock_cls.return_value = device
@@ -916,3 +917,20 @@ async def test_coordinator_user_cache_returns_none_when_list_users_absent(
     data = await coordinator._async_update_data()
 
     assert data.users == []
+
+
+async def test_coordinator_update_failed_on_unsupported_error(
+    hass: HomeAssistant,
+) -> None:
+    """Test coordinator raises UpdateFailed on AkuvoxUnsupportedError."""
+    device = AsyncMock()
+    device.get_relay_status = AsyncMock(
+        side_effect=AkuvoxUnsupportedError(
+            "Device S535 not in capability matrix",
+        ),
+    )
+
+    coordinator = AkuvoxDataUpdateCoordinator(hass=hass, device=device)
+
+    with pytest.raises(UpdateFailed):
+        await coordinator._async_update_data()
