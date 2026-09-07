@@ -6,6 +6,6 @@
   "documentation": "https://github.com/turzi-org/homeassistant-local-akuvox",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/turzi-org/homeassistant-local-akuvox/issues",
-  "requirements": ["pylocal-akuvox>=0.3.0"],
+  "requirements": ["pylocal-akuvox>=1.1.1"],
   "version": "0.1.0"
 }
