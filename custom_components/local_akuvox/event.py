@@ -6,7 +6,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.components.event import EventDeviceClass, EventEntity
+from homeassistant.components.event import EventEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -86,8 +86,10 @@ class AkuvoxAccessEvent(AkuvoxEntity, EventEntity):
     resolved from the device's user cache.
     """
 
+    # No device class: these are credential events, not doorbell presses.
+    # HA requires a DOORBELL event entity to fire "ring", which this
+    # entity never does.
     _attr_has_entity_name = True
-    _attr_device_class = EventDeviceClass.DOORBELL
     _attr_name = "Access Event"
     _attr_event_types = ALL_ACCESS_EVENT_TYPES
 
