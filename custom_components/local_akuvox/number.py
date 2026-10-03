@@ -67,34 +67,35 @@ class AkuvoxHoldDelayNumber(AkuvoxEntity, RestoreNumber):
         Args:
             coordinator: The data update coordinator.
             relay_letter: Relay letter (A, B, C, D).
+
         """
         super().__init__(coordinator)
         self._relay_letter = relay_letter
-        
+
         # Priority: Relay name if fetched from device, else Relay letter
         relay_cfg = coordinator.data.relay_configs.get(relay_letter)
         name = relay_cfg.name.strip() if relay_cfg and relay_cfg.name else ""
-        self._attr_name = f"Hold Delay ({name})" if name else f"Hold Delay (Relay {relay_letter})"
-        
-        mac_clean = (
-            coordinator.data.device_info.mac_address.lower().replace(":", "")
+        self._attr_name = (
+            f"Hold Delay ({name})" if name else f"Hold Delay (Relay {relay_letter})"
         )
+
+        mac_clean = coordinator.data.device_info.mac_address.lower().replace(":", "")
         self._attr_unique_id = f"{mac_clean}_hold_delay_{relay_letter.lower()}"
-        
+
         # Initialize default state inside coordinator settings
         if self._relay_letter not in self.coordinator.relay_settings:
             self.coordinator.relay_settings[self._relay_letter] = {}
-        
+
         # Start with None until restored or defaults applied
         self._attr_native_value = None
 
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
         await super().async_added_to_hass()
-        
+
         # Restore previous state
         last_number_data = await self.async_get_last_number_data()
-        
+
         if last_number_data and last_number_data.native_value is not None:
             self._attr_native_value = last_number_data.native_value
         else:
@@ -104,9 +105,11 @@ class AkuvoxHoldDelayNumber(AkuvoxEntity, RestoreNumber):
                 self._attr_native_value = relay_cfg.hold_delay
             else:
                 self._attr_native_value = 5.0
-                
+
         # Push to coordinator
-        self.coordinator.relay_settings[self._relay_letter]["hold_delay"] = int(self._attr_native_value)
+        self.coordinator.relay_settings[self._relay_letter]["hold_delay"] = int(
+            self._attr_native_value
+        )
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
