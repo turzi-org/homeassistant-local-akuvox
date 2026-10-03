@@ -50,9 +50,7 @@ async def async_setup_entry(
     from .coordinator import AkuvoxDataUpdateCoordinator
 
     coordinator: AkuvoxDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    mac_clean = (
-        coordinator.data.device_info.mac_address.lower().replace(":", "")
-    )
+    mac_clean = coordinator.data.device_info.mac_address.lower().replace(":", "")
 
     access_event = AkuvoxAccessEvent(
         coordinator=coordinator,
@@ -103,20 +101,20 @@ class AkuvoxAccessEvent(AkuvoxEntity, EventEntity):
         Args:
             coordinator: The data update coordinator.
             mac_clean: Normalized MAC address.
+
         """
         super().__init__(coordinator)
         self._mac_clean = mac_clean
         self._attr_unique_id = f"{mac_clean}_access_event"
 
     @callback
-    def fire_access_event(
-        self, access_type: str, payload: dict[str, Any]
-    ) -> None:
+    def fire_access_event(self, access_type: str, payload: dict[str, Any]) -> None:
         """Fire an access event.
 
         Args:
             access_type: The type of access event (e.g., 'valid_code').
             payload: The webhook payload with user identity data.
+
         """
         event_data: dict[str, Any] = {}
 
@@ -133,6 +131,4 @@ class AkuvoxAccessEvent(AkuvoxEntity, EventEntity):
 
         self._trigger_event(access_type, event_data)
         self.async_write_ha_state()
-        _LOGGER.debug(
-            "Access event fired: type=%s, data=%s", access_type, event_data
-        )
+        _LOGGER.debug("Access event fired: type=%s, data=%s", access_type, event_data)
