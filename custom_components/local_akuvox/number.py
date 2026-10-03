@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: 2026 Turzi
 # SPDX-License-Identifier: Apache-2.0
 """Number platform for Akuvox relay hold delay configuration."""
 
