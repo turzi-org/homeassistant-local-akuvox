@@ -225,6 +225,7 @@ class AkuvoxDataUpdateCoordinator(
         self._cached_users: list[User] = []
         self._last_user_fetch: float | None = None
         self._was_unavailable: bool = False
+        self._config_refresh_requested: bool = False
         self.relay_settings: dict[str, dict[str, Any]] = {}
 
     def get_user_by_pin(self, pin: str) -> User | None:
@@ -260,9 +261,17 @@ class AkuvoxDataUpdateCoordinator(
             recovered from unavailable state.
 
         """
-        if self._cached_device_name is None:
+        if self._cached_device_name is None or self._config_refresh_requested:
             return True
         return bool(self._was_unavailable)
+
+    def request_config_refresh(self) -> None:
+        """Re-read the device config on the next update.
+
+        Call after writing settings to the device, so cached values
+        derived from its config (relay names, hold delays) follow.
+        """
+        self._config_refresh_requested = True
 
     def _fetch_config_from_device_config(
         self,
@@ -346,6 +355,7 @@ class AkuvoxDataUpdateCoordinator(
                 else "Unknown",
             )
             self._was_unavailable = False
+            self._config_refresh_requested = False
             return
 
         try:
@@ -375,6 +385,7 @@ class AkuvoxDataUpdateCoordinator(
                 else "Unknown",
             )
         self._was_unavailable = False
+        self._config_refresh_requested = False
 
     async def _async_fetch_users(self) -> None:
         """Fetch and cache user list from the device.

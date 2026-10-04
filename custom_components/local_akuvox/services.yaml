@@ -500,3 +500,18 @@ delete_group:
       selector:
         text:
           multiline: false
+
+set_device_config:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          multiple: true
+          filter:
+            integration: local_akuvox
+    settings:
+      required: true
+      example: '{"Config.Settings.LOGLEVEL.Level": "3"}'
+      selector:
+        object:
