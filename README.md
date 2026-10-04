@@ -280,9 +280,9 @@ fields such as `code` are redacted) as the payload.
 
 ## Services
 
-All services target lock entities belonging to this integration. Call
-them via **Developer Tools** → **Services** or from automations and
-scripts.
+All services except `set_device_config` target lock entities belonging
+to this integration; `set_device_config` targets devices. Call them via
+**Developer Tools** → **Services** or from automations and scripts.
 
 ### Schedule Management
 
@@ -327,6 +327,37 @@ scripts.
 | `local_akuvox.add_group` | Create a contact group. |
 | `local_akuvox.modify_group` | Update a group name. |
 | `local_akuvox.delete_group` | Remove a contact group. |
+
+### Device Configuration
+
+| Service | Description |
+| --- | --- |
+| `local_akuvox.set_device_config` | Write raw device settings (admin). |
+
+The integration sends each setting to the device's configuration API
+with the credentials it already stores, so device passwords are never
+needed in the call. Keys must start with `Config.`; numbers and
+`true`/`false` are sent as text. Up to 50 settings per call.
+
+Use it with care: settings go to the device unchecked, a wrong key or
+value can change how a door or intercom behaves, and some settings make
+the device restart. All target devices are checked before anything is
+written; after that they are written one after another, so if one
+fails, the ones before it keep the new settings. Only the setting
+names are logged, never their values.
+
+```yaml
+# Send the device's system log to a syslog server
+service: local_akuvox.set_device_config
+data:
+  device_id:
+    - 0123456789abcdef0123456789abcdef
+  settings:
+    Config.Settings.LOGLEVEL.Level: 3
+    Config.Settings.LOGLEVEL.RemoteSyslog: true
+    Config.Settings.LOGLEVEL.RemoteServer: "192.168.1.10"
+    Config.Settings.LOGLEVEL.RemoteServerPort: 514
+```
 
 ### Example: Add a User with PIN Access
 

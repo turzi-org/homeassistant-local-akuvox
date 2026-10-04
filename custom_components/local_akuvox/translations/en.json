@@ -510,6 +510,20 @@
           "description": "Device ID of the group to delete."
         }
       }
+    },
+    "set_device_config": {
+      "name": "Set device configuration",
+      "description": "Write configuration settings directly to Akuvox devices. Admin only. Settings are sent as-is: a wrong key or value can change how a door or intercom behaves, and some settings make the device restart.",
+      "fields": {
+        "device_id": {
+          "name": "Devices",
+          "description": "Akuvox devices to change. All of them get the same settings, one after another."
+        },
+        "settings": {
+          "name": "Settings",
+          "description": "Configuration keys and values, for example {\"Config.Settings.LOGLEVEL.Level\": \"3\"}. Keys start with \"Config.\"; numbers and true/false are sent as text. Up to 50 settings per call."
+        }
+      }
     }
   },
   "exceptions": {
@@ -566,6 +580,12 @@
     },
     "cannot_remove_last_pair": {
       "message": "Cannot remove the last schedule-relay pair."
+    },
+    "device_not_found": {
+      "message": "{device_id} is not a loaded Akuvox device."
+    },
+    "invalid_setting": {
+      "message": "The device rejected the settings: {error}"
     }
   }
 }

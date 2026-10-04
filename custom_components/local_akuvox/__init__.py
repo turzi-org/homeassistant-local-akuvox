@@ -6,16 +6,25 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, SupportsResponse
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import service
 from homeassistant.helpers.typing import ConfigType
-from pylocal_akuvox import AkuvoxDevice
+from pylocal_akuvox import (
+    AkuvoxAuthenticationError,
+    AkuvoxConnectionError,
+    AkuvoxDevice,
+    AkuvoxError,
+    AkuvoxValidationError,
+)
 
 from .const import (
     CONF_WEBHOOK_ENABLED,
@@ -40,6 +49,7 @@ from .const import (
     SERVICE_MODIFY_SCHEDULE,
     SERVICE_MODIFY_USER,
     SERVICE_REMOVE_USER_SCHEDULE_RELAY,
+    SERVICE_SET_DEVICE_CONFIG,
     VALID_DAYS,
 )
 from .coordinator import AkuvoxDataUpdateCoordinator
@@ -76,6 +86,124 @@ def _csv_to_list(value: Any) -> list[str]:
                 result.append(str(item))
         return result
     return cv.ensure_list(value)
+
+
+# Device config keys look like "Config.Settings.LOGLEVEL.Level".
+_CONFIG_KEY_RE = re.compile(r"^Config(\.[A-Za-z0-9_]+){2,}$")
+_MAX_SETTINGS_PER_CALL = 50
+
+
+def _config_value(value: Any) -> str:
+    """Coerce a setting value to the string form the device API expects.
+
+    Raises:
+        vol.Invalid: If the value is not text, a number or a boolean.
+
+    """
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, (str, int, float)):
+        return str(value)
+    raise vol.Invalid("setting values must be text, numbers or true/false")
+
+
+SET_DEVICE_CONFIG_SCHEMA = vol.Schema(
+    {
+        vol.Required("device_id"): vol.All(
+            cv.ensure_list, vol.Length(min=1), [cv.string]
+        ),
+        vol.Required("settings"): vol.All(
+            dict,
+            vol.Length(min=1, max=_MAX_SETTINGS_PER_CALL),
+            {vol.Match(_CONFIG_KEY_RE): _config_value},
+        ),
+    }
+)
+
+
+def _coordinator_for_device(
+    hass: HomeAssistant,
+    device_id: str,
+) -> AkuvoxDataUpdateCoordinator:
+    """Return the coordinator of the Akuvox device with this registry id.
+
+    Raises:
+        ServiceValidationError: If the id is not a loaded Akuvox device.
+
+    """
+    device_entry = dr.async_get(hass).async_get(device_id)
+    if device_entry is not None:
+        for entry_id in device_entry.config_entries:
+            coordinator = hass.data.get(DOMAIN, {}).get(entry_id)
+            if isinstance(coordinator, AkuvoxDataUpdateCoordinator):
+                return coordinator
+    raise ServiceValidationError(
+        translation_domain=DOMAIN,
+        translation_key="device_not_found",
+        translation_placeholders={"device_id": device_id},
+    )
+
+
+async def _async_set_device_config(call: ServiceCall) -> None:
+    """Write raw configuration keys to one or more Akuvox devices.
+
+    Every target is resolved before anything is written, so an unknown
+    device id changes nothing. Devices are written one after another;
+    if one fails, the ones before it keep their new settings.
+
+    Args:
+        call: The service call (``device_id`` and ``settings``).
+
+    Raises:
+        ServiceValidationError: On an unknown device or a rejected setting.
+        HomeAssistantError: On device communication errors.
+
+    """
+    settings: dict[str, str] = call.data["settings"]
+    coordinators = [
+        _coordinator_for_device(call.hass, device_id)
+        for device_id in call.data["device_id"]
+    ]
+    for coordinator in coordinators:
+        title = (
+            coordinator.config_entry.title
+            if coordinator.config_entry is not None
+            else "Akuvox device"
+        )
+        try:
+            await coordinator.device.set_device_config(settings)  # type: ignore[attr-defined]
+        except AkuvoxValidationError as err:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_setting",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except AkuvoxAuthenticationError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="auth_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except AkuvoxConnectionError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="device_unavailable",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except AkuvoxError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="device_error",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        coordinator.request_config_refresh()
+        # Log keys only: values can hold credentials (SIP, web passwords).
+        _LOGGER.info(
+            "Wrote %d setting(s) to %s: %s",
+            len(settings),
+            title,
+            ", ".join(sorted(settings)),
+        )
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -344,6 +472,16 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Required("id"): cv.string,
         },
         func=SERVICE_DELETE_GROUP,
+    )
+
+    # ── Device configuration (admin only) ────────────────────
+
+    service.async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_SET_DEVICE_CONFIG,
+        _async_set_device_config,
+        schema=SET_DEVICE_CONFIG_SCHEMA,
     )
 
     return True

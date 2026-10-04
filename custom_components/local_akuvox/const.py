@@ -160,6 +160,9 @@ SERVICE_ADD_GROUP: Final = "add_group"
 SERVICE_MODIFY_GROUP: Final = "modify_group"
 SERVICE_DELETE_GROUP: Final = "delete_group"
 
+# Admin-only: write raw Config.* keys to a device through /api/config/set
+SERVICE_SET_DEVICE_CONFIG: Final = "set_device_config"
+
 # Event names
 EVENT_SCHEDULE_CHANGED: Final = "local_akuvox_schedule_changed"
 EVENT_USER_CHANGED: Final = "local_akuvox_user_changed"
@@ -295,6 +298,7 @@ def get_model_capabilities(model: str) -> dict[str, Any]:
         return MODEL_CAPABILITIES[best_match]
 
     return dict(DEFAULT_MODEL_CAPABILITIES)
+
 
 # Day-of-week name → digit mapping (single source of truth)
 DAY_NAME_TO_DIGIT: Final[dict[str, str]] = {
