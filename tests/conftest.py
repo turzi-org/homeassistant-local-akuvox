@@ -458,10 +458,10 @@ def get_device_by_identifier(
 ) -> dr.DeviceEntry | None:
     """Return the registered device that carries this identifier.
 
-    ``DeviceRegistry.async_get_device(identifiers=...)`` is deprecated in
-    Home Assistant 2026.10 (identifiers are no longer unique across
-    config entries) and raises under the test harness there; filtering
-    the registry works on both older and newer releases.
+    ``DeviceRegistry.async_get_device(identifiers=...)`` and mapping
+    access to ``DeviceRegistry.devices`` are deprecated in Home Assistant
+    2026.10 and raise under the test harness there. Looking devices up
+    per config entry works on both older and newer releases.
 
     Args:
         hass: The Home Assistant instance.
@@ -471,9 +471,11 @@ def get_device_by_identifier(
         The matching device, or None.
 
     """
-    for device in dr.async_get(hass).devices.values():
-        if identifier in device.identifiers:
-            return device
+    registry = dr.async_get(hass)
+    for entry in hass.config_entries.async_entries(identifier[0]):
+        for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
+            if identifier in device.identifiers:
+                return device
     return None
 
 
