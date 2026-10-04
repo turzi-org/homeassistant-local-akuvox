@@ -11,7 +11,6 @@ from unittest.mock import AsyncMock, call, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -27,7 +26,7 @@ from custom_components.local_akuvox.const import (
     DEFAULT_RELAY_TYPE,
     DOMAIN,
 )
-from tests.conftest import MOCK_MAC
+from tests.conftest import MOCK_MAC, get_device_by_identifier
 
 
 async def test_entity_unique_id(
@@ -93,11 +92,8 @@ async def test_entity_device_info(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    dev_reg = dr.async_get(hass)
     mac_clean = MOCK_MAC.lower().replace(":", "")
-    device = dev_reg.async_get_device(
-        identifiers={(DOMAIN, mac_clean)},
-    )
+    device = get_device_by_identifier(hass, (DOMAIN, mac_clean))
     assert device is not None
     assert device.manufacturer == "Akuvox"
     assert device.model == "E21V"

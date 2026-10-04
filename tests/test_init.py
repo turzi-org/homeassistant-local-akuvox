@@ -10,7 +10,6 @@ from unittest.mock import AsyncMock, patch
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.local_akuvox import _create_device
@@ -23,7 +22,7 @@ from custom_components.local_akuvox.const import (
     CONFIG_KEY_LOCATION,
     DOMAIN,
 )
-from tests.conftest import MOCK_MAC
+from tests.conftest import MOCK_MAC, get_device_by_identifier
 
 
 async def test_setup_entry_creates_coordinator(
@@ -156,9 +155,8 @@ async def test_device_name_from_config_location(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    dev_reg = dr.async_get(hass)
     mac_clean = MOCK_MAC.lower().replace(":", "")
-    device = dev_reg.async_get_device(identifiers={(DOMAIN, mac_clean)})
+    device = get_device_by_identifier(hass, (DOMAIN, mac_clean))
     assert device is not None
     assert device.name == "Front Door"
 
@@ -185,9 +183,8 @@ async def test_device_name_fallback_when_location_empty(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    dev_reg = dr.async_get(hass)
     mac_clean = MOCK_MAC.lower().replace(":", "")
-    device = dev_reg.async_get_device(identifiers={(DOMAIN, mac_clean)})
+    device = get_device_by_identifier(hass, (DOMAIN, mac_clean))
     assert device is not None
     assert device.name == "Akuvox E21V"
 

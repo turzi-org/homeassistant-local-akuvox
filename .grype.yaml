@@ -32,3 +32,74 @@ ignore:
     package:
       name: pytest
       type: python
+
+  # PyJWT 2.13.0 and cryptography 48.0.1 are pinned exactly by
+  # homeassistant 2026.9.4 (PyJWT==2.13.0, cryptography==48.0.1);
+  # fixes need PyJWT 2.14+/2.15 and cryptography 49+/50, which the
+  # integration cannot install alongside Home Assistant. Same advisories
+  # as the PYSEC-2026-4140..4152 and PYSEC-2026-3552..3554 entries in
+  # the pip-audit ignore lists. Remove once Home Assistant upgrades.
+  - vulnerability: GHSA-ffc3-869f-jxw9
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-p4g4-x82p-q773
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-r6x4-923q-g947
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-9j54-fg26-wv3r
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-9v7f-9g4p-ffgj
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-w2cx-738m-mc7w
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-gvp8-978c-rx2q
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-w6j9-cwv2-h6wq
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-8wjv-2p76-3863
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-2gx3-rcp4-g85q
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-42vr-xj54-vc7v
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-hxm8-2xgr-2p9m
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-jwrc-g2q2-pq5p
+    package:
+      name: PyJWT
+      type: python
+  - vulnerability: GHSA-jwv3-5hgf-82ww
+    package:
+      name: cryptography
+      type: python
+  - vulnerability: GHSA-g6cj-pr64-35w5
+    package:
+      name: cryptography
+      type: python
+  - vulnerability: GHSA-m2h6-j472-rp4c
+    package:
+      name: cryptography
+      type: python
