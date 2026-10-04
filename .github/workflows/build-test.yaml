@@ -148,11 +148,11 @@ jobs:
           python_version: "${{ matrix.python-version }}"
           # Transitive dep CVEs we cannot control
           # aiohttp (via homeassistant)
-          # cryptography (via homeassistant)
+          # cryptography (via homeassistant; homeassistant 2026.9.4 pins cryptography==48.0.1)
           # orjson (via homeassistant)
           # pillow (via homeassistant)
           # pip (CI runner tooling)
-          # pyjwt (via homeassistant)
+          # pyjwt (via homeassistant; homeassistant 2026.9.4 pins PyJWT==2.13.0)
           # pyopenssl (via homeassistant)
           # requests (via pip tooling)
           # uv (dev tooling)
@@ -182,6 +182,19 @@ jobs:
             PYSEC-2026-3552
             PYSEC-2026-3553
             PYSEC-2026-3554
+            PYSEC-2026-4140
+            PYSEC-2026-4141
+            PYSEC-2026-4142
+            PYSEC-2026-4143
+            PYSEC-2026-4144
+            PYSEC-2026-4145
+            PYSEC-2026-4146
+            PYSEC-2026-4147
+            PYSEC-2026-4148
+            PYSEC-2026-4149
+            PYSEC-2026-4150
+            PYSEC-2026-4151
+            PYSEC-2026-4152
 
   sbom:
     name: 'Generate SBOM'
