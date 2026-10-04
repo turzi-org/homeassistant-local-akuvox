@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from pylocal_akuvox import (
     AccessSchedule,
     Contact,
@@ -449,6 +450,31 @@ def mock_group_list() -> list[Group]:
             id="2",
         ),
     ]
+
+
+def get_device_by_identifier(
+    hass: HomeAssistant,
+    identifier: tuple[str, str],
+) -> dr.DeviceEntry | None:
+    """Return the registered device that carries this identifier.
+
+    ``DeviceRegistry.async_get_device(identifiers=...)`` is deprecated in
+    Home Assistant 2026.10 (identifiers are no longer unique across
+    config entries) and raises under the test harness there; filtering
+    the registry works on both older and newer releases.
+
+    Args:
+        hass: The Home Assistant instance.
+        identifier: A ``(domain, id)`` device identifier.
+
+    Returns:
+        The matching device, or None.
+
+    """
+    for device in dr.async_get(hass).devices.values():
+        if identifier in device.identifiers:
+            return device
+    return None
 
 
 async def setup_entry(
