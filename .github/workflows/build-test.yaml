@@ -179,6 +179,9 @@ jobs:
             GHSA-4xh5-x5gv-qwph
             GHSA-cfh3-3jmp-rvhc
             GHSA-pjjw-68hj-v9mw
+            PYSEC-2026-3552
+            PYSEC-2026-3553
+            PYSEC-2026-3554
 
   sbom:
     name: 'Generate SBOM'
