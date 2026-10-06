@@ -14,7 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, EVENT_WEBHOOK_RECEIVED
+from .const import CONF_INPUT_INVERT, DOMAIN, EVENT_WEBHOOK_RECEIVED
 from .entity import AkuvoxEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -94,6 +94,7 @@ async def async_setup_entry(
                 mac_clean=mac_clean,
                 custom_name=custom_name,
                 device_class_override=device_class,
+                invert=bool(input_opts.get(CONF_INPUT_INVERT, False)),
             )
         )
 
@@ -131,12 +132,13 @@ async def async_setup_entry(
         # Update input sensors
         if event_type in _INPUT_EVENT_MAP:
             letter, state = _INPUT_EVENT_MAP[event_type]
+            status = (data.get("payload") or {}).get("status")
             for entity in entities:
                 if (
                     isinstance(entity, AkuvoxInputSensor)
                     and entity.input_letter == letter
                 ):
-                    entity.update_state(state)
+                    entity.update_state(state, status=status)
 
         # Update tamper sensor
         if event_type == "tamper_alarm_triggered":
@@ -159,8 +161,33 @@ async def async_setup_entry(
     )
 
 
+def _parse_level(status: Any) -> int | None:
+    """Parse an input level reported by the device.
+
+    Args:
+        status: Raw value, such as the webhook's ``status`` parameter.
+
+    Returns:
+        0 (low), 1 (high), or None when the value is not recognised.
+
+    """
+    text = str(status).strip().lower() if status is not None else ""
+    if text in ("1", "high"):
+        return 1
+    if text in ("0", "low"):
+        return 0
+    return None
+
+
 class AkuvoxInputSensor(AkuvoxEntity, BinarySensorEntity):
-    """Represents an Akuvox dry-contact input as a binary sensor."""
+    """Represents an Akuvox dry-contact input as a binary sensor.
+
+    The device decides when an input is "triggered": its level equals the
+    trigger level configured on the device (high or low).  The sensor is
+    on while the input is triggered, flipped when ``invert`` is set.  The
+    coordinator reads the real level on every refresh, which is the
+    source of truth; webhooks update the state in between.
+    """
 
     _attr_has_entity_name = True
 
@@ -171,6 +198,7 @@ class AkuvoxInputSensor(AkuvoxEntity, BinarySensorEntity):
         mac_clean: str,
         custom_name: str = "",
         device_class_override: BinarySensorDeviceClass | None = BinarySensorDeviceClass.DOOR,
+        invert: bool = False,
     ) -> None:
         """Initialize the input sensor.
 
@@ -180,34 +208,74 @@ class AkuvoxInputSensor(AkuvoxEntity, BinarySensorEntity):
             mac_clean: Normalized MAC address.
             custom_name: User-configured name (overrides default).
             device_class_override: Configurable device class.
+            invert: Report the opposite of the device's triggered state.
         """
         super().__init__(coordinator)
         self._input_letter = input_letter
         self._mac_clean = mac_clean
+        self._invert = invert
         self._attr_name = custom_name.strip() if custom_name.strip() else f"Input {input_letter}"
         self._attr_unique_id = f"{mac_clean}_input_{input_letter.lower()}"
         self._attr_device_class = device_class_override
-        self._attr_is_on = False
+        self._triggered = False
+        self._sync_from_coordinator()
+        self._attr_is_on = self._triggered != self._invert
 
     @property
     def input_letter(self) -> str:
         """Return the input letter for event matching."""
         return self._input_letter
 
+    def _sync_from_coordinator(self) -> None:
+        """Take the triggered state from the device's reported level.
+
+        Does nothing when the device did not report this input's level or
+        its trigger level, so the last webhook-derived state stands.
+        """
+        data = getattr(self.coordinator, "data", None)
+        if data is None:
+            return
+        level = data.input_status.get(self._input_letter)
+        trigger = data.input_triggers.get(self._input_letter)
+        if level is None or trigger is None:
+            return
+        self._triggered = level == trigger
+
     @callback
-    def update_state(self, is_on: bool) -> None:
+    def _handle_coordinator_update(self) -> None:
+        """Re-read the polled level and publish it."""
+        self._sync_from_coordinator()
+        self._attr_is_on = self._triggered != self._invert
+        super()._handle_coordinator_update()
+
+    @callback
+    def update_state(self, is_on: bool, status: Any = None) -> None:
         """Update the binary sensor state from a webhook event.
 
         Args:
-            is_on: True if triggered, False if closed.
+            is_on: True if the device reported the input as triggered,
+                False if it reported it closed.
+            status: The webhook's ``status`` value, used only to flag a
+                report that disagrees with the device's trigger level.
         """
-        self._attr_is_on = is_on
+        self._triggered = is_on
+        self._attr_is_on = is_on != self._invert
         self.async_write_ha_state()
         _LOGGER.debug(
-            "Input %s state updated to %s via webhook",
+            "Input %s %s via webhook (sensor %s)",
             self._input_letter,
-            "ON" if is_on else "OFF",
+            "triggered" if is_on else "closed",
+            "ON" if self._attr_is_on else "OFF",
         )
+        level = _parse_level(status)
+        trigger = self.coordinator.data.input_triggers.get(self._input_letter)
+        if level is not None and trigger is not None and (level == trigger) != is_on:
+            _LOGGER.debug(
+                "Input %s webhook status %s disagrees with event; "
+                "the coordinator refresh that follows will correct it",
+                self._input_letter,
+                status,
+            )
 
 
 class AkuvoxTamperSensor(AkuvoxEntity, BinarySensorEntity):

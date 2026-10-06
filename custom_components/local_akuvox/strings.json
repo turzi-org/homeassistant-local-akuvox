@@ -64,12 +64,16 @@
           "relay_d_lock": "Relay D \u2014 Create Lock Entity",
           "input_a_name": "Input A \u2014 Custom Name",
           "input_a_class": "Input A \u2014 Sensor Type",
+          "input_a_invert": "Input A \u2014 Invert On/Off",
           "input_b_name": "Input B \u2014 Custom Name",
           "input_b_class": "Input B \u2014 Sensor Type",
+          "input_b_invert": "Input B \u2014 Invert On/Off",
           "input_c_name": "Input C \u2014 Custom Name",
           "input_c_class": "Input C \u2014 Sensor Type",
+          "input_c_invert": "Input C \u2014 Invert On/Off",
           "input_d_name": "Input D \u2014 Custom Name",
-          "input_d_class": "Input D \u2014 Sensor Type"
+          "input_d_class": "Input D \u2014 Sensor Type",
+          "input_d_invert": "Input D \u2014 Invert On/Off"
         },
         "data_description": {
           "relay_a_name": "Display name for this relay's lock and switch entities (e.g., 'Front Door', 'Gate').",
@@ -82,12 +86,16 @@
           "relay_d_lock": "When enabled, a Lock entity is created alongside the Switch.",
           "input_a_name": "Display name for this input sensor (e.g., 'Main Door Sensor').",
           "input_a_class": "Sensor type determines the icon and behavior (door, motion, window, etc.).",
+          "input_a_invert": "Turn on when the input is NOT triggered. The device decides what triggered means: the input's trigger level (high or low) in its own settings.",
           "input_b_name": "Display name for this input sensor.",
           "input_b_class": "Sensor type determines the icon and behavior.",
+          "input_b_invert": "Turn on when the input is NOT triggered.",
           "input_c_name": "Display name for this input sensor.",
           "input_c_class": "Sensor type determines the icon and behavior.",
+          "input_c_invert": "Turn on when the input is NOT triggered.",
           "input_d_name": "Display name for this input sensor.",
-          "input_d_class": "Sensor type determines the icon and behavior."
+          "input_d_class": "Sensor type determines the icon and behavior.",
+          "input_d_invert": "Turn on when the input is NOT triggered."
         }
       }
     },
@@ -141,12 +149,16 @@
           "relay_d_delay": "Relay D \u2014 Hold Delay (seconds)",
           "input_a_name": "Input A \u2014 Custom Name",
           "input_a_class": "Input A \u2014 Sensor Type",
+          "input_a_invert": "Input A \u2014 Invert On/Off",
           "input_b_name": "Input B \u2014 Custom Name",
           "input_b_class": "Input B \u2014 Sensor Type",
+          "input_b_invert": "Input B \u2014 Invert On/Off",
           "input_c_name": "Input C \u2014 Custom Name",
           "input_c_class": "Input C \u2014 Sensor Type",
+          "input_c_invert": "Input C \u2014 Invert On/Off",
           "input_d_name": "Input D \u2014 Custom Name",
-          "input_d_class": "Input D \u2014 Sensor Type"
+          "input_d_class": "Input D \u2014 Sensor Type",
+          "input_d_invert": "Input D \u2014 Invert On/Off"
         },
         "data_description": {
           "relay_a_name": "Display name for this relay's lock and switch entities (e.g., 'Front Door', 'Gate').",
@@ -167,12 +179,16 @@
           "relay_d_delay": "How long the relay stays open before re-locking (1-300 seconds).",
           "input_a_name": "Display name for this input sensor (e.g., 'Main Door Sensor').",
           "input_a_class": "Sensor type determines the icon and behavior (door, motion, window, etc.).",
+          "input_a_invert": "Turn on when the input is NOT triggered. The device decides what triggered means: the input's trigger level (high or low) in its own settings.",
           "input_b_name": "Display name for this input sensor.",
           "input_b_class": "Sensor type determines the icon and behavior.",
+          "input_b_invert": "Turn on when the input is NOT triggered.",
           "input_c_name": "Display name for this input sensor.",
           "input_c_class": "Sensor type determines the icon and behavior.",
+          "input_c_invert": "Turn on when the input is NOT triggered.",
           "input_d_name": "Display name for this input sensor.",
-          "input_d_class": "Sensor type determines the icon and behavior."
+          "input_d_class": "Sensor type determines the icon and behavior.",
+          "input_d_invert": "Turn on when the input is NOT triggered."
         }
       }
     }

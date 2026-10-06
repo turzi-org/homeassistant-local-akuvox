@@ -42,7 +42,9 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     RELAY_KEY_RE,
+    input_trigger_config_keys,
 )
+from .device import async_get_input_status
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -184,6 +186,35 @@ def _build_relay_config(config: Any, letter: str) -> RelayConfig:
     )
 
 
+def _build_input_triggers(config: Any) -> dict[str, int]:
+    """Read each input's trigger level from a DeviceConfig.
+
+    Args:
+        config: DeviceConfig instance with dict-like access.
+
+    Returns:
+        Input letter to the level (0 or 1) that counts as triggered.
+        Inputs whose key is missing or unparseable are left out.
+
+    """
+    triggers: dict[str, int] = {}
+    for letter in "ABCD":
+        for key in input_trigger_config_keys(letter):
+            value = config.get(key, None)
+            if value is None or value == "":
+                continue
+            level = _parse_config_int(
+                value,
+                default=-1,
+                allowed={0, 1},
+                key=key,
+            )
+            if level in (0, 1):
+                triggers[letter] = level
+                break
+    return triggers
+
+
 @dataclass
 class AkuvoxCoordinatorData:
     """Data class for coordinator update results."""
@@ -193,6 +224,11 @@ class AkuvoxCoordinatorData:
     device_name: str = ""
     relay_configs: dict[str, RelayConfig] = field(default_factory=dict)
     users: list[User] = field(default_factory=list)
+    # Input letter -> current level (0 = low, 1 = high); empty when the
+    # device cannot report it.
+    input_status: dict[str, int] = field(default_factory=dict)
+    # Input letter -> level that counts as "triggered", from device config.
+    input_triggers: dict[str, int] = field(default_factory=dict)
 
 
 class AkuvoxDataUpdateCoordinator(
@@ -223,6 +259,7 @@ class AkuvoxDataUpdateCoordinator(
         self._cached_device_name: str | None = None
         self._cached_relay_configs: dict[str, RelayConfig] | None = None
         self._cached_users: list[User] = []
+        self._cached_input_triggers: dict[str, int] = {}
         self._last_user_fetch: float | None = None
         self._was_unavailable: bool = False
         self._config_refresh_requested: bool = False
@@ -300,6 +337,7 @@ class AkuvoxDataUpdateCoordinator(
                     letter,
                 )
         self._cached_relay_configs = relay_configs
+        self._cached_input_triggers = _build_input_triggers(device_config)
 
     def _apply_default_config(
         self,
@@ -419,6 +457,26 @@ class AkuvoxDataUpdateCoordinator(
                 "Unexpected error while fetching users; keeping cache",
             )
 
+    async def _async_fetch_input_status(self) -> dict[str, int]:
+        """Read input levels from the device.
+
+        Non-fatal: the relay call that precedes this already established
+        that the device is reachable, and some models have no input
+        status endpoint, so any failure here yields an empty result and
+        the input sensors keep what webhooks last told them.
+
+        Returns:
+            Input letter to level, or an empty dict on failure.
+
+        """
+        try:
+            return await async_get_input_status(self.device)
+        except AkuvoxError as err:
+            _LOGGER.debug("Could not read input status: %s", err)
+        except Exception:
+            _LOGGER.exception("Unexpected error reading input status")
+        return {}
+
     async def _async_update_data(self) -> AkuvoxCoordinatorData:
         """Fetch data from the Akuvox device.
 
@@ -480,10 +538,14 @@ class AkuvoxDataUpdateCoordinator(
 
         await self._async_fetch_users()
 
+        input_status = await self._async_fetch_input_status()
+
         return AkuvoxCoordinatorData(
             device_info=self._cached_device_info,
             relay_status=relay_status,
             device_name=self._cached_device_name or "",
             relay_configs=self._cached_relay_configs or {},
             users=list(self._cached_users),
+            input_status=input_status,
+            input_triggers=dict(self._cached_input_triggers),
         )

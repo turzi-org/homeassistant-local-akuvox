@@ -137,6 +137,7 @@ device model:
 | --- | --- | --- |
 | **Name** | Custom display name for the input | `Input A`, `Input B`, … |
 | **Device Class** | HA device class for the binary sensor | `door` |
+| **Invert On/Off** | Report the opposite of the device's triggered state | `false` |
 
 Supported device classes: `door`, `garage_door`, `gate`, `window`,
 `motion`, `opening`, `tamper`, `safety`, `none`.
@@ -172,12 +173,19 @@ State is updated via the coordinator's 30-second polling cycle.
 
 | Entity Type | Description | Updated via |
 | --- | --- | --- |
-| **Input (A–D)** | Dry-contact input with configurable device class | Webhook |
+| **Input (A–D)** | Dry-contact input with configurable device class | Polling + webhook |
 | **Tamper** | Tamper alarm sensor | Webhook |
 | **Break-in (A–D)** | Break-in alarm per input | Webhook |
 
 Input sensors are **disabled by default** — enable them from the entity
 settings in Home Assistant.
+
+An input sensor is **on while the input is triggered**, which is when its
+level equals the trigger level set on the device (*Input Trigger* /
+*Option*: high or low). The integration reads the real level from the
+device on every refresh and after every input webhook, so a missed event
+corrects itself. If the sensor is the opposite of what the door is doing,
+the wiring is the other way round: use **Invert On/Off** for that input.
 
 ### Event
 

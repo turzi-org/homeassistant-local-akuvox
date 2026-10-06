@@ -395,13 +395,13 @@ async def test_unknown_event_sanitized(
     coordinator.async_refresh.assert_not_awaited()
 
 
-# ── Input event — no refresh ─────────────────────────────────
+# ── Input event — refresh ────────────────────────────────────
 
 
-async def test_input_event_no_refresh(
+async def test_input_event_refreshes_coordinator(
     hass: HomeAssistant,
 ) -> None:
-    """Test input events do NOT trigger coordinator refresh."""
+    """Test input events refresh the coordinator to re-read the level."""
     coordinator = MagicMock()
     coordinator.async_refresh = AsyncMock()
     coordinator.get_user_by_pin = MagicMock(return_value=None)
@@ -431,7 +431,7 @@ async def test_input_event_no_refresh(
 
     assert response is not None
     assert response.status == 200
-    coordinator.async_refresh.assert_not_awaited()
+    coordinator.async_refresh.assert_awaited_once()
 
 
 # ── Concurrent deliveries (FR-014) ──────────────────────────
