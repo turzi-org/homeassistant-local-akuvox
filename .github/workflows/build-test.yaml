@@ -195,6 +195,7 @@ jobs:
             PYSEC-2026-4150
             PYSEC-2026-4151
             PYSEC-2026-4152
+            CVE-2026-102275
 
   sbom:
     name: 'Generate SBOM'

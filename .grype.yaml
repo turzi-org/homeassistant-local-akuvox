@@ -91,6 +91,10 @@ ignore:
     package:
       name: PyJWT
       type: python
+  - vulnerability: GHSA-x33g-cr3x-6449
+    package:
+      name: PyJWT
+      type: python
   - vulnerability: GHSA-jwv3-5hgf-82ww
     package:
       name: cryptography
