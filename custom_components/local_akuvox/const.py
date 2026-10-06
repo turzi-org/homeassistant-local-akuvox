@@ -136,6 +136,14 @@ REFRESH_EVENT_TYPES: Final[frozenset[str]] = frozenset(
         "relay_c_closed",
         "relay_d_triggered",
         "relay_d_closed",
+        "input_a_triggered",
+        "input_a_closed",
+        "input_b_triggered",
+        "input_b_closed",
+        "input_c_triggered",
+        "input_c_closed",
+        "input_d_triggered",
+        "input_d_closed",
         "valid_code_entered",
     }
 )
@@ -203,6 +211,16 @@ CONFIG_KEY_RELAY_MODE_SUFFIX: Final = "Mode"
 # Relay key pattern — matches "RelayA", "RelayB", etc.
 RELAY_KEY_RE: Final = re.compile(r"Relay([A-Z])")
 
+# Input trigger level: the level that counts as "triggered" for an input.
+# S535-style firmware stores it as PREFIX.INPUT.InputTrigger (input A) and
+# PREFIX.INPUT.Input{Letter}Trigger (B-D); A02-style firmware stores it as
+# PREFIX.INPUT{Letter}.Option.  1 means high, 0 means low.
+CONFIG_KEY_INPUT_PREFIX: Final = f"{CONFIG_KEY_PREFIX}.INPUT"
+
+# Input status path and key pattern — matches "InputA", "InputB", etc.
+INPUT_STATUS_PATH: Final = "/api/input/status"
+INPUT_KEY_RE: Final = re.compile(r"Input([A-Z])")
+
 # Device config defaults
 DEFAULT_HOLD_DELAY_SECONDS: Final = 5
 DEFAULT_RELAY_TYPE: Final = 0
@@ -210,6 +228,9 @@ DEFAULT_RELAY_MODE: Final = 0
 
 # Entity configuration keys (stored in entry.options["entity_config"])
 CONF_ENTITY_CONFIG: Final = "entity_config"
+
+# Per-input option: flip the sensor's on/off sense (entity_config[input_x])
+CONF_INPUT_INVERT: Final = "invert"
 
 # Valid device classes for input binary sensors
 VALID_INPUT_DEVICE_CLASSES: Final = [
@@ -335,3 +356,21 @@ def get_auth_method_map() -> dict[str, AuthMethod]:
             AUTH_DIGEST: _AuthMethod.DIGEST,
         }
     return _AUTH_METHOD_MAP
+
+
+def input_trigger_config_keys(letter: str) -> tuple[str, str]:
+    """Return the device config keys holding an input's trigger level.
+
+    Args:
+        letter: Input letter (A, B, C, D).
+
+    Returns:
+        The S535-style key and the A02-style key, in that order.
+
+    """
+    s535_key = (
+        f"{CONFIG_KEY_INPUT_PREFIX}.InputTrigger"
+        if letter == "A"
+        else f"{CONFIG_KEY_INPUT_PREFIX}.Input{letter}Trigger"
+    )
+    return s535_key, f"{CONFIG_KEY_PREFIX}.INPUT{letter}.Option"

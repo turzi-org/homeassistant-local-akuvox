@@ -28,6 +28,7 @@ from custom_components.local_akuvox.const import (
     CONF_VERIFY_SSL,
 )
 from custom_components.local_akuvox.device import (
+    async_get_input_status,
     async_trigger_relay,
     build_auth_config,
     create_device,
@@ -181,3 +182,31 @@ async def test_async_trigger_relay_passes_through_when_supported() -> None:
     )
     await async_trigger_relay(device, num=2, mode=1, level=1, delay=3)
     device.trigger_relay.assert_awaited_once_with(num=2, mode=1, level=1, delay=3)
+
+
+# ── async_get_input_status ───────────────────────────────────
+
+
+async def test_get_input_status_parses_levels() -> None:
+    """Input levels are keyed by letter; other keys and junk are ignored."""
+    device = MagicMock()
+    device._http.get = AsyncMock(
+        return_value={
+            "InputA": 0,
+            "InputB": "1",
+            "InputC": "x",
+            "InputD": 2,
+            "Other": 1,
+        }
+    )
+
+    assert await async_get_input_status(device) == {"A": 0, "B": 1}
+    device._http.get.assert_awaited_once_with("/api/input/status")
+
+
+async def test_get_input_status_empty_response() -> None:
+    """An empty envelope yields no levels."""
+    device = MagicMock()
+    device._http.get = AsyncMock(return_value=None)
+
+    assert await async_get_input_status(device) == {}

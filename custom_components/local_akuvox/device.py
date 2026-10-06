@@ -26,6 +26,8 @@ from .const import (
     CONF_USE_SSL,
     CONF_USERNAME,
     CONF_VERIFY_SSL,
+    INPUT_KEY_RE,
+    INPUT_STATUS_PATH,
     get_auth_method_map,
 )
 
@@ -156,3 +158,39 @@ async def async_trigger_relay(
         delay=delay,
         adapter=adapter,
     )
+
+
+async def async_get_input_status(device: AkuvoxDevice) -> dict[str, int]:
+    """Read the current level of every input from the device.
+
+    pylocal-akuvox has no wrapper for ``/api/input/status``, so this
+    goes through the library's HTTP client, which carries the
+    connection's authentication and TLS settings.
+
+    Args:
+        device: The connected device.
+
+    Returns:
+        Input letter to level (0 = low, 1 = high), for example
+        ``{"A": 0, "B": 1}``. Empty when the device reports no inputs.
+
+    Raises:
+        AkuvoxError: When the request fails or the device refuses it.
+
+    """
+    http = getattr(device, "_http", None)
+    if http is None:
+        return {}
+    data = await http.get(INPUT_STATUS_PATH)
+    levels: dict[str, int] = {}
+    for key, value in (data or {}).items():
+        match = INPUT_KEY_RE.fullmatch(key)
+        if match is None:
+            continue
+        try:
+            level = int(value)
+        except (TypeError, ValueError):
+            continue
+        if level in (0, 1):
+            levels[match.group(1)] = level
+    return levels

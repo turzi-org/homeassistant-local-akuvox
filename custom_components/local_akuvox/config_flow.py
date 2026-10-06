@@ -574,6 +574,7 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
         """
         from .const import (
             CONF_ENTITY_CONFIG,
+            CONF_INPUT_INVERT,
             VALID_INPUT_DEVICE_CLASSES,
             get_model_capabilities,
         )
@@ -605,6 +606,9 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
                         "name": user_input[input_name_key],
                         "device_class": user_input.get(
                             input_class_key, "door"
+                        ),
+                        CONF_INPUT_INVERT: user_input.get(
+                            f"input_{letter.lower()}_invert", False
                         ),
                     }
 
@@ -651,6 +655,12 @@ class AkuvoxConfigFlow(ConfigFlow, domain=DOMAIN):
                     default="door",
                 )
             ] = vol.In(VALID_INPUT_DEVICE_CLASSES)
+            schema_dict[
+                vol.Required(
+                    f"input_{letter.lower()}_invert",
+                    default=False,
+                )
+            ] = bool
 
         model_info = f" ({model})" if model else ""
 
@@ -753,6 +763,7 @@ class AkuvoxOptionsFlow(OptionsFlow):
         from .const import (
             CONF_DEVICE_MODEL,
             CONF_ENTITY_CONFIG,
+            CONF_INPUT_INVERT,
             VALID_INPUT_DEVICE_CLASSES,
             get_model_capabilities,
         )
@@ -791,6 +802,9 @@ class AkuvoxOptionsFlow(OptionsFlow):
                         "name": user_input[input_name_key],
                         "device_class": user_input.get(
                             input_class_key, "door"
+                        ),
+                        CONF_INPUT_INVERT: user_input.get(
+                            f"input_{letter.lower()}_invert", False
                         ),
                     }
 
@@ -866,6 +880,12 @@ class AkuvoxOptionsFlow(OptionsFlow):
                     default=cfg.get("device_class", "door"),
                 )
             ] = vol.In(VALID_INPUT_DEVICE_CLASSES)
+            schema_dict[
+                vol.Required(
+                    f"input_{letter.lower()}_invert",
+                    default=cfg.get(CONF_INPUT_INVERT, False),
+                )
+            ] = bool
 
         # Add model info to description
         model_info = f" ({model})" if model else ""

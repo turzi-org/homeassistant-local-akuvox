@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -235,6 +235,9 @@ def mock_akuvox_device(
             return_value=mock_device_config,
         )
         device.trigger_relay = AsyncMock(return_value=None)
+        # Raw HTTP client behind /api/input/status (no library wrapper)
+        device._http = MagicMock()
+        device._http.get = AsyncMock(return_value={})
         device.__aenter__ = AsyncMock(return_value=device)
         device.__aexit__ = AsyncMock(return_value=None)
         # Schedule and user CRUD methods
