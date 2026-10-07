@@ -50,6 +50,12 @@ _LOGGER = logging.getLogger(__name__)
 
 _USER_CACHE_TTL_SECONDS = 300  # 5 minutes
 
+# The device config is large (about 125 KB on an S535) and some units have
+# hung around config downloads, so it is cached for a long time. It still
+# has to be re-read now and then: the input trigger levels live in it and
+# are edited on the device itself, where nothing tells us.
+_CONFIG_CACHE_TTL_SECONDS = 3600  # 1 hour
+
 
 @dataclass(frozen=True)
 class RelayConfig:
@@ -263,6 +269,7 @@ class AkuvoxDataUpdateCoordinator(
         self._last_user_fetch: float | None = None
         self._was_unavailable: bool = False
         self._config_refresh_requested: bool = False
+        self._last_config_fetch: float | None = None
         self.relay_settings: dict[str, dict[str, Any]] = {}
 
     def get_user_by_pin(self, pin: str) -> User | None:
@@ -294,13 +301,19 @@ class AkuvoxDataUpdateCoordinator(
         """Determine whether device config should be fetched.
 
         Returns:
-            True if config has never been fetched or device
-            recovered from unavailable state.
+            True if config has never been fetched, a refresh was
+            requested, the device recovered from unavailable state, or
+            the cached copy is older than the cache TTL.
 
         """
         if self._cached_device_name is None or self._config_refresh_requested:
             return True
-        return bool(self._was_unavailable)
+        if self._was_unavailable:
+            return True
+        return (
+            self._last_config_fetch is None
+            or monotonic() - self._last_config_fetch >= _CONFIG_CACHE_TTL_SECONDS
+        )
 
     def request_config_refresh(self) -> None:
         """Re-read the device config on the next update.
@@ -394,6 +407,7 @@ class AkuvoxDataUpdateCoordinator(
             )
             self._was_unavailable = False
             self._config_refresh_requested = False
+            self._last_config_fetch = monotonic()
             return
 
         try:
@@ -424,6 +438,7 @@ class AkuvoxDataUpdateCoordinator(
             )
         self._was_unavailable = False
         self._config_refresh_requested = False
+        self._last_config_fetch = monotonic()
 
     async def _async_fetch_users(self) -> None:
         """Fetch and cache user list from the device.

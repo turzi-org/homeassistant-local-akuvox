@@ -186,6 +186,8 @@ level equals the trigger level set on the device (*Input Trigger* /
 device on every refresh and after every input webhook, so a missed event
 corrects itself. If the sensor is the opposite of what the door is doing,
 the wiring is the other way round: use **Invert On/Off** for that input.
+The trigger level is part of the device config, which is cached for an hour,
+so a change made on the device shows up within an hour (or on reload).
 
 ### Event
 
