@@ -993,3 +993,96 @@ async def test_coordinator_input_status_failure_is_not_fatal(
 
     assert data.input_status == {}
     assert data.relay_status == mock_relay_status
+
+
+# ── Config cache TTL ─────────────────────────────────────────
+
+
+async def _coordinator_with_config(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    configs: list[Any],
+) -> tuple[AkuvoxDataUpdateCoordinator, AsyncMock]:
+    """Build a coordinator whose device serves ``configs`` in order."""
+    device = _make_device()
+    device.get_info = AsyncMock(return_value=mock_device_info)
+    device.get_relay_status = AsyncMock(return_value=mock_relay_status)
+    device.get_device_config = AsyncMock(side_effect=configs)
+    return AkuvoxDataUpdateCoordinator(hass=hass, device=device), device
+
+
+async def test_config_not_refetched_within_ttl(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config: Any,
+) -> None:
+    """Polling inside the cache window does not download the config again."""
+    coordinator, device = await _coordinator_with_config(
+        hass, mock_device_info, mock_relay_status, [mock_device_config]
+    )
+    with patch("custom_components.local_akuvox.coordinator.monotonic") as clock:
+        clock.return_value = 1000.0
+        await coordinator._async_update_data()
+        clock.return_value = 1000.0 + 3599
+        await coordinator._async_update_data()
+
+    assert device.get_device_config.await_count == 1
+
+
+async def test_config_refetched_after_ttl_picks_up_trigger_change(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config_factory: Any,
+) -> None:
+    """A trigger level edited on the device is seen after the TTL."""
+    key = "Config.DoorSetting.INPUT.InputTrigger"
+    coordinator, device = await _coordinator_with_config(
+        hass,
+        mock_device_info,
+        mock_relay_status,
+        [
+            mock_device_config_factory(**{key: "0"}),
+            mock_device_config_factory(**{key: "1"}),
+        ],
+    )
+    with patch("custom_components.local_akuvox.coordinator.monotonic") as clock:
+        clock.return_value = 1000.0
+        first = await coordinator._async_update_data()
+        clock.return_value = 1000.0 + 3600
+        second = await coordinator._async_update_data()
+
+    assert first.input_triggers["A"] == 0
+    assert second.input_triggers["A"] == 1
+    assert device.get_device_config.await_count == 2
+
+
+async def test_failed_config_refetch_keeps_cache_and_waits_a_full_ttl(
+    hass: HomeAssistant,
+    mock_device_info: DeviceInfo,
+    mock_relay_status: dict[str, Any],
+    mock_device_config_factory: Any,
+) -> None:
+    """A failed re-read keeps the old values and is not retried every poll."""
+    key = "Config.DoorSetting.INPUT.InputTrigger"
+    coordinator, device = await _coordinator_with_config(
+        hass,
+        mock_device_info,
+        mock_relay_status,
+        [
+            mock_device_config_factory(**{key: "1"}),
+            AkuvoxConnectionError("boom"),
+        ],
+    )
+    with patch("custom_components.local_akuvox.coordinator.monotonic") as clock:
+        clock.return_value = 1000.0
+        await coordinator._async_update_data()
+        clock.return_value = 1000.0 + 3600
+        refreshed = await coordinator._async_update_data()
+        clock.return_value = 1000.0 + 3600 + 30
+        await coordinator._async_update_data()
+
+    assert refreshed.input_triggers["A"] == 1
+    assert device.get_device_config.await_count == 2
