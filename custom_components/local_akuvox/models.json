@@ -1,0 +1,122 @@
+{
+  "S539": {
+    "relays": 3,
+    "inputs": 3,
+    "tamper": false
+  },
+  "S535": {
+    "relays": 1,
+    "inputs": 2,
+    "tamper": false
+  },
+  "S532": {
+    "relays": 2,
+    "inputs": 4,
+    "tamper": false
+  },
+  "X916": {
+    "relays": 4,
+    "inputs": 4,
+    "tamper": false
+  },
+  "X915": {
+    "relays": 3,
+    "inputs": 3,
+    "tamper": false
+  },
+  "X915V2": {
+    "relays": 3,
+    "inputs": 3,
+    "tamper": false
+  },
+  "X912": {
+    "relays": 2,
+    "inputs": 3,
+    "tamper": false
+  },
+  "X910": {
+    "relays": 2,
+    "inputs": 2,
+    "tamper": false
+  },
+  "R29": {
+    "relays": 3,
+    "inputs": 3,
+    "tamper": false
+  },
+  "R28": {
+    "relays": 3,
+    "inputs": 3,
+    "tamper": false
+  },
+  "R28V2": {
+    "relays": 3,
+    "inputs": 3,
+    "tamper": false
+  },
+  "R20": {
+    "relays": 2,
+    "inputs": 2,
+    "tamper": false
+  },
+  "R25": {
+    "relays": 2,
+    "inputs": 2,
+    "tamper": false
+  },
+  "E18": {
+    "relays": 2,
+    "inputs": 3,
+    "tamper": true
+  },
+  "E16": {
+    "relays": 1,
+    "inputs": 1,
+    "tamper": true
+  },
+  "E16V2": {
+    "relays": 1,
+    "inputs": 1,
+    "tamper": true
+  },
+  "E13": {
+    "relays": 1,
+    "inputs": 2,
+    "tamper": false
+  },
+  "E12": {
+    "relays": 1,
+    "inputs": 2,
+    "tamper": false
+  },
+  "A095": {
+    "relays": 4,
+    "inputs": 4,
+    "tamper": true
+  },
+  "A094": {
+    "relays": 4,
+    "inputs": 0,
+    "tamper": true
+  },
+  "A05": {
+    "relays": 1,
+    "inputs": 1,
+    "tamper": true
+  },
+  "A03": {
+    "relays": 1,
+    "inputs": 2,
+    "tamper": true
+  },
+  "A02": {
+    "relays": 1,
+    "inputs": 2,
+    "tamper": true
+  },
+  "A01": {
+    "relays": 1,
+    "inputs": 2,
+    "tamper": true
+  }
+}

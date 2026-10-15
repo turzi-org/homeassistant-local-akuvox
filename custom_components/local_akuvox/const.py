@@ -5,7 +5,9 @@
 
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
 if TYPE_CHECKING:
@@ -249,38 +251,13 @@ VALID_INPUT_DEVICE_CLASSES: Final = [
 CONF_DEVICE_MODEL: Final = "device_model"
 
 # Model capabilities — relay and input counts per model
-# Derived from Akuvox "Action URLs Supported by Different Models" spec
-MODEL_CAPABILITIES: Final[dict[str, dict[str, int | bool]]] = {
-    # S series
-    "S539": {"relays": 3, "inputs": 3, "tamper": False},
-    "S535": {"relays": 1, "inputs": 2, "tamper": False},
-    "S532": {"relays": 2, "inputs": 4, "tamper": False},
-    # X series
-    "X916": {"relays": 4, "inputs": 4, "tamper": False},
-    "X915": {"relays": 3, "inputs": 3, "tamper": False},
-    "X915V2": {"relays": 3, "inputs": 3, "tamper": False},
-    "X912": {"relays": 2, "inputs": 3, "tamper": False},
-    "X910": {"relays": 2, "inputs": 2, "tamper": False},
-    # R series
-    "R29": {"relays": 3, "inputs": 3, "tamper": False},
-    "R28": {"relays": 3, "inputs": 3, "tamper": False},
-    "R28V2": {"relays": 3, "inputs": 3, "tamper": False},
-    "R20": {"relays": 2, "inputs": 2, "tamper": False},
-    "R25": {"relays": 2, "inputs": 2, "tamper": False},
-    # E series
-    "E18": {"relays": 2, "inputs": 3, "tamper": True},
-    "E16": {"relays": 1, "inputs": 1, "tamper": True},
-    "E16V2": {"relays": 1, "inputs": 1, "tamper": True},
-    "E13": {"relays": 1, "inputs": 2, "tamper": False},
-    "E12": {"relays": 1, "inputs": 2, "tamper": False},
-    # A series
-    "A095": {"relays": 4, "inputs": 4, "tamper": True},
-    "A094": {"relays": 4, "inputs": 0, "tamper": True},
-    "A05": {"relays": 1, "inputs": 1, "tamper": True},
-    "A03": {"relays": 1, "inputs": 2, "tamper": True},
-    "A02": {"relays": 1, "inputs": 2, "tamper": True},
-    "A01": {"relays": 1, "inputs": 2, "tamper": True},
-}
+# Derived from Akuvox "Action URLs Supported by Different Models" spec.
+# Kept in models.json, the single source: Turzi's platform generates its own
+# copy from that file (apps/api/scripts/sync-akuvox-models.ts in turzi-apps),
+# so a count is corrected in one place. Read once, when the module is imported.
+MODEL_CAPABILITIES: Final[dict[str, dict[str, int | bool]]] = json.loads(
+    (Path(__file__).parent / "models.json").read_text(encoding="utf-8")
+)
 
 # Default capabilities when model is unknown
 DEFAULT_MODEL_CAPABILITIES: Final[dict[str, int | bool]] = {
